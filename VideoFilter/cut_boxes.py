@@ -8,7 +8,7 @@ from ultralytics import YOLO
 from tqdm import tqdm
 import os
 import ffmpeg
-from paths import INFO_DPATH, VIDEO_DPATH, CUT_VIDEO_DPATH
+from paths import YOLO_BBOXES_DPATH, VIDEO_DPATH, CUT_VIDEO_DPATH
 
 n_processes = 12
 
@@ -21,7 +21,7 @@ video_seg = {yid: seg for fname, _, yid, seg in zip(*list(camera_steady.values()
 def run_trim():
     video_fname = '140kg Squat 6 reps-viZUvjS0RGY.mkv'
     video_fpath = VIDEO_DPATH/video_fname
-    with open((INFO_DPATH/video_fname).with_suffix('.json'), 'r') as file:
+    with open((YOLO_BBOXES_DPATH/video_fname).with_suffix('.json'), 'r') as file:
         video_info = json.load(file)
 
     cap = cv2.VideoCapture(str(video_fpath))
@@ -53,7 +53,7 @@ def cut_video_on_boxes(video_fpath):
         print(f"skip video {video_fname} by steady filter")
         return
 
-    bboxes_fpath = (INFO_DPATH / video_fpath.name).with_suffix('.pickle')
+    bboxes_fpath = (YOLO_BBOXES_DPATH / video_fpath.name).with_suffix('.pickle')
     with open(bboxes_fpath, 'rb') as file:
         tracks = pickle.load(file)
     # bbox_idxs = list(tracks.keys())

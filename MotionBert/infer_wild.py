@@ -61,11 +61,11 @@ testloader_params = {
 }
 
 RESULTS_DPATH = Path("/home/ubuntu/PycharmProjects/FitMate/VideoFilter/results_base_video_mp3")
-INFO_DPATH = RESULTS_DPATH / "yolo_bboxes"
+YOLO_BBOXES_DPATH = RESULTS_DPATH / "yolo_bboxes"
 CUT_VIDEO_DPATH = RESULTS_DPATH / "cut_video"
 JOINTS_DPATH = RESULTS_DPATH / "mediapipe_joints"
 JOINTS2d_DPATH = RESULTS_DPATH / "joints2d"
-JOINTS2d_INFO_DPATH = RESULTS_DPATH / "joints2d_info"
+JOINTS2d_YOLO_BBOXES_DPATH = RESULTS_DPATH / "joints2d_info"
 JOINTS2d_TRACK_DPATH = RESULTS_DPATH / "joints2d_track"
 credibility_filtered = RESULTS_DPATH / "cred_filtered_video"
 one_person_filtered = RESULTS_DPATH / "joints2d_one_person"

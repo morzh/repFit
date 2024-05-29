@@ -9,7 +9,7 @@ from ultralytics import YOLO
 from tqdm import tqdm
 import os
 import ffmpeg
-from paths import INFO_DPATH, video_dpath, CUT_VIDEO_DPATH, FILTERED_VIDEO_DPATH, JOINTS_DPATH, RESULTS_DPATH
+from paths import YOLO_BBOXES_DPATH, video_dpath, CUT_VIDEO_DPATH, FILTERED_VIDEO_DPATH, JOINTS_DPATH, RESULTS_DPATH
 from tools.video_reader import VideoReader
 import mediapipe as mp
 mp_pose = mp.solutions.pose

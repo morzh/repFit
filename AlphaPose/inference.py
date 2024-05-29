@@ -158,12 +158,12 @@ def proc(video_name):
     save_video_dpath = result_dpath / 'video_with_joints'
     save_joints_dpath = result_dpath / 'joints2d'
     save_track_joints_dpath = result_dpath / 'track_joints2d'
-    joints_info_dpath = result_dpath / 'joints_info'
+    joints_YOLO_BBOXES_DPATH = result_dpath / 'joints_info'
 
     save_video_dpath.mkdir(exist_ok=True, parents=True)
     save_joints_dpath.mkdir(exist_ok=True, parents=True)
     save_track_joints_dpath.mkdir(exist_ok=True, parents=True)
-    joints_info_dpath.mkdir(exist_ok=True, parents=True)
+    joints_YOLO_BBOXES_DPATH.mkdir(exist_ok=True, parents=True)
 
     mode = 'video'
     input_source = os.path.join(video_dpath, video_name)
@@ -271,7 +271,7 @@ def proc(video_name):
             result[i].append({'kp_score': frame_result2['kp_score'].tolist(),
                               'proposal_score': frame_result2['proposal_score'].tolist()})
 
-    with open((joints_info_dpath/video_name).with_suffix(".json"), 'w') as file:
+    with open((joints_YOLO_BBOXES_DPATH/video_name).with_suffix(".json"), 'w') as file:
         json.dump(result, file)
 
     print_finish_info()

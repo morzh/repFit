@@ -9,7 +9,7 @@ from ultralytics import YOLO
 from tqdm import tqdm
 import os
 import ffmpeg
-from paths import JOINTS2d_DPATH, one_person_filtered, CUT_VIDEO_DPATH, JOINTS2d_INFO_DPATH, JOINTS_DPATH, RESULTS_DPATH, credibility_filtered, JOINTS2d_TRACK_DPATH
+from paths import JOINTS2d_DPATH, one_person_filtered, CUT_VIDEO_DPATH, JOINTS2d_YOLO_BBOXES_DPATH, JOINTS_DPATH, RESULTS_DPATH, credibility_filtered, JOINTS2d_TRACK_DPATH
 from tools.video_reader import VideoReader
 import mediapipe as mp
 mp_pose = mp.solutions.pose
@@ -101,7 +101,7 @@ def mark_as_steady():
 
 
 def filter_by_joints_count():
-    for joints_info_fpath in JOINTS2d_INFO_DPATH.glob("*.json"):
+    for joints_info_fpath in JOINTS2d_YOLO_BBOXES_DPATH.glob("*.json"):
         with open(joints_info_fpath, 'r') as file:
             joints_info = json.load(file)
         frames_with_only_one_person = sum([len(j) == 1 for n, j in joints_info.items()])
