@@ -8,7 +8,8 @@ class VideoReader:
     """ Read frames from video with frame_generator
 
         example:
-        frame_generator = VideoReader(video_fpath).frame_generator()
+        video_reader = VideoReader(video_fpath)
+        frame_generator = video_reader.frame_generator()
         for frame in frame_generator:
             pass
 
@@ -17,7 +18,7 @@ class VideoReader:
         self.fpath = fpath
         self.video_reader = cv2.VideoCapture(str(fpath))
         self.n_frames = None
-        self.fps = None
+        self._fps = None
         self.success = False
         self.frame = None
         self._init_info()
@@ -25,7 +26,7 @@ class VideoReader:
     def _init_info(self):
         if self.video_reader.isOpened():
             self.n_frames = int(self.video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.fps = int(self.video_reader.get(cv2.CAP_PROP_FPS))
+            self._fps = int(self.video_reader.get(cv2.CAP_PROP_FPS))
             self.success, self.frame = self.video_reader.read()
             if self.success:
                 self._progress = tqdm(range(self.n_frames))
@@ -45,3 +46,12 @@ class VideoReader:
     @property
     def progress(self):
         return self._progress.n
+
+    @property
+    def fps(self):
+        return self._fps
+
+    def __del__(self):
+        if self.video_reader is not None:
+            self.video_reader.release()
+

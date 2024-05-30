@@ -27,8 +27,7 @@ class HumanTracker:
 
         self.video_reader = VideoReader(video_fpath)
         tracks = {}
-        frame_generator = self.video_reader.frame_generator()
-        for frame in frame_generator:
+        for frame in self.video_reader.frame_generator():
             results = self.detector_model.track(frame, **self.detector_params)
             idxs = results[0].boxes.id
             if idxs is not None:
@@ -41,6 +40,7 @@ class HumanTracker:
 
 
 def extract(video_fpath: Path):
+    """ Make files with bboxes info """
     video_fname = video_fpath.name
     try:
         result_fpath = (YOLO_BBOXES_DPATH / video_fname).with_suffix('.pickle')
