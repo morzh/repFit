@@ -15,5 +15,5 @@ def read_pickle(fpath: Union[str, Path]) -> Any:
 
 
 def write_json(obj, fpath: Union[str, Path]):
-    with open(fpath, 'w') as file:
-        json.dump(obj, file)
+    with open(fpath, 'w', encoding='utf8') as file:
+        json.dump(obj, file, ensure_ascii=True)

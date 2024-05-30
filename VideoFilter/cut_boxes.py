@@ -54,6 +54,7 @@ def cut_video_by_yolo_boxes(video_fpath: Path):
                 elif video_reader.progress > seg[1]:
                     break
             video_writer.release()
+            print(f"Save cut video {str(cut_video_fpath)}")
 
 
 def get_fragments(bbox_array: dict, video_id: str, min_length: int) -> list:

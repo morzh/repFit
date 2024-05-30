@@ -39,7 +39,7 @@ class HumanTracker:
         return tracks
 
 
-def extract(video_fpath: Path):
+def extract_stable_tracks(video_fpath: Path):
     """ Make files with bboxes info """
     video_fname = video_fpath.name
     try:
@@ -48,7 +48,7 @@ def extract(video_fpath: Path):
             print(f"Skip processed video {video_fname}. Result fpath: {str(result_fpath)}")
             return
         result_fpath.parents[0].mkdir(exist_ok=True, parents=True)
-        print(f"Start processing of video {video_fname}")
+        print(f"Start processing of video {str(video_fpath)}")
 
         tracker = HumanTracker()
         tracks = tracker.extract_tracks(video_fpath)

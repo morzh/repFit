@@ -14,6 +14,7 @@ from lib.utils.vismo import render_and_save
 from pathlib import Path
 import shutil
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="configs/pose3d/MB_ft_h36m_global_lite.yaml",
@@ -25,7 +26,7 @@ def parse_args():
                         default="/home/ubuntu/PycharmProjects/FitMate/AlphaPose/data/AlphaPose/joints2d/1 1_2 kyykky - 1 1_2 squat-I2uXMPxPkKk.mp4.json",
                         type=str, help='alphapose detection result json path')
     parser.add_argument('-v', '--vid_path',
-                        default='/home/ubuntu/PycharmProjects/FitMate/AlphaPose/data/base_videos/1 1_2 kyykky - 1 1_2 squat-I2uXMPxPkKk.mp4',
+                        default='/home/ubuntu/PycharmProjects/FitMate/AlphaPose/data/videos/1 1_2 kyykky - 1 1_2 squat-I2uXMPxPkKk.mp4',
                         type=str, help='video path')
     parser.add_argument('-o', '--out_path',
                         default='/home/ubuntu/PycharmProjects/FitMate/AlphaPose/data/MotionBERT',
@@ -60,41 +61,27 @@ testloader_params = {
     'drop_last': False
 }
 
-RESULTS_DPATH = Path("/home/ubuntu/PycharmProjects/FitMate/VideoFilter/results_base_video_mp3")
-YOLO_BBOXES_DPATH = RESULTS_DPATH / "yolo_bboxes"
-CUT_VIDEO_DPATH = RESULTS_DPATH / "cut_video"
-JOINTS_DPATH = RESULTS_DPATH / "mediapipe_joints"
-JOINTS2d_DPATH = RESULTS_DPATH / "joints2d"
-JOINTS2d_YOLO_BBOXES_DPATH = RESULTS_DPATH / "joints2d_info"
-JOINTS2d_TRACK_DPATH = RESULTS_DPATH / "joints2d_track"
-credibility_filtered = RESULTS_DPATH / "cred_filtered_video"
-one_person_filtered = RESULTS_DPATH / "joints2d_one_person"
+sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
+from VideoFilter.paths import (
+    RESULTS_DPATH,
+    CRED_FILTERED_VIDEO_DPATH,
+    JOINTS2d_TRACK_DPATH,
+    JOINTS2d_EXTRA_INFO_DPATH,
+    VIDEO_WITH_2D_JOINTS,
+    FINAL_VIDEOS_DPATH,
+    JOINTS_3D_DPATH
+)
 
-# base_dir = Path("/home/ubuntu/PycharmProjects/FitMate/AlphaPose/data_cut")
-base_dir = RESULTS_DPATH
-# joints_dir = base_dir/'joints2d'
-# track_joints_dir = base_dir/'joints2d_track'
-out_dir = base_dir/'joints3d'
-final_videos_dpath = base_dir / "final_videos"
-from_videos_dpath = base_dir/"video_with_joints"
-joints_dir = base_dir/'joints2d_track'
-
-final_videos_dpath.mkdir(exist_ok=True, parents=True)
-os.makedirs(out_dir, exist_ok=True)
-
-vid = imageio.get_reader(opts.vid_path, 'ffmpeg')
-fps_in = vid.get_meta_data()['fps']
-vid_size = vid.get_meta_data()['size']
 os.makedirs(opts.out_path, exist_ok=True)
 
-
-joints2d_files = os.listdir(joints_dir)
+joints2d_files = os.listdir(JOINTS2d_TRACK_DPATH)
 for joints_fname in joints2d_files:
     print(joints_fname)
-    joints_fpath = os.path.join(joints_dir, joints_fname)
+    joints_fpath = os.path.join(JOINTS2d_TRACK_DPATH, joints_fname)
 
     try:
-        wild_dataset = WildDetDataset(joints_fpath, clip_len=opts.clip_len, scale_range=[1, 1], focus=opts.focus)
+        wild_dataset = WildDetDataset(joints_fpath, clip_len=opts.clip_len, scale_range=[1, 1],
+                                      focus=opts.focus)
     except Exception as ex:
         continue
     test_loader = DataLoader(wild_dataset, **testloader_params)
@@ -120,11 +107,11 @@ for joints_fname in joints2d_files:
             #     predicted_3d_pos[:, :, 0, :] = 0  # [N,T,17,3]
             # else:
             predicted_3d_pos[:, 0, 0, 2] = 0
-                # pass
+            # pass
             # if args.gt_2d:
             #     predicted_3d_pos[..., :2] = batch_input[..., :2]
             results_all.append(predicted_3d_pos.cpu().numpy())
-    
+
     results_all = np.hstack(results_all)
     results_all = np.concatenate(results_all)
     # render_and_save(results_all, '%s/X3D.mp4' % (opts.out_path), keep_imgs=False, fps=fps_in)
@@ -134,7 +121,9 @@ for joints_fname in joints2d_files:
     #     results_all[:, :, :2] = results_all[:, :, :2] + np.array(vid_size) / 2.0
 
     shutil.copyfile(
-        (from_videos_dpath / joints_fname).with_suffix(".mp4"),
-        (final_videos_dpath / joints_fname).with_suffix(".mp4")
+        (VIDEO_WITH_2D_JOINTS / joints_fname).with_suffix(".mp4"),
+        (FINAL_VIDEOS_DPATH / joints_fname).with_suffix(".mp4")
     )
-    np.save((out_dir/ joints_fname).with_suffix(".npy"), results_all)
+    joints_3d_fpath = (JOINTS_3D_DPATH / joints_fname).with_suffix(".npy")
+    np.save(joints_3d_fpath, results_all)
+    print(f"Save joints3d {joints_3d_fpath}")

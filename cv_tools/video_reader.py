@@ -43,6 +43,14 @@ class VideoReader:
             self._progress.update()
             yield frame
 
+    @staticmethod
+    def imshow(frame, window_name: str = 'window'):
+        cv2.imshow(window_name, frame)
+        key = cv2.waitKey(1)
+        if key == 27:  # if ESC is pressed, exit loop
+            cv2.destroyAllWindows()
+            exit(1)
+
     @property
     def progress(self):
         return self._progress.n

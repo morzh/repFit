@@ -36,8 +36,7 @@ configs = "/home/ubuntu/PycharmProjects/FitMate/AlphaPose/configs/halpe_26/resne
 parser.add_argument('--cfg', type=str, default=configs, help='experiment configure file name')
 parser.add_argument('--nn', type=int, help='number of video')
 parser.add_argument('--checkpoint', type=str, default=checkpoint, help='checkpoint file name')
-parser.add_argument('--sp', default=False, action='store_true',
-                    help='Use single process for pytorch')
+
 parser.add_argument('--detector', dest='detector', help='detector name', default="yolo")
 parser.add_argument('--detfile', dest='detfile', help='detection result file', default="")
 parser.add_argument('--indir', dest='inputpath', help='image-directory', default="")
@@ -85,112 +84,36 @@ args.detbatch = args.detbatch * len(args.gpus)
 args.posebatch = args.posebatch * len(args.gpus)
 args.tracking = args.pose_track or args.pose_flow or args.detector == 'tracker'
 
-if not args.sp:
-    torch.multiprocessing.set_start_method('forkserver', force=True)
-    torch.multiprocessing.set_sharing_strategy('file_system')
-
-
-def check_input():
-    # for wecam
-    if args.webcam != -1:
-        args.detbatch = 1
-        return 'webcam', int(args.webcam)
-
-    # for video
-    if len(args.video):
-        if os.path.isfile(args.video):
-            videofile = args.video
-            return 'video', videofile
-        else:
-            raise IOError('Error: --video must refer to a video file, not directory.')
-
-    # for detection results
-    if len(args.detfile):
-        if os.path.isfile(args.detfile):
-            detfile = args.detfile
-            return 'detfile', detfile
-        else:
-            raise IOError('Error: --detfile must refer to a detection json file, not directory.')
-
-    # for images
-    if len(args.inputpath) or len(args.inputlist) or len(args.inputimg):
-        inputpath = args.inputpath
-        inputlist = args.inputlist
-        inputimg = args.inputimg
-
-        if len(inputlist):
-            im_names = open(inputlist, 'r').readlines()
-        elif len(inputpath) and inputpath != '/':
-            for root, dirs, files in os.walk(inputpath):
-                im_names = files
-            im_names = natsort.natsorted(im_names)
-        elif len(inputimg):
-            args.inputpath = os.path.split(inputimg)[0]
-            im_names = [os.path.split(inputimg)[1]]
-
-        return 'image', im_names
-
-    else:
-        raise NotImplementedError
 
 n_process = 5
-def print_finish_info():
-    print('===========================> Finish Model Running.')
-    if (args.save_img or args.save_video) and not args.vis_fast:
-        print('===========================> Rendering remaining images in the queue...')
-        print(
-            '===========================> If this step takes too long, you can enable the --vis_fast flag to use fast rendering (real-time).')
 
+sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
 
-def loop():
-    n = 0
-    while True:
-        yield n
-        n += 1
+from VideoFilter.paths import (
+    CRED_FILTERED_VIDEO_DPATH,
+    JOINTS2d_TRACK_DPATH,
+    JOINTS2d_EXTRA_INFO_DPATH,
+    VIDEO_WITH_2D_JOINTS
+)
 
-base_dit = Path("/home/ubuntu/PycharmProjects/FitMate/VideoFilter/results_base_video_mp3")
-video_dpath = base_dit/"cred_filtered_video"
-
-result_dpath = base_dit
 
 def proc(video_name):
-    # Load pose model
-    save_video_dpath = result_dpath / 'video_with_joints'
-    save_joints_dpath = result_dpath / 'joints2d'
-    save_track_joints_dpath = result_dpath / 'track_joints2d'
-    joints_YOLO_BBOXES_DPATH = result_dpath / 'joints_info'
-
-    save_video_dpath.mkdir(exist_ok=True, parents=True)
-    save_joints_dpath.mkdir(exist_ok=True, parents=True)
-    save_track_joints_dpath.mkdir(exist_ok=True, parents=True)
-    joints_YOLO_BBOXES_DPATH.mkdir(exist_ok=True, parents=True)
-
-    mode = 'video'
-    input_source = os.path.join(video_dpath, video_name)
-
-    save_video_fpath = save_video_dpath / video_name
-    save_joints_fpath = (save_joints_dpath / video_name).with_suffix(".json")
+    save_video_fpath = VIDEO_WITH_2D_JOINTS / video_name
+    save_joints_fpath = (JOINTS2d_TRACK_DPATH / video_name).with_suffix(".json")
 
     if save_joints_fpath.is_file():
         print(f"Skip exist file {video_name}")
         return
     print(f"Start processing of file {video_name}")
     # Load detection loader
-    det_loader = DetectionLoader(input_source, get_detector(args), cfg, args, batchSize=args.detbatch, mode=mode, queueSize=args.qsize)
-    # det_worker = det_loader.start()
-
-    runtime_profile = {
-        'dt': [],
-        'pt': [],
-        'pn': []
-    }
+    input_source = os.path.join(CRED_FILTERED_VIDEO_DPATH, video_name)
+    det_loader = DetectionLoader(input_source, get_detector(args), cfg, args, batchSize=args.detbatch, mode='video', queueSize=args.qsize)
 
     # Init data writer
-    queueSize = 2 if mode == 'webcam' else args.qsize
     save_opt = video_save_opt.copy()
     save_opt['savepath'] = str(save_video_fpath)
     save_opt.update(det_loader.videoinfo)
-    writer = DataWriter(cfg, args, str(save_video_fpath), str(save_joints_fpath), save_video=True, video_save_opt=save_opt, queueSize=queueSize)
+    writer = DataWriter(cfg, args, str(save_video_fpath), str(save_joints_fpath), save_video=True, video_save_opt=save_opt)
 
     data_len = det_loader.length - 2
     im_names_desc = tqdm(range(data_len), dynamic_ncols=True)
@@ -206,14 +129,11 @@ def proc(video_name):
     print('Loading pose model from %s...' % (args.checkpoint,))
     pose_model.load_state_dict(torch.load(args.checkpoint, map_location=args.device))
     pose_dataset = builder.retrieve_dataset(cfg.DATASET.TRAIN)
-    # if not video_name.endswith(".mp4"):
-    #     print(f"Skip not mp4 file {video_name}")
-    #     continue
+
     pose_model.to(args.device)
     pose_model.eval()
 
     for i in im_names_desc:
-        start_time = getTime()
         with torch.no_grad():
             inps, orig_img, im_name, boxes, scores, ids, cropped_boxes = det_loader.read()
             if orig_img is None:
@@ -257,10 +177,8 @@ def proc(video_name):
                 new_scores.append(t.detscore)
 
             new_hm = torch.Tensor(new_hm).to(args.device)
-            # boxes,scores,ids,hm,cropped_boxes, boxes = track(tracker,args,orig_img,inps,boxes,hm,cropped_boxes,im_name,scores)
             boxes, scores, ids, hm, cropped_boxes = torch.tensor(
                 new_boxes), new_scores, new_ids, new_hm, new_crop
-            # END TRACKING
 
             hm = hm.cpu()
             writer.update(boxes, scores, ids, hm, cropped_boxes, orig_img, im_name)
@@ -271,17 +189,23 @@ def proc(video_name):
             result[i].append({'kp_score': frame_result2['kp_score'].tolist(),
                               'proposal_score': frame_result2['proposal_score'].tolist()})
 
-    with open((joints_YOLO_BBOXES_DPATH/video_name).with_suffix(".json"), 'w') as file:
+    writer.stop()
+    with open((JOINTS2d_EXTRA_INFO_DPATH/video_name).with_suffix(".json"), 'w') as file:
         json.dump(result, file)
 
-    print_finish_info()
+    print('===========================> Finish Model Running.')
+    if (args.save_img or args.save_video) and not args.vis_fast:
+        print('===========================> Rendering remaining images in the queue...')
+        print(
+            '===========================> If this step takes too long, you can enable the --vis_fast flag to use fast rendering (real-time).')
 
-    writer.stop()
+
 
 
 if __name__ == "__main__":
-    videos = os.listdir(video_dpath)
-    # for video in base_videos:
+    videos = os.listdir(CRED_FILTERED_VIDEO_DPATH)
+    proc(videos[0])
+    # for video in videos:
     #     proc(video)
     with Pool(n_process) as p:
         p.map(proc, videos)

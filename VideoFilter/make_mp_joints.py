@@ -1,11 +1,10 @@
-import cv2
-import json
 from pathlib import Path
 import numpy as np
 
-from paths import JOINTS_DPATH
+from paths import JOINTS_MP_DPATH
 from cv_tools.video_reader import VideoReader
 from utils.file_reader import write_json
+from constants import model_complexity
 
 import mediapipe as mp
 mp_pose = mp.solutions.pose
@@ -15,24 +14,22 @@ mp_drawing = mp.solutions.drawing_utils
 show = False
 
 
-def make_joints(video_fpath: Path):
+def make_mp_joints(video_fpath: Path):
     # Load a model
-    save_joints_fpath = JOINTS_DPATH / video_fpath.name
+    save_joints_fpath = JOINTS_MP_DPATH / video_fpath.name
     if save_joints_fpath.is_file():
         print(f"Skip processed video {str(save_joints_fpath)}")
         return
     video_reader = VideoReader(video_fpath)
-    results = []
-    stats = []
-    with mp_pose.Pose(static_image_mode=False, model_complexity=2) as pose:
+    mp_joints = []
+    frames_with_joints = []
+    with mp_pose.Pose(static_image_mode=False, model_complexity=model_complexity) as pose:
         for frame in video_reader.frame_generator():
             result = pose.process(frame)
             joints = to_np(result)
-            if joints is None:
-                pass
-            else:
-                results.append(joints)
-                stats.append(video_reader._progress.n-1)
+            if joints is not None:
+                mp_joints.append(joints)
+                frames_with_joints.append(video_reader.progress-1)
 
             if show:
                 mp_drawing.draw_landmarks(
@@ -40,14 +37,15 @@ def make_joints(video_fpath: Path):
                     landmark_list=result.pose_landmarks,
                     connections=mp_pose.POSE_CONNECTIONS
                 )
-                cv2.imshow('frame', frame)
-                key = cv2.waitKey(1)
-                if key == 27:  # if ESC is pressed, exit loop
-                    cv2.destroyAllWindows()
-                    break
+                video_reader.imshow(frame)
 
-    np.save(save_joints_fpath.with_suffix('.npy'), results, allow_pickle=True)
-    write_json(stats, save_joints_fpath.with_suffix('.txt'))
+    mp_joints_fpath = save_joints_fpath.with_suffix('.npy')
+    np.save(mp_joints_fpath, mp_joints, allow_pickle=True)
+    print(f"Save mediapipe joint in {str(mp_joints_fpath)}")
+
+    write_json(frames_with_joints, save_joints_fpath.with_suffix('.txt'))
+    print(f"Save position number of frames which contains "
+          f"joint in {str(save_joints_fpath.with_suffix('.txt'))}")
 
 
 def to_np(landmarks):
