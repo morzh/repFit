@@ -1,0 +1,3 @@
+
+class SteadyCameraCoarseFilter:
+    pass

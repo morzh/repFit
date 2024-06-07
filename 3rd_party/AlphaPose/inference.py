@@ -2,26 +2,16 @@
 import argparse
 import json
 import os
-import platform
 import sys
-import time
-from pathlib import Path
-import numpy as np
 import torch
 from tqdm import tqdm
-import natsort
-from PIL import Image
 from detector.apis import get_detector
 from trackers.tracker_api import Tracker
 from trackers.tracker_cfg import cfg as tcfg
-from trackers import track
 from alphapose.models import builder
 from alphapose.utils.config import update_config
 from alphapose.utils.detector import DetectionLoader
-from alphapose.utils.file_detector import FileDetectionLoader
 from alphapose.utils.transforms import flip, flip_heatmap
-from alphapose.utils.vis import getTime
-from alphapose.utils.webcam_detector import WebCamDetectionLoader
 from alphapose.utils.writer import DataWriter
 from alphapose.utils.writer import DEFAULT_VIDEO_SAVE_OPT as video_save_opt
 from multiprocessing import Pool
@@ -89,7 +79,7 @@ n_process = 5
 
 sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
 
-from VideoFilter.paths import (
+from filters.video_filter.paths import (
     CRED_FILTERED_VIDEO_DPATH,
     JOINTS2d_TRACK_DPATH,
     JOINTS2d_EXTRA_INFO_DPATH,

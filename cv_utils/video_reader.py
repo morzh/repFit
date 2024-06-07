@@ -38,10 +38,19 @@ class VideoReader:
         """
         while self.success:
             self.success, _frame = self.video_reader.read()
-            frame = self.frame
+            return_frame = self.frame
             self.frame = _frame
             self._progress.update()
-            yield frame
+            yield return_frame
+
+    def __next__(self):
+        if self.success:
+            self.success, _frame = self.video_reader.read()
+            return_frame = self.frame
+            self.frame = _frame
+            return return_frame
+        else:
+            StopIteration
 
     @staticmethod
     def imshow(frame, window_name: str = 'window'):

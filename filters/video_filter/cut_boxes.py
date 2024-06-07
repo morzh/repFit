@@ -4,7 +4,7 @@ import numpy as np
 
 from paths import YOLO_BBOXES_DPATH, CUT_VIDEO_DPATH, RESULTS_ROOT
 from utils.file_reader import read_pickle
-from cv_tools.video_reader import VideoReader
+from cv_utils.video_reader import VideoReader
 from constants import min_fragment_n_frames
 
 camera_steady = read_pickle(RESULTS_ROOT/"camera_steady_segments.pickle")
