@@ -1,3 +1,4 @@
+import os.path
 from typing import Union
 from tqdm import tqdm
 from pathlib import Path
@@ -14,9 +15,13 @@ class VideoReader:
             pass
 
     """
-    def __init__(self, fpath: Union[str, Path]):
+    def __init__(self, fpath: str | Path):
         self.fpath = fpath
-        self.video_reader = cv2.VideoCapture(str(fpath))
+        if os.path.exists(str(fpath)):
+            self.video_capture = cv2.VideoCapture(str(fpath))
+        else:
+            FileNotFoundError(f'Video file {self.fpath} does not exist')
+
         self.n_frames = None
         self._fps = None
         self.success = False
@@ -24,10 +29,10 @@ class VideoReader:
         self._init_info()
 
     def _init_info(self):
-        if self.video_reader.isOpened():
-            self.n_frames = int(self.video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-            self._fps = int(self.video_reader.get(cv2.CAP_PROP_FPS))
-            self.success, self.frame = self.video_reader.read()
+        if self.video_capture.isOpened():
+            self.n_frames = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
+            self.success, self.frame = self.video_capture.read()
             if self.success:
                 self._progress = tqdm(range(self.n_frames))
                 self._progress.update()
@@ -37,7 +42,7 @@ class VideoReader:
         :return: generator object
         """
         while self.success:
-            self.success, _frame = self.video_reader.read()
+            self.success, _frame = self.video_capture.read()
             return_frame = self.frame
             self.frame = _frame
             self._progress.update()
@@ -45,7 +50,7 @@ class VideoReader:
 
     def __next__(self):
         if self.success:
-            self.success, _frame = self.video_reader.read()
+            self.success, _frame = self.video_capture.read()
             return_frame = self.frame
             self.frame = _frame
             return return_frame
@@ -68,7 +73,21 @@ class VideoReader:
     def fps(self):
         return self._fps
 
+    @property
+    def width(self):
+        """
+        @return: video width
+        """
+        return int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+
+    @property
+    def height(self):
+        """
+        @return: video height
+        """
+        return int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
     def __del__(self):
-        if self.video_reader is not None:
-            self.video_reader.release()
+        if self.video_capture is not None:
+            self.video_capture.release()
 

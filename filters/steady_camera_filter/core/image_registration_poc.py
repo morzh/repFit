@@ -23,12 +23,32 @@ class PhaseCorrelationResult:
     cross_correlation_std: float = 0
 
 
-class ImageRegistrationPoc:
+class ImageSequenceRegistrationPoc:
     """
-    Image registration using phase only correlation (POC) approach
+    Images sequence registration using phase only correlation (POC) approach.
     """
     def __init__(self):
-        self.windowing: Optional[np.ndarray] = None
+        self.windowing: Optional[ndimageNxM] = None
+        self.reference_fft: Optional[ndimageNxM] = None
+        self.target_fft: Optional[ndimageNxM] = None
+
+    def set_reference(self, reference_image: ndimageNxM):
+        """
+        calculate and set reference image's FFT
+        @param reference_image: grayscale N by M image in numpy array
+        """
+        self.reference_fft = np.fft.fft2(reference_image * self.windowing)
+        self.reference_fft = np.fft.fftshift(self.reference_fft)
+
+    def update_target(self, target_image: ndimageNxM):
+        """
+        update FFTs of reference and target images.
+        @param target_image: grayscale N by M image in numpy array
+        """
+        self.reference_fft = self.target_fft
+        self.target_fft = np.fft.fft2(target_image * self.windowing)
+        self.target_fft = np.fft.fftshift(self.target_fft)
+
 
     @staticmethod
     def highpass_box_filter(image: ndimageNxMx3, filter_size: int = 10) -> ndimageNxMf:
@@ -42,14 +62,16 @@ class ImageRegistrationPoc:
         image_highpass = image - cv2.boxFilter(image, ddepth=0, ksize=(filter_size, filter_size))
         return image_highpass
 
-    def cross_power_spectrum(self, image_reference: ndimageNxMx3 | ndimageNxM, image_target: ndimageNxMx3 | ndimageNxM) -> ndimageNxMc:
+    def cross_power_spectrum(self, image_reference: ndimageNxM, image_target: ndimageNxM) -> ndimageNxMc:
         """
         Cross power spectrum of reference and target images
-        @param image_reference: reference image
-        @param image_target: target image
+        @param image_reference: reference grayscale image
+        @param image_target: target grayscale image
         @return: values of cross power spectrum
         """
         assert image_target.shape == image_reference.shape
+        assert len(image_reference.shape) == 2
+        assert len(image_target.shape) == 2
 
         if len(image_target.shape) == 3:
             image_target = image_target.mean(axis=2)
@@ -64,18 +86,23 @@ class ImageRegistrationPoc:
         absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
         if np.all(absolute_cross_power_spectrum) > 0:
             cross_power_spectrum /= absolute_cross_power_spectrum
-        '''
-        if plot_windowed_images:
-            plt.figure(figsize=(25, 20))
-            plt.subplot(121)
-            plt.imshow(frame_target * self.windowing)
-            plt.subplot(122)
-            plt.imshow(frame_reference * self.windowing)
-            plt.tight_layout()
-            plt.show()
-        '''
 
         return cross_power_spectrum
+
+    def register(self):
+        cross_power_spectrum = self.reference_fft * np.conjugate(self.target_fft)
+        absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
+        if np.all(absolute_cross_power_spectrum) > 0:
+            cross_power_spectrum /= absolute_cross_power_spectrum
+
+        cross_correlation = np.real(cross_power_spectrum)
+        pixel_shift = np.unravel_index(cross_correlation.argmax(), cross_correlation.shape)
+        pixel_shift = tuple(pixel_shift)  # [row, column] format
+        peak_value = float(cross_correlation[pixel_shift])
+        pixel_shift = (pixel_shift[1], pixel_shift[0])  # (X, Y) format
+        mean = np.mean(cross_correlation)
+        std = np.std(cross_correlation)
+        return PhaseCorrelationResult(shift=pixel_shift, peak_value=peak_value, cross_correlation_mean=mean, cross_correlation_std=std)
 
     def register_images(self, image_reference: ndimageNxMx3 | ndimageNxM, image_target: ndimageNxMx3 | ndimageNxM) -> PhaseCorrelationResult:
         """
