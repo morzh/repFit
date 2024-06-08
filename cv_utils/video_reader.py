@@ -1,5 +1,4 @@
 import os.path
-from typing import Union
 from tqdm import tqdm
 from pathlib import Path
 import cv2
@@ -15,7 +14,7 @@ class VideoReader:
             pass
 
     """
-    def __init__(self, fpath: str | Path):
+    def __init__(self, fpath: str | Path, use_tqdm=True):
         self.fpath = fpath
         if os.path.exists(str(fpath)):
             self.video_capture = cv2.VideoCapture(str(fpath))
@@ -26,6 +25,7 @@ class VideoReader:
         self._fps = None
         self.success = False
         self.frame = None
+        self.use_tqdm = use_tqdm
         self._init_info()
 
     def _init_info(self):
@@ -33,7 +33,7 @@ class VideoReader:
             self.n_frames = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
             self.success, self.frame = self.video_capture.read()
-            if self.success:
+            if self.success and self.use_tqdm:
                 self._progress = tqdm(range(self.n_frames))
                 self._progress.update()
 
@@ -74,20 +74,26 @@ class VideoReader:
         return self._fps
 
     @property
-    def width(self):
+    def width(self) -> int:
         """
         @return: video width
         """
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
 
     @property
-    def height(self):
+    def height(self) -> int:
         """
         @return: video height
         """
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+    @property
+    def resolution(self) -> tuple[int, int]:
+        """
+        Resolution in (width, height) format
+        """
+        return self.width, self.height
+
     def __del__(self):
         if self.video_capture is not None:
             self.video_capture.release()
-

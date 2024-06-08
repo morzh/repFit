@@ -8,7 +8,7 @@ class VideoFramesBatch:
     def __init__(self, video_filepath: str | Path, batch_size: int = 10):
         self.video_filepath = video_filepath
         self.batch_size = batch_size
-        self.video_reader = VideoReader(video_filepath)
+        self.video_reader = VideoReader(video_filepath, use_tqdm=False)
 
     def __next__(self):
         batch = np.empty((self.batch_size, self.video_reader.height, self.video_reader.width, 3))
