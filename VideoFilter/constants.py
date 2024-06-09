@@ -2,7 +2,7 @@
 n_processes = 12
 
 # extract_stable_tracks
-min_occurrence_rate = 0.5
+min_occurrence_rate = 0.9
 min_track_length_sec = 4
 
 
