@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from collections import deque
 import numpy as np
 import cv2
+from scipy import ndimage
 from numpy.typing import NDArray
 from typing import Annotated, Literal, Optional
 import matplotlib.pyplot as plt
@@ -16,12 +17,10 @@ ndimageNxMc = Annotated[NDArray[np.csingle], Literal["N", "M"]]
 @dataclass(frozen=True, slots=True)
 class PhaseCorrelationResult:
     """
-    Data storage for ImageRegistrationPoc.register_images() return value
+    Data storage for ImageRegistrationPoc.register_images() and ImageRegistrationPoc.register() return value
     """
     shift: tuple[int, int] = (0, 0)
     peak_value: float = 0
-    cross_correlation_mean: float = 0
-    cross_correlation_std: float = 0
 
 
 class ImageSequenceRegistrationPoc:
@@ -35,42 +34,12 @@ class ImageSequenceRegistrationPoc:
         self.target_fft: Optional[ndimageNxM] = None
         self.windowing = self.image_windowing(images_resolution, windowing_function=windowing_function)
 
-    def set_reference(self, reference_image: ndimageNxM):
-        """
-        calculate and set reference image's FFT
-        @param reference_image: grayscale N by M image in numpy array
-        """
-        self.reference_fft = np.fft.fft2(reference_image * self.windowing)
-        self.reference_fft = np.fft.fftshift(self.reference_fft)
-
-    def update_target(self, target_image: ndimageNxM):
-        """
-        update FFTs of reference and target images.
-        @param target_image: grayscale N by M image in numpy array
-        """
-        self.reference_fft = self.target_fft
-        self.target_fft = np.fft.fft2(target_image * self.windowing)
-        self.target_fft = np.fft.fftshift(self.target_fft)
-
-    def update_deque(self, new_image):
-        """
-
-        """
+    def update_deque(self, new_image: ndimageNxM) -> None:
+        # windowing and FFT
         new_image_fft = np.fft.fft2(new_image * self.windowing)
+        # Shift the zero-frequency component to the center of the spectrum.
         new_image_fft = np.fft.fftshift(new_image_fft)
         self.fft_deque.append(new_image_fft)
-
-    @staticmethod
-    def highpass_box_filter(image: ndimageNxMx3, filter_size: int = 10) -> ndimageNxMf:
-        """
-        Simple image high pass filter using box filter for image smoothing
-        @param image: input image
-        @param filter_size: box filter kernel size (squared)
-        @return: filtered image
-        """
-        image = image.mean(axis=2)  # make color image grey
-        image_highpass = image - cv2.boxFilter(image, ddepth=0, ksize=(filter_size, filter_size))
-        return image_highpass
 
     def cross_power_spectrum(self, image_reference: ndimageNxM, image_target: ndimageNxM) -> ndimageNxMc:
         """
@@ -83,40 +52,47 @@ class ImageSequenceRegistrationPoc:
         assert len(image_reference.shape) == 2
         assert len(image_target.shape) == 2
 
-        if len(image_target.shape) == 3:
-            image_target = image_target.mean(axis=2)
-        if len(image_reference.shape) == 3:
-            image_reference = image_reference.mean(axis=2)
-
         fft_frame_1 = np.fft.fft2(image_target * self.windowing)
         fft_frame_2 = np.fft.fft2(image_reference * self.windowing)
         fft_frame_1 = np.fft.fftshift(fft_frame_1)
         fft_frame_2 = np.fft.fftshift(fft_frame_2)
         cross_power_spectrum = fft_frame_1 * np.conjugate(fft_frame_2)
-        absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
-        if np.all(absolute_cross_power_spectrum) > 0:
-            cross_power_spectrum /= absolute_cross_power_spectrum
-
+        # absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
+        # if np.all(absolute_cross_power_spectrum) > 0:
+        #     cross_power_spectrum /= absolute_cross_power_spectrum
         return cross_power_spectrum
 
-    def register(self):
+    def register(self) -> PhaseCorrelationResult:
         if len(self.fft_deque) != 2:
             warnings.warn('Only one image provided for registration. '
                           'Add new image using ImageSequenceRegistrationPoc.update_deque() method')
-        cross_power_spectrum = self.fft_deque[0] * np.conjugate(self.fft_deque[1])
+            return PhaseCorrelationResult(shift=(0, 0), peak_value=-1)
+
+        if self.fft_deque[0].shape != self.fft_deque[1].shape:
+            raise ValueError('All images in deque should have the same shape')
+
+        cross_power_spectrum = self.fft_deque[0] * np.ma.conjugate(self.fft_deque[1])
+        poc_result = self.registration_result_from_cross_power_spectrum(cross_power_spectrum)
+        return poc_result
+
+    def registration_result_from_cross_power_spectrum(self, cross_power_spectrum) -> PhaseCorrelationResult:
         absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
         if np.all(absolute_cross_power_spectrum) > 0:
             cross_power_spectrum /= absolute_cross_power_spectrum
 
-        cross_correlation = np.fft.ifft2(cross_power_spectrum)
-        cross_correlation = np.real(cross_correlation)
-        pixel_shift = np.unravel_index(cross_correlation.argmax(), cross_correlation.shape)
-        pixel_shift = tuple(pixel_shift)  # [row, column] format
+        cross_correlation = np.fft.ifft2(cross_power_spectrum).real
+        pixel_shift = np.unravel_index(cross_correlation.argmax(), cross_correlation.shape)  # [row, column] format
         peak_value = float(cross_correlation[pixel_shift])
-        pixel_shift = (pixel_shift[1], pixel_shift[0])  # (X, Y) format
-        mean = np.mean(cross_correlation)
-        std = np.std(cross_correlation)
-        return PhaseCorrelationResult(shift=pixel_shift, peak_value=peak_value, cross_correlation_mean=mean, cross_correlation_std=std)
+        pixel_shift = np.array(pixel_shift)  # [row, column] format
+
+        #  negative shifts registration
+        if pixel_shift[0] > self.fft_deque[0].shape[0] / 2:
+            pixel_shift[0] = self.fft_deque[0].shape[0] - 1 - pixel_shift[0]
+        if pixel_shift[1] > self.fft_deque[0].shape[1] / 2:
+            pixel_shift[1] = self.fft_deque[0].shape[1] - 1 - pixel_shift[1]
+
+        pixel_shift = (int(pixel_shift[1]), int(pixel_shift[0]))  # convert [row, column] to (X, Y) format
+        return PhaseCorrelationResult(shift=pixel_shift, peak_value=peak_value)
 
     def register_images(self, image_reference: ndimageNxMx3 | ndimageNxM, image_target: ndimageNxMx3 | ndimageNxM) -> PhaseCorrelationResult:
         """
@@ -126,16 +102,17 @@ class ImageSequenceRegistrationPoc:
         @return:  images registration result
         """
         assert image_target.shape == image_reference.shape
-        self.windowing = self.image_windowing(image_target.shape[:2], np.blackman)
-        cross_correlation = np.fft.ifft2(self.cross_power_spectrum(image_reference, image_target))
-        cross_correlation = np.real(cross_correlation)
-        pixel_shift = np.unravel_index(cross_correlation.argmax(), cross_correlation.shape)
-        pixel_shift = tuple(pixel_shift)  # [row, column] format
-        peak_value = float(cross_correlation[pixel_shift])
-        pixel_shift = (pixel_shift[1], pixel_shift[0])  # (X, Y) format
-        mean = np.mean(cross_correlation)
-        std = np.std(cross_correlation)
-        return PhaseCorrelationResult(shift=pixel_shift, peak_value=peak_value, cross_correlation_mean=mean, cross_correlation_std=std)
+
+        if len(image_reference.shape) == 3:
+            image_reference = image_reference.mean(axis=2)
+        if len(image_target.shape) == 3:
+            image_target = image_target.mean(axis=2)
+
+        assert image_target.shape == self.windowing.shape
+        assert image_reference.shape == self.windowing.shape
+
+        cross_power_spectrum = self.cross_power_spectrum(image_reference, image_target)
+        return self.registration_result_from_cross_power_spectrum(cross_power_spectrum)
 
     def plot_windowing_2d(self) -> None:
         """

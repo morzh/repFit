@@ -6,8 +6,8 @@ from cv_utils.video_segments_writer import VideoSegmentsWriter
 def extract_coarse_steady_camera_video_segments(video_filepath, number_frames_to_average=15) -> list[range]:
     if number_frames_to_average < 10:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
-    camera_filter = SteadyCameraCoarseFilter(video_filepath)
-    camera_filter.process(number_frames_to_average=number_frames_to_average)
+    camera_filter = SteadyCameraCoarseFilter(video_filepath, number_frames_to_average=number_frames_to_average)
+    camera_filter.process()
     return camera_filter.steady_camera_frames_ranges
 
 
