@@ -2,7 +2,7 @@
 n_processes = 12
 
 # extract_stable_tracks
-min_occurrence_rate = 0.9
+min_occurrence_rate = 0.95
 min_track_length_sec = 4
 
 
@@ -14,5 +14,6 @@ model_complexity = 2
 
 # filter
 credibility_threshold = 0.9
+multi_person_threshold = 0.05
 
 

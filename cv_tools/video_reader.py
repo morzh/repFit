@@ -17,13 +17,6 @@ class VideoReader:
     def __init__(self, fpath: Union[str, Path]):
         self.fpath = fpath
         self.video_reader = cv2.VideoCapture(str(fpath))
-        self.n_frames = None
-        self._fps = None
-        self.success = False
-        self.frame = None
-        self._init_info()
-
-    def _init_info(self):
         if self.video_reader.isOpened():
             self.n_frames = int(self.video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_reader.get(cv2.CAP_PROP_FPS))
@@ -31,6 +24,13 @@ class VideoReader:
             if self.success:
                 self._progress = tqdm(range(self.n_frames))
                 self._progress.update()
+                self._shape = self.frame.shape[:-1][::-1]
+        else:
+            self.n_frames = None
+            self._fps = None
+            self.success = False
+            self.frame = None
+            self._shape = (None, None)
 
     def frame_generator(self):
         """
@@ -58,6 +58,11 @@ class VideoReader:
     @property
     def fps(self):
         return self._fps
+
+    @property
+    def shape(self):
+        """:return (w, h)"""
+        return self._shape
 
     def __del__(self):
         if self.video_reader is not None:
