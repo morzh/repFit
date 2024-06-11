@@ -12,13 +12,13 @@ from track_filter import (
 )
 
 
-def run():
+def run_full_pipeline():
     base_videos = list(VIDEO_DPATH.glob('*'))
     run_pool(trim_video_by_steady, base_videos)
 
     steady_videos = list(STEADY_VIDEO_DPATH.glob('*'))
     run_pool(extract_stable_tracks, steady_videos)
-    exit(0)
+
     joints_credibility = filter_by_joints_credibility()
     joints_count = filter_by_joints_count()
     filter_result = merge_filters(joints_credibility, joints_count)
@@ -27,14 +27,14 @@ def run():
 
 
 
-def first_step():
+def debug():
     # base_videos = list(VIDEO_DPATH.glob('*'))
     base_videos = list(VIDEO_DPATH.glob('*'))
     # for v in base_videos:
     #     trim_video_by_steady(v)
 
-    run_pool(trim_video_by_steady, base_videos, 4)
-    exit(0)
+    # run_pool(trim_video_by_steady, base_videos, 4)
+    # exit(0)
     joints_credibility = filter_by_joints_credibility()
     joints_count = filter_by_joints_count()
     filter_result = merge_filters(joints_credibility, joints_count)
@@ -75,4 +75,4 @@ def merge_filters(*args, drop_filtered=True) -> dict:
 
 
 if __name__ == '__main__':
-    run()
+    run_full_pipeline()

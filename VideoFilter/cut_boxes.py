@@ -61,49 +61,35 @@ def cut_video_by_yolo_boxes(video_fpath: Path):
 def cut_videos_by_filters(videos: List[Path], filter_result: dict):
     for video_fpath in videos:
         video_fname = video_fpath.stem
-        video_youtube_id = video_fname[-11:]
-        if video_youtube_id not in video_seg:
-            print(f"skip video {video_fname} by steady filter")
-            return
-
-        for bboxes_fpath in STABLE_FILTER_DPATH.glob("*.pickle"):
-            if bboxes_fpath.name not in filter_result:
+        if video_fname not in filter_result:
+            continue
+        bboxes_fpath = STABLE_FILTER_DPATH / (video_fname+".pickle")
+        tracks = read_pickle(bboxes_fpath)
+        for track_row_n, (track_idx, track) in enumerate(tracks.items()):
+            cut_video_fpath = (FILTERED_VIDEO_DPATH / (bboxes_fpath.stem + f"_{track_row_n}")).with_suffix(".mp4")
+            if cut_video_fpath.is_file():
+                print(f"skip processed track {str(cut_video_fpath)}")
                 continue
-            tracks = read_pickle(bboxes_fpath)
-            for track_row_n, (track_idx, track) in enumerate(tracks.items()):
-                cut_video_fpath = (FILTERED_VIDEO_DPATH / (bboxes_fpath.stem + f"_{track_row_n}_0")).with_suffix(".mp4")
-                if cut_video_fpath.is_file():
-                    print(f"skip processed track {str(cut_video_fpath)}")
-                    continue
-                video_fpath = bboxes_fpath.stem
+            bbox_array = {i: frame_data['bbox'] for i, frame_data in track.items()}
+            bbox_min_h, bbox_max_h, bbox_min_w, bbox_max_w = found_bbox_boarders(bbox_array)
+            frames_with_bbox = list(bbox_array.keys())
+            video_reader = VideoReader(video_fpath)
+            video_writer = cv2.VideoWriter(
+                str(cut_video_fpath),
+                cv2.VideoWriter_fourcc(*'MP4V'),
+                video_reader.fps,
+                (bbox_max_w-bbox_min_w, bbox_max_h-bbox_min_h)
+            )
 
-                bbox_array = found_bbox_array(track, track_idx)
-                fragment_with_bboxes = get_fragments(bbox_array, bboxes_fpath.stem, min_fragment_n_frames)
-                if not fragment_with_bboxes:
-                    print(f"skip track {str(cut_video_fpath)} by steady filter")
-                    continue
+            for frame in video_reader.frame_generator():
+                if video_reader.progress > frames_with_bbox[0] and video_reader.progress < frames_with_bbox[-1]:
+                    bbox_img = frame[bbox_min_h:bbox_max_h, bbox_min_w:bbox_max_w, :]
+                    video_writer.write(bbox_img)
+                elif video_reader.progress > frames_with_bbox[-1]:
+                    break
+            video_writer.release()
+            print(f"Save cut video {str(cut_video_fpath)}")
 
-                bbox_min_h, bbox_max_h, bbox_min_w, bbox_max_w = found_bbox_boarders(bbox_array)
-                for seg_n, seg in enumerate(fragment_with_bboxes):
-                    video_reader = VideoReader(video_fpath)
-
-                    fragment_fname = bboxes_fpath.stem + f"_{track_row_n}_{seg_n}.mp4"
-                    cut_video_fpath = STEADY_VIDEO_DPATH / fragment_fname
-                    video_writer = cv2.VideoWriter(
-                        str(cut_video_fpath),
-                        cv2.VideoWriter_fourcc(*'MP4V'),
-                        video_reader.fps,
-                        (bbox_max_w-bbox_min_w, bbox_max_h-bbox_min_h)
-                    )
-
-                    for frame in video_reader.frame_generator():
-                        if video_reader.progress > seg[0] and video_reader.progress < seg[1]:
-                            bbox_img = frame[bbox_min_h:bbox_max_h, bbox_min_w:bbox_max_w, :]
-                            video_writer.write(bbox_img)
-                        elif video_reader.progress > seg[1]:
-                            break
-                    video_writer.release()
-                    print(f"Save cut video {str(cut_video_fpath)}")
 
 def get_fragments(bbox_array: dict, video_id: str, min_length: int) -> list:
     bbox_indexes = list(bbox_array.keys())
