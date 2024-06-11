@@ -19,8 +19,8 @@ for video_source_filename in video_source_filenames:
     # if video_source_filename in skip_list:
     #     continue
 
-    # if video_source_filename != 'Light Squat day-WGmeZPkyRJ0.mkv':
-    #     continue
+    if video_source_filename != 'Squat Lateral .avi-qpWNOCVHq5o.mp4':
+        continue
 
     print(video_source_filename)
     video_target_filename = os.path.splitext(video_source_filename)[0] + '.mp4'

@@ -57,6 +57,13 @@ class VideoReader:
         else:
             StopIteration
 
+    def __iter__(self):
+        while self.success:
+            self.success, _frame = self.video_capture.read()
+            return_frame = self.frame
+            self.frame = _frame
+            yield return_frame
+
     @staticmethod
     def imshow(frame, window_name: str = 'window'):
         cv2.imshow(window_name, frame)
