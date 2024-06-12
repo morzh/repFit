@@ -81,42 +81,33 @@ class SteadyCameraCoarseFilter:
                                                      font_scale, (255, 100, 100), 1, cv2.LINE_AA)
                 cv2.imshow('POC', reference_target_image)
                 cv2.waitKey(10)
-                '''
-                plt.figure(figsize=(25, 15))
-                plt.suptitle(registration_result)
-                plt.subplot(121)
-                plt.imshow(reference_image, cmap='gray')
-                plt.subplot(122)
-                plt.imshow(target_image, cmap='gray')
-                plt.tight_layout()
-                plt.show()
-                '''
                 reference_image = target_image
 
     def calculate_steady_camera_ranges(self) -> segments_list:
-        self.print_registration_results()
+        # self.print_registration_results()
         shifts_norms = np.linalg.norm(self.registration_shifts, axis=1)
         shifts_norms_mask = shifts_norms < self.maximum_shift_length
         confidence_mask = self.registration_confidence > self.minimum_poc_confidence
         mask = np.logical_and(shifts_norms_mask, confidence_mask)
-        number_frames_averaging = self.video_frames_batch.batch_size
+
+        number_frames_to_average = self.video_frames_batch.batch_size
         video_frames_number = self.video_frames_batch.video_reader.n_frames
-        number_bins = int(video_frames_number / number_frames_averaging)
-        bin_range = np.array([0, 2 * number_frames_averaging - 1])
-        bins_ranges = np.linspace(0, (number_bins - 1) * number_frames_averaging, number_bins).reshape(-1, 1) + bin_range
-        bins_ranges[-1, -1] = self.video_frames_batch.video_reader.n_frames - 1
-        bins_ranges = bins_ranges[mask]
-        return self.unite_overlapping_ranges(bins_ranges)
+        number_bins = int(video_frames_number / number_frames_to_average)
+        base_segment_range = np.array([0, 2 * number_frames_to_average - 1])
+        segments = np.linspace(0, (number_bins - 1) * number_frames_to_average, number_bins, dtype=np.int32).reshape(-1, 1) + base_segment_range
+        segments[-1, -1] = self.video_frames_batch.video_reader.n_frames - 1
+        segments = segments[mask]
+        return self.unite_overlapping_ranges(segments)
 
     @staticmethod
-    def unite_overlapping_ranges(bins_ranges: np.ndarray) -> segments_list:
-        for index in range(len(bins_ranges) - 1):
-            if bins_ranges[index, 1] > bins_ranges[index + 1, 0]:
-                bins_ranges[index + 1, 0] = bins_ranges[index, 0]
-                bins_ranges[index] = np.nan
-        nans_mask = ~np.isnan(bins_ranges[:, 0])
-        bins_ranges = bins_ranges[nans_mask]
-        return bins_ranges
+    def unite_overlapping_ranges(segments: segments_list) -> segments_list:
+        for index in range(len(segments) - 1):
+            if segments[index, 1] > segments[index + 1, 0]:
+                segments[index + 1, 0] = segments[index, 0]
+                segments[index] = -1
+        nans_mask = segments[:, 0] >= 0
+        segments = segments[nans_mask]
+        return segments
 
     def print_registration_results(self):
         table = BeautifulTable()

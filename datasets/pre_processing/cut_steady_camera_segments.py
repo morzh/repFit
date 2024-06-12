@@ -2,6 +2,7 @@ import os
 from os import listdir
 from os.path import isfile, join, splitext
 from pathlib import Path
+import yaml
 
 from filters.steady_camera_filter.extract_video_segmens import extract_coarse_steady_camera_video_segments, write_video_segments
 
@@ -13,6 +14,16 @@ video_source_filenames = [f for f in listdir(videos_source_folder) if isfile(joi
 video_source_filenames.sort()
 
 os.makedirs(videos_target_folder, exist_ok=True)
+
+parameters = None
+with open('steady_camera_filter_parameters.yaml') as f:
+    try:
+        parameters = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        print(e)
+
+if parameters is None:
+    exit(0)
 
 skip_list = ['041215 Squats-RI8TA9vNzdA.mp4']
 for video_source_filename in video_source_filenames:
@@ -26,8 +37,8 @@ for video_source_filename in video_source_filenames:
     video_target_filename = os.path.splitext(video_source_filename)[0] + '.mp4'
 
     video_source_filepath = os.path.join(videos_source_folder, video_source_filename)
-    video_target_filepath = os.path.join(videos_target_folder, video_target_filename)
+    # video_target_filepath = os.path.join(videos_target_folder, video_target_filename)
 
-    video_segments = extract_coarse_steady_camera_video_segments(video_source_filepath, number_frames_to_average=20)
+    video_segments = extract_coarse_steady_camera_video_segments(video_source_filepath, parameters['video_segments_extraction'])
     print(video_segments)
-    write_video_segments(video_target_filepath, video_segments)
+    write_video_segments(video_source_filepath, videos_target_folder, video_segments)
