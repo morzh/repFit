@@ -26,7 +26,6 @@ def run_full_pipeline():
     cut_videos_by_filters(steady_videos, filter_result)
 
 
-
 def debug():
     # base_videos = list(VIDEO_DPATH.glob('*'))
     base_videos = list(VIDEO_DPATH.glob('*'))
@@ -36,7 +35,8 @@ def debug():
     # run_pool(trim_video_by_steady, base_videos, 4)
     # exit(0)
     joints_credibility = filter_by_joints_credibility()
-    joints_count = filter_by_joints_count()
+    # joints_count = filter_by_joints_count()
+    joints_count, intersection_percents = filter_by_joints_count()
     filter_result = merge_filters(joints_credibility, joints_count)
 
     steady_videos = list(STEADY_VIDEO_DPATH.glob('*'))
@@ -75,4 +75,4 @@ def merge_filters(*args, drop_filtered=True) -> dict:
 
 
 if __name__ == '__main__':
-    run_full_pipeline()
+    debug()
