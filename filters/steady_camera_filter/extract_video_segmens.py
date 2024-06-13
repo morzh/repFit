@@ -2,6 +2,7 @@ import os.path
 import warnings
 import numpy as np
 import cv2
+import yaml
 
 from typing import Annotated, Literal, TypeVar, Optional
 from numpy.typing import NDArray
@@ -12,7 +13,21 @@ from cv_utils.video_segments_writer import VideoSegmentsWriter
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
+def yaml_parameters(filepath: str) -> Optional[dict]:
+    parameters = None
+    with open('steady_camera_filter_parameters.yaml') as f:
+        try:
+            parameters = yaml.safe_load(f)
+        except yaml.YAMLError as e:
+            print(e)
+    return parameters
+
+
 def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters: dict) -> segments_list:
+    if parameters['verbose_filename']:
+        video_filename = os.path.basename(video_filepath)
+        print(video_filename)
+
     number_frames_to_average = parameters['number_frames_to_average']
     if number_frames_to_average < 5:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
@@ -24,12 +39,19 @@ def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters:
                                              maximum_shift_length=parameters['maximum_shift_length'],
                                              minimum_poc_confidence=parameters['minimum_poc_confidence'])
     camera_filter.process()
-    return camera_filter.calculate_steady_camera_ranges()
+    steady_segments = camera_filter.calculate_steady_camera_ranges()
+
+    if parameters['poc_registration_verbose']:
+        camera_filter.print_registration_results()
+    if parameters['verbose_segments']:
+        print(steady_segments)
+
+    return steady_segments
 
 
-def write_video_segments(video_filepath, output_folder, segments, scale_factor=0.5, use_segments_gaps=False):
+def write_video_segments(video_filepath, output_folder, segments, parameters: dict):
     if not os.path.exists(video_filepath):
-        return
+        raise FileNotFoundError(f'File {video_filepath} does not exist')
 
     video_capture = cv2.VideoCapture(str(video_filepath))
     fps = int(video_capture.get(cv2.CAP_PROP_FPS))
@@ -40,5 +62,5 @@ def write_video_segments(video_filepath, output_folder, segments, scale_factor=0
                                                 fps=fps,
                                                 width=width,
                                                 height=height,
-                                                scale=scale_factor)
-    video_segments_writer.write(segments, write_segments_inbetween=use_segments_gaps)
+                                                scale=parameters['scale_factor'])
+    video_segments_writer.write(segments, use_gaps=parameters['use_segments_gaps'])

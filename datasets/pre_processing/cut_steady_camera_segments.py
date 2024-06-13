@@ -2,9 +2,9 @@ import os
 from os import listdir
 from os.path import isfile, join, splitext
 from pathlib import Path
-import yaml
 
-from filters.steady_camera_filter.extract_video_segmens import extract_coarse_steady_camera_video_segments, write_video_segments
+
+from filters.steady_camera_filter.extract_video_segmens import extract_coarse_steady_camera_video_segments, write_video_segments, yaml_parameters
 
 videos_source_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022'
 videos_target_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_coarse_steady_camera'
@@ -14,14 +14,7 @@ video_source_filenames = [f for f in listdir(videos_source_folder) if isfile(joi
 video_source_filenames.sort()
 
 os.makedirs(videos_target_folder, exist_ok=True)
-
-parameters = None
-with open('steady_camera_filter_parameters.yaml') as f:
-    try:
-        parameters = yaml.safe_load(f)
-    except yaml.YAMLError as e:
-        print(e)
-
+parameters = yaml_parameters('steady_camera_filter_parameters.yaml')
 if parameters is None:
     exit(0)
 
@@ -33,12 +26,8 @@ for video_source_filename in video_source_filenames:
     if video_source_filename != 'Squat Lateral .avi-qpWNOCVHq5o.mp4':
         continue
 
-    print(video_source_filename)
     video_target_filename = os.path.splitext(video_source_filename)[0] + '.mp4'
-
     video_source_filepath = os.path.join(videos_source_folder, video_source_filename)
-    # video_target_filepath = os.path.join(videos_target_folder, video_target_filename)
 
     video_segments = extract_coarse_steady_camera_video_segments(video_source_filepath, parameters['video_segments_extraction'])
-    print(video_segments)
-    write_video_segments(video_source_filepath, videos_target_folder, video_segments)
+    write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])
