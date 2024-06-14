@@ -23,6 +23,7 @@ class VideoReader:
 
         self.n_frames = None
         self._fps = None
+        self._current_frame_index = 0
         self.success = False
         self.frame = None
         self.use_tqdm = use_tqdm
@@ -45,6 +46,7 @@ class VideoReader:
             self.success, _frame = self.video_capture.read()
             return_frame = self.frame
             self.frame = _frame
+            self._current_frame_index += 1
             self._progress.update()
             yield return_frame
 
@@ -53,6 +55,7 @@ class VideoReader:
             self.success, _frame = self.video_capture.read()
             return_frame = self.frame
             self.frame = _frame
+            self._current_frame_index += 1
             return return_frame
         else:
             StopIteration
@@ -62,7 +65,12 @@ class VideoReader:
             self.success, _frame = self.video_capture.read()
             return_frame = self.frame
             self.frame = _frame
+            self._current_frame_index += 1
             yield return_frame
+
+    @property
+    def current_frame_index(self):
+        return self._current_frame_index
 
     @staticmethod
     def imshow(frame, window_name: str = 'window'):

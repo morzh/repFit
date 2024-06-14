@@ -18,16 +18,14 @@ parameters = yaml_parameters('steady_camera_filter_parameters.yaml')
 if parameters is None:
     exit(0)
 
-skip_list = ['041215 Squats-RI8TA9vNzdA.mp4']
+videos_to_skip = ['041215 Squats-RI8TA9vNzdA.mp4']
+videos_with_problems = ['405 Squat-OONV768bbO4.mp4', 'Squats onthe Cable Core-Xwocbi-tp2o.mkv']
 for video_source_filename in video_source_filenames:
     # if video_source_filename in skip_list:
     #     continue
-
-    if video_source_filename != 'Squat Lateral .avi-qpWNOCVHq5o.mp4':
+    if video_source_filename != 'Squats onthe Cable Core-Xwocbi-tp2o.mkv':
         continue
-
     video_target_filename = os.path.splitext(video_source_filename)[0] + '.mp4'
     video_source_filepath = os.path.join(videos_source_folder, video_source_filename)
-
     video_segments = extract_coarse_steady_camera_video_segments(video_source_filepath, parameters['video_segments_extraction'])
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])

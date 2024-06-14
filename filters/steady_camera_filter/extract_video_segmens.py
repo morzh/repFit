@@ -37,9 +37,10 @@ def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters:
                                              poc_maximum_dimension=parameters['poc_maximum_dimension'],
                                              minimum_ocr_confidence=parameters['minimum_ocr_confidence'],
                                              maximum_shift_length=parameters['maximum_shift_length'],
-                                             minimum_poc_confidence=parameters['minimum_poc_confidence'])
-    camera_filter.process()
+                                             poc_minimum_confidence=parameters['poc_minimum_confidence'])
+    camera_filter.process(parameters['poc_show_averaged_frames_couple'])
     steady_segments = camera_filter.calculate_steady_camera_ranges()
+    steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
 
     if parameters['poc_registration_verbose']:
         camera_filter.print_registration_results()
