@@ -1,18 +1,20 @@
-from ocr_engine_base import OcrEngineBase
+import numpy as np
+import cv2
+from filters.steady_camera_filter.core.ocr_engine.ocr_engine_base import OcrEngineBase
 import easyocr
 
 
 class EasyOcrEngine(OcrEngineBase):
-    def __init__(self, minimum_ocr_confidence):
+    def __init__(self, minimum_ocr_confidence, minimal_resolution: int = 512):
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
         self.model_ocr = easyocr.Reader(self.ocr_lang_list)
         self.ocr_confidence = minimum_ocr_confidence
+        self.minimum_resolution = minimal_resolution
 
-    def pixel_mask(self, image, output_resolution):
-        current_ocr_result = self.model_ocr.readtext(image)  # , decoder='beamsearch', beamWidth=10)
-        # current_ocr_result = pytesseract.image_to_boxes(image)
-        # if current_ocr_result:
-        #     print(current_ocr_result)
+    def pixel_mask(self, image, output_resolution) -> cv2.typing.MatLike:
+        if max(image.shape) < self.minimum_resolution:
+            image = cv2.resize(image, (0, 0), fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
+        current_ocr_result = self.model_ocr.readtext(image)
         current_text_mask = np.zeros(image.shape[:2])
         if len(current_ocr_result):
             for ocr_box in current_ocr_result:

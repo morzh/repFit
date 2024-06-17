@@ -7,8 +7,10 @@ import yaml
 from typing import Annotated, Literal, TypeVar, Optional
 from numpy.typing import NDArray
 
+from filters.steady_camera_filter.core.ocr_engine.craft_engine import CraftEngine
 from filters.steady_camera_filter.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from cv_utils.video_segments_writer import VideoSegmentsWriter
+from filters.steady_camera_filter.core.video_segments import VideoSegments
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
@@ -23,7 +25,18 @@ def yaml_parameters(filepath: str) -> Optional[dict]:
     return parameters
 
 
-def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters: dict) -> segments_list:
+def video_resolution_check(video_filepath: str, maximum_dimension_size: int = 360):
+    video_capture = cv2.VideoCapture(video_filepath)
+    video_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    video_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    maximum_dimension = max(video_width, video_height)
+
+    if maximum_dimension > maximum_dimension_size:
+        return True
+    return False
+
+
+def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters: dict) -> VideoSegments:
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
         print(video_filename)
@@ -32,13 +45,14 @@ def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters:
     if number_frames_to_average < 5:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
+    ocr_engine = CraftEngine()
     camera_filter = SteadyCameraCoarseFilter(video_filepath,
+                                             ocr_engine,
                                              number_frames_to_average=number_frames_to_average,
-                                             poc_maximum_dimension=parameters['poc_maximum_dimension'],
-                                             minimum_ocr_confidence=parameters['minimum_ocr_confidence'],
                                              maximum_shift_length=parameters['maximum_shift_length'],
+                                             poc_maximum_image_dimension=parameters['poc_maximum_dimension'],
                                              poc_minimum_confidence=parameters['poc_minimum_confidence'])
-    camera_filter.process(parameters['poc_show_averaged_frames_couple'])
+    camera_filter.process(parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.calculate_steady_camera_ranges()
     steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
 
@@ -47,21 +61,31 @@ def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters:
     if parameters['verbose_segments']:
         print(steady_segments)
 
+    del camera_filter
     return steady_segments
 
 
-def write_video_segments(video_filepath, output_folder, segments, parameters: dict):
+def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, parameters: dict):
     if not os.path.exists(video_filepath):
         raise FileNotFoundError(f'File {video_filepath} does not exist')
 
-    video_capture = cv2.VideoCapture(str(video_filepath))
-    fps = int(video_capture.get(cv2.CAP_PROP_FPS))
-    width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
-                                                fps=fps,
-                                                width=width,
-                                                height=height,
+                                                fps=video_segments.video_fps,
+                                                width=video_segments.video_width,
+                                                height=video_segments.video_height,
                                                 scale=parameters['scale_factor'])
-    video_segments_writer.write(segments, use_gaps=parameters['use_segments_gaps'])
+    video_segments_writer.write(video_segments, write_method='cv2', use_gaps=parameters['use_segments_gaps'])
+
+
+def extract_write_steady_camera_segments(video_source_filepath):
+    parameters = yaml_parameters('steady_camera_filter_parameters.yaml')
+    if parameters is None:
+        return
+
+    if not video_resolution_check(video_source_filepath, maximum_dimension_size=parameters['video_segments_extraction']['minimum_dimension_resolution']):
+        return
+
+    videos_target_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_coarse_steady_camera'
+    video_segments = extract_coarse_steady_camera_video_segments(video_source_filepath, parameters['video_segments_extraction'])
+    write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])

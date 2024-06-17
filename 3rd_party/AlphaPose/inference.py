@@ -190,8 +190,6 @@ def proc(video_name):
             '===========================> If this step takes too long, you can enable the --vis_fast flag to use fast rendering (real-time).')
 
 
-
-
 if __name__ == "__main__":
     videos = os.listdir(CRED_FILTERED_VIDEO_DPATH)
     proc(videos[0])

@@ -50,16 +50,6 @@ class VideoReader:
             self._progress.update()
             yield return_frame
 
-    def __next__(self):
-        if self.success:
-            self.success, _frame = self.video_capture.read()
-            return_frame = self.frame
-            self.frame = _frame
-            self._current_frame_index += 1
-            return return_frame
-        else:
-            StopIteration
-
     def __iter__(self):
         while self.success:
             self.success, _frame = self.video_capture.read()
