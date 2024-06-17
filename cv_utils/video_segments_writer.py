@@ -22,7 +22,7 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 class VideoSegmentsWriter:
     input_filepath: str | Path
     output_folder: str | Path
-    fps: int
+    fps: float
     width: int
     height: int
     scale: float = 0.5
