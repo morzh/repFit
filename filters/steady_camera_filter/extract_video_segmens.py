@@ -7,7 +7,7 @@ import yaml
 from typing import Annotated, Literal, TypeVar, Optional
 from numpy.typing import NDArray
 
-from filters.steady_camera_filter.core.ocr_engine.craft_engine import CraftEngine
+from filters.steady_camera_filter.core.ocr.craft import Craft
 from filters.steady_camera_filter.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from cv_utils.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
@@ -25,13 +25,13 @@ def yaml_parameters(filepath: str) -> Optional[dict]:
     return parameters
 
 
-def video_resolution_check(video_filepath: str, maximum_dimension_size: int = 360):
+def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 360):
     video_capture = cv2.VideoCapture(video_filepath)
     video_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     maximum_dimension = max(video_width, video_height)
 
-    if maximum_dimension > maximum_dimension_size:
+    if maximum_dimension > minimum_dimension_size:
         return True
     return False
 
@@ -45,7 +45,7 @@ def extract_coarse_steady_camera_video_segments(video_filepath: str, parameters:
     if number_frames_to_average < 5:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
-    ocr_engine = CraftEngine()
+    ocr_engine = Craft()
     camera_filter = SteadyCameraCoarseFilter(video_filepath,
                                              ocr_engine,
                                              number_frames_to_average=number_frames_to_average,
@@ -78,14 +78,10 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     video_segments_writer.write(video_segments, write_method='cv2', use_gaps=parameters['use_segments_gaps'])
 
 
-def extract_write_steady_camera_segments(video_source_filepath):
-    parameters = yaml_parameters('steady_camera_filter_parameters.yaml')
-    if parameters is None:
+def extract_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters):
+    minimum_resolution = parameters['video_segments_extraction']['minimum_dimension_resolution']
+    if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         return
 
-    if not video_resolution_check(video_source_filepath, maximum_dimension_size=parameters['video_segments_extraction']['minimum_dimension_resolution']):
-        return
-
-    videos_target_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_coarse_steady_camera'
     video_segments = extract_coarse_steady_camera_video_segments(video_source_filepath, parameters['video_segments_extraction'])
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])

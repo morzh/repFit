@@ -10,19 +10,6 @@ class VideoFramesBatch:
         self.batch_size: int = batch_size
         self.video_reader = VideoReader(video_filepath, use_tqdm=False)
 
-    def __next__(self):
-        batch = np.empty((self.batch_size, self.video_reader.height, self.video_reader.width, 3))
-        index = 0
-        while index < self.batch_size:
-            batch[index] = next(self.video_reader)
-            index += 1
-
-        if index == self.batch_size:
-            index = 0
-            return batch
-        else:
-            StopIteration
-
     def __iter__(self):
         batch = np.zeros((self.batch_size, self.video_reader.height, self.video_reader.width, 3))
         index = 0

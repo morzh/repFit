@@ -1,8 +1,8 @@
-from ocr_engine_base import OcrEngineBase
+from ocr_base import OcrBase
 import pytesseract
 
 
-class TesseractOcrEngine(OcrEngineBase):
+class TesseractOcr(OcrBase):
     def pixel_mask(self, image, output_resolution):
         current_ocr_result = pytesseract.image_to_boxes(image)
         if current_ocr_result:

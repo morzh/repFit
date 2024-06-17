@@ -1,10 +1,10 @@
 import numpy as np
 import cv2
-from filters.steady_camera_filter.core.ocr_engine.ocr_engine_base import OcrEngineBase
+from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 import easyocr
 
 
-class EasyOcrEngine(OcrEngineBase):
+class EasyOcr(OcrBase):
     def __init__(self, minimum_ocr_confidence, minimal_resolution: int = 512):
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
         self.model_ocr = easyocr.Reader(self.ocr_lang_list)

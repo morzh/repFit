@@ -12,6 +12,6 @@ class VideoSegments:
     video_filename: str
     video_width: int
     video_height: int
-    frames_number: int
     video_fps: float
+    frames_number: int
     segments: segments_list

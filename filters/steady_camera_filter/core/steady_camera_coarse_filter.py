@@ -5,8 +5,8 @@ import numpy as np
 
 from collections import deque
 from beautifultable import BeautifulTable
-from filters.steady_camera_filter.core.ocr_engine.ocr_engine_base import OcrEngineBase
-from filters.steady_camera_filter.core.ocr_engine.easy_ocr_engine import EasyOcrEngine
+from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
+from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
 
 from typing import Annotated, Literal
 from numpy.typing import NDArray
@@ -14,7 +14,7 @@ from numpy.typing import NDArray
 
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 from cv_utils.video_frames_batch import VideoFramesBatch
-from filters.steady_camera_filter.core.image_registration_engine.image_registration_poc import ImageSequenceRegistrationPoc
+from filters.steady_camera_filter.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]
 image_color = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]
@@ -24,7 +24,7 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 class SteadyCameraCoarseFilter:
     def __init__(self,
                  video_filepath: str,
-                 ocr: OcrEngineBase,
+                 ocr: OcrBase,
                  number_frames_to_average=20,
                  poc_maximum_image_dimension=512,
                  maximum_shift_length=1.5,

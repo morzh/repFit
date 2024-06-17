@@ -2,12 +2,13 @@ import numpy as np
 from CRAFT import CRAFTModel, draw_polygons
 import cv2
 from cv2 import typing
-from filters.steady_camera_filter.core.ocr_engine.ocr_engine_base import OcrEngineBase
+from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
 from easyocr.craft import CRAFT
 craft_weights_folder = '/home/anton/work/fitMate/repFit/3rd_party/weights/craft'
 
-class CraftEngine(OcrEngineBase):
+
+class Craft(OcrBase):
     """
     CRAFT: Character-Region Awareness For Text detection
         https://github.com/fcakyon/craft-text-detector
