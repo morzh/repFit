@@ -30,8 +30,8 @@ class ImageSequenceRegistrationPoc:
     """
     def __init__(self, images_resolution: tuple[int, int], windowing_function=np.hamming):
         """
-        @images_resolution: images resolution (height, width)
-        @windowing_function: windowing function for image FFT
+        :param images_resolution: images resolution (height, width)
+        :param windowing_function: windowing function for image FFT
         """
         self.fft_deque = deque(maxlen=2)
         self.reference_fft: Optional[ndimageNxM] = None
@@ -42,8 +42,7 @@ class ImageSequenceRegistrationPoc:
         """
         Description:
             Update filter's double queue (deque) with new image. Not, queue has fixed size, adding new image causes deleting the oldest one
-        @new_image: image to add to deque
-        @return:
+        :param new_image: image to add to deque
         """
         # windowing and FFT
         new_image_fft = np.fft.fft2(new_image * self.windowing)
@@ -55,9 +54,9 @@ class ImageSequenceRegistrationPoc:
         """
         Description:
             Cross power spectrum of reference and target images (from current deque)
-        @param image_reference: reference grayscale image
-        @param image_target: target grayscale image
-        @return: values of cross power spectrum
+        :param image_reference: reference grayscale image
+        :param image_target: target grayscale image
+        :return: values of cross power spectrum
         """
         assert image_target.shape == image_reference.shape
         assert len(image_reference.shape) == 2
@@ -74,7 +73,7 @@ class ImageSequenceRegistrationPoc:
         """
         Description:
             Register two current images (strictly speaking their FFTs) in deque.
-        @return: registration result
+        :return: registration result
         """
         if len(self.fft_deque) != 2:
             warnings.warn('Only one image provided for registration. '
@@ -92,7 +91,7 @@ class ImageSequenceRegistrationPoc:
         """
         Description:
             Calculate pixel shift in images registration from cross power spectrum.
-        @return: registration result
+        :return: registration result
         """
         absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
         if np.all(absolute_cross_power_spectrum) > 0:
@@ -116,9 +115,9 @@ class ImageSequenceRegistrationPoc:
         """
         Description:
             Register images using phase only correlation
-        @param image_reference:  reference image
-        @param image_target: target image
-        @return:  images registration result
+        :param image_reference:  reference image
+        :param image_target: target image
+        :return:  images registration result
         """
         assert image_target.shape == image_reference.shape
 
@@ -137,7 +136,6 @@ class ImageSequenceRegistrationPoc:
         """
         Description:
             Plot current windowing 2D function values
-        @return: None
         """
         x = np.linspace(0, 1.5, 51)
         y = np.linspace(0, 1.5, 51)
@@ -158,9 +156,9 @@ class ImageSequenceRegistrationPoc:
             https://en.wikipedia.org/wiki/Window_function
             What should be considered when selecting a windowing function when smoothing a time series:
             https://dsp.stackexchange.com/questions/208/what-should-be-considered-when-selecting-a-windowing-function-when-smoothing-a-t
-        @param shape: shape of 2D windowing function values in (width, height) format
-        @param windowing_function: windowing function (Hamming by default)
-        @return: 2D windowing function values
+        :param shape: shape of 2D windowing function values in (width, height) format
+        :param windowing_function: windowing function (Hamming by default)
+        :return: 2D windowing function values
         """
         window_in_rows = windowing_function(shape[1])
         window_in_rows = np.clip(window_in_rows, 1e-6, 1.0)

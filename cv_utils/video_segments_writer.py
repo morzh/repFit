@@ -18,11 +18,14 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 class VideoSegmentsWriter:
     """
-    Class for writing video segments to a different video files in given output folder.
+    Class for writing video segments to a different video files to a given output folder.
     """
     def __init__(self, input_filepath: str | Path, output_folder: str | Path, fps: float, scale_factor: float = 0.5):
         """
-
+        :param input_filepath: input filepath
+        :param output_folder: folder for output videos
+        :param fps: FPS for output videos
+        :param scale_factor: scale factor for output videos
         """
         self.input_filepath = input_filepath
         self.output_folder = output_folder
