@@ -6,8 +6,6 @@ import cv2
 import numpy as np
 import ffmpeg
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-from moviepy.config import FFMPEG_BINARY
-import subprocess
 
 from cv_utils.video_reader import VideoReader
 from filters.steady_camera_filter.core.video_segments import VideoSegments
@@ -69,7 +67,7 @@ class VideoSegmentsWriter:
         segments_gaps = self.calculate_segments_gaps(video_segments)
         raise NotImplementedError('Writing non steady camera video segments in not implemented yet')
 
-    def write(self, video_segments: VideoSegments, write_method: str = 'cv2', use_gaps: bool = False):
+    def write(self, video_segments: VideoSegments, write_method: str = 'cv2', use_gaps: bool = False) -> None:
         if video_segments.segments.size == 0:
             return
 
@@ -92,14 +90,36 @@ class VideoSegmentsWriter:
         else:
             raise NotImplementedError('Methods other than cv2 and ffmpeg are not implemented yet')
 
-    def calculate_segments_gaps(self, video_segments: VideoSegments):
-        pass
+    @staticmethod
+    def calculate_segments_gaps(self, video_segments: VideoSegments) -> VideoSegments:
+        """
+        Description:
+            Video segments inversion.
+        @video_segments: video segments information
+        @return inverted video segments
+        """
+        segments = video_segments.segments.flatten()
+        segments = np.insert(segments, 0, 0)
+        segments = np.append(segments, video_segments.frames_number - 1)
+        segments = segments.reshape(-1, 2)
+
+        if segments[0, 0] == segments[0, 1]:
+            segments = np.delete(segments, 0, axis=0)
+        if segments[-1, 0] == segments[-1, 1]:
+            segments = np.delete(segments, -1, axis=0)
+        video_segments.segments = segments
+
+        return  video_segments
 
     def extract_filename_base_extension(self) -> tuple[str, str]:
+        """
+        Extract file name without extension and file extension from file pathname.
+        @return file name and file extension
+        """
         video_filename = os.path.basename(self.input_filepath)
         return os.path.splitext(video_filename)
 
-    def current_filepath_segment(self, segment):
+    def current_filepath_segment(self, segment) -> str:
         video_filename_base, _ = self.extract_filename_base_extension()
         filename_postfix = '_' + str(segment[0]) + '-' + str(segment[1]) + '__'
         video_filename = video_filename_base + '__steady' + filename_postfix + '.mp4'

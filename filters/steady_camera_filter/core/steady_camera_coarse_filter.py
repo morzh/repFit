@@ -30,6 +30,7 @@ class SteadyCameraCoarseFilter:
         As this approach uses frames averaging, at the begging and at the end of a video segment camera could be slightly non-steady.
         Also, when camera angle changes fast enough (in the period of one or several frames), this algorithm may not catch it.
         There also could be some issues  with sidebars videos (videos originally vertical with added sidebars to produce horizontal ones).
+        Text regions smooth masking is mandatory to produce correct results.
     """
     def __init__(self,
                  video_filepath: str,
