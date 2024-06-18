@@ -77,10 +77,8 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
                                                 fps=video_segments.video_fps,
-                                                width=video_segments.video_width,
-                                                height=video_segments.video_height,
                                                 scale=parameters['scale_factor'])
-    video_segments_writer.write(video_segments, write_method='cv2', use_gaps=parameters['use_segments_gaps'])
+    video_segments_writer.write(video_segments, write_method='cv2', write_gaps=parameters['use_segments_gaps'])
 
 
 def extract_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
