@@ -22,14 +22,32 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
 class SteadyCameraCoarseFilter:
+    """
+    Description:
+        Steady camera filter. This filter extracts steady camera segments in video. Coarse in the name of the filter means, it uses averaged frames
+        to speedup video processing. The downside of the averaging is this filter mey not be precise enough.
+    Remarks:
+        As this approach uses frames averaging, at the begging and at the end of a video segment camera could be slightly non-steady.
+        Also, when camera angle changes fast enough (in the period of one or several frames), this algorithm may not catch it.
+        There also could be some issues  with sidebars videos (videos originally vertical with added sidebars to produce horizontal ones).
+    """
     def __init__(self,
                  video_filepath: str,
                  ocr: OcrBase,
                  number_frames_to_average=20,
                  poc_maximum_image_dimension=512,
                  maximum_shift_length=1.5,
-                 poc_minimum_confidence=0.4,
+                 registration_minimum_confidence=0.4,
                  ):
+        """
+        @video_filepath: video file pathname
+        @ocr: ocr model to use for text masking
+        @number_frames_to_average: number of frames to average before registration
+        @maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
+        between respective frames.
+        @registration_minimum_confidence: registration confidence threshold. If registration confidence less than registration_minimum_confidence, then
+        camera is not considered as steady.
+        """
         self.video_frames_batch = VideoFramesBatch(video_filepath, number_frames_to_average)
         self.ocr = ocr
         # Image registration section
@@ -43,9 +61,15 @@ class SteadyCameraCoarseFilter:
         self.poc_maximum_image_dimension = poc_maximum_image_dimension
         self._calculate_poc_resolution()
         self.poc_engine = ImageSequenceRegistrationPoc(self.poc_resolution)
-        self.poc_minimum_confidence = poc_minimum_confidence
+        self.poc_minimum_confidence = registration_minimum_confidence
 
     def _calculate_poc_resolution(self) -> None:
+        """
+        Description:
+            Calculates factor for image resolution before using images registration. For computational reasons, all images fed to
+            image registration procedure will have the same maximum resolution along some dimension.
+        @return:
+        """
         poc_scale_factor = float(self.poc_maximum_image_dimension) / max(self.video_frames_batch.video_reader.resolution)
         original_resolution = self.video_frames_batch.video_reader.resolution
         poc_resolution = (round(original_resolution[0] * poc_scale_factor), round(original_resolution[1] * poc_scale_factor))
@@ -61,6 +85,7 @@ class SteadyCameraCoarseFilter:
             So, accumulated VideoFramesBatch.VideoReader.current_frame_index used as a video frames number (after all frames had been read).
 
         @verbose: show reference and target image pair with registration results (for debug purposes)
+        @return:
         """
 
         for current_image_frames_batch in self.video_frames_batch:
@@ -78,10 +103,10 @@ class SteadyCameraCoarseFilter:
             if len(self.poc_engine.fft_deque) == 2:
                 current_registration_result = self.poc_engine.register()
                 self.registration_shifts = np.vstack((self.registration_shifts, np.array(current_registration_result.shift)))
-                self.registration_confidence = np.append(self.registration_confidence, current_registration_result.peak_value)
+                self.registration_confidence = np.append(self.registration_confidence, current_registration_result.confidence)
 
                 if verbose:
-                    registration_result = f'Shift: {current_registration_result.shift}, peak value: {current_registration_result.peak_value:1.2f}'
+                    registration_result = f'Shift: {current_registration_result.shift}, peak value: {current_registration_result.confidence:1.2f}'
                     reference_target_image = np.hstack((self.averaged_frames_pair_deque[0].astype(np.uint8),
                                                         self.averaged_frames_pair_deque[1].astype(np.uint8)))
                     text_font = cv2.FONT_HERSHEY_SIMPLEX
@@ -112,6 +137,11 @@ class SteadyCameraCoarseFilter:
         return video_segments
 
     def calculate_steady_camera_ranges(self) -> VideoSegments:
+        """
+        Description:
+            Calculate video segments in frames at which camera is steady
+        @return: video segments
+        """
         # self.print_registration_results()
         shifts_norms = np.linalg.norm(self.registration_shifts, axis=1)
         shifts_norms_mask = shifts_norms < self.maximum_shift_length
@@ -169,11 +199,12 @@ class SteadyCameraCoarseFilter:
     @staticmethod
     def _apply_text_mask(image: image_grayscale, mask: image_grayscale, sigma=7) -> image_grayscale:
         """
-        Apply mask to the image. Given a mask it will be:
-            1. Extended to cover more space
-            2. Blurred using Gaussian blur with the given sigma
-        After that, grayscale image and monochrome image (whose color is the mean color of the whole image with the same shape)
-        will be mixed up by calculated mask.
+        Description:
+            Apply mask to the image. Given a mask it will be:
+                1. Extended to cover more space
+                2. Blurred using Gaussian blur with the given sigma
+            After that, grayscale image and monochrome image (whose color is the mean color of the whole image with the same shape)
+            will be mixed up by calculated mask.
         @image: input grayscale image
         @mask: mask with float values in [0, 1] range
         @return: masked image

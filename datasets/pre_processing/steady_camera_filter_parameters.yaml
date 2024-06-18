@@ -1,14 +1,14 @@
 
 video_segments_extraction:
   minimum_dimension_resolution: 256
-  minimum_steady_camera_time_segment: 6  # time in seconds
+  minimum_steady_camera_time_segment: 7  # time in seconds
   number_frames_to_average: 15
   poc_maximum_dimension: 512
   poc_registration_verbose: false
   poc_minimum_confidence: 0.1
   poc_show_averaged_frames_pair: false
   minimum_ocr_confidence: 0.1
-  maximum_shift_length: 1.5
+  maximum_shift_length: 1.0
   verbose_filename: true
   verbose_segments: false
 

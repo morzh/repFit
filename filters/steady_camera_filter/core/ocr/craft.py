@@ -18,16 +18,21 @@ class Craft(OcrBase):
         https://arxiv.org/pdf/1904.01941
     """
     def __init__(self, use_cuda=True, use_refiner=False, use_fp16=False):
+        """
+        @use_cuda: use CUDA for text regions calculations
+        @use_refiner:
+        @use_fp16: if True, use float16 precision, float32 otherwise
+        """
         if use_cuda:
             self.device = 'cuda'
         else:
             self.device = 'cpu'
         self.craft = CRAFTModel(craft_weights_folder, self.device, use_refiner=use_refiner, fp16=use_fp16)
 
-    def pixel_mask(self, image, output_resolution) -> typing.MatLike:
+    def pixel_mask(self, image: typing.MatLike, output_resolution: tuple[int, int]) -> typing.MatLike:
         if len(image.shape) == 2:
             image = np.repeat(np.expand_dims(image, axis=2), 3, axis=2)
-        image_dimensions = image.shape[:2]
+        image_dimensions = (image.shape[0], image.shape[1])
         polygons = self.craft.get_polygons(image)
         mask = self.draw_polygons(image_dimensions, polygons)
         mask = cv2.resize(mask, output_resolution)
@@ -35,6 +40,12 @@ class Craft(OcrBase):
 
     @staticmethod
     def draw_polygons(image_shape: tuple[int, int], polygons: list[list[list[int]]]) -> np.ndarray:
+        """
+        CRAFT outputs set of polygons to mask text in an image. This polygons then should be converted to an image mask.
+        @image_shape: input image resolution
+        @polygons: set of polygons (output from CRAFT)
+        @return: image mask with values in [0, 1].
+        """
         mask = np.zeros(image_shape)
         for i, poly in enumerate(polygons):
             poly_ = np.array(poly).astype(np.int32).reshape((-1))

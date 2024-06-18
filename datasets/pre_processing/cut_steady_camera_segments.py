@@ -10,10 +10,11 @@ from filters.steady_camera_filter.extract_video_segmens import extract_write_ste
 
 videos_source_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022'
 videos_target_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_coarse_steady_camera'
-use_multiprocessing = True
-number_processes = 5
-
 videos_extensions = ['.mp4', 'MP4', '.mkv', 'webm']
+
+use_multiprocessing = True
+number_processes = 4
+
 video_source_filepaths = [join(videos_source_folder, f) for f in listdir(videos_source_folder)
                           if isfile(join(videos_source_folder, f)) and splitext(f)[-1] in videos_extensions]
 os.makedirs(videos_target_folder, exist_ok=True)

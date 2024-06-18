@@ -31,7 +31,7 @@ def yaml_parameters(filepath: str) -> Optional[dict]:
     return parameters
 
 
-def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 360):
+def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 360) -> bool:
     video_capture = cv2.VideoCapture(video_filepath)
     video_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -57,7 +57,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
                                              number_frames_to_average=number_frames_to_average,
                                              maximum_shift_length=parameters['maximum_shift_length'],
                                              poc_maximum_image_dimension=parameters['poc_maximum_dimension'],
-                                             poc_minimum_confidence=parameters['poc_minimum_confidence'])
+                                             registration_minimum_confidence=parameters['poc_minimum_confidence'])
     camera_filter.process(parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.calculate_steady_camera_ranges()
     steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
@@ -70,7 +70,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     return steady_segments
 
 
-def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, parameters: dict):
+def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, parameters: dict) -> None:
     if not os.path.exists(video_filepath):
         raise FileNotFoundError(f'File {video_filepath} does not exist')
 
@@ -83,7 +83,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     video_segments_writer.write(video_segments, write_method='cv2', use_gaps=parameters['use_segments_gaps'])
 
 
-def extract_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters):
+def extract_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
     minimum_resolution = parameters['video_segments_extraction']['minimum_dimension_resolution']
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         return

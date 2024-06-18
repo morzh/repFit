@@ -15,26 +15,36 @@ ndimageNxMc = Annotated[NDArray[np.csingle], Literal["N", "M"]]
 
 
 @dataclass(frozen=True, slots=True)
-class PhaseCorrelationResult:
+class ImageRegistrationResult:
     """
     Data storage for ImageRegistrationPoc.register_images() and ImageRegistrationPoc.register() return value
     """
     shift: tuple[int, int] = (0, 0)
-    peak_value: float = 0
+    confidence: float = 0
 
 
 class ImageSequenceRegistrationPoc:
     """
     Images sequence registration using phase only correlation (POC) approach.
-    As wee need to cache FFTs ...... bla bla bla
+    https://en.wikipedia.org/wiki/Phase_correlation
     """
-    def __init__(self, images_resolution, windowing_function=np.hamming):
+    def __init__(self, images_resolution: tuple[int, int], windowing_function=np.hamming):
+        """
+        @images_resolution: images resolution (height, width)
+        @windowing_function: windowing function for image FFT
+        """
         self.fft_deque = deque(maxlen=2)
         self.reference_fft: Optional[ndimageNxM] = None
         self.target_fft: Optional[ndimageNxM] = None
         self.windowing = self.image_windowing(images_resolution, windowing_function=windowing_function)
 
     def update_deque(self, new_image: ndimageNxM) -> None:
+        """
+        Description:
+            Update filter's double queue (deque) with new image. Not, queue has fixed size, adding new image causes deleting the oldest one
+        @new_image: image to add to deque
+        @return:
+        """
         # windowing and FFT
         new_image_fft = np.fft.fft2(new_image * self.windowing)
         # Shift the zero-frequency component to the center of the spectrum.
@@ -43,7 +53,8 @@ class ImageSequenceRegistrationPoc:
 
     def cross_power_spectrum(self, image_reference: ndimageNxM, image_target: ndimageNxM) -> ndimageNxMc:
         """
-        Cross power spectrum of reference and target images
+        Description:
+            Cross power spectrum of reference and target images (from current deque)
         @param image_reference: reference grayscale image
         @param image_target: target grayscale image
         @return: values of cross power spectrum
@@ -57,25 +68,32 @@ class ImageSequenceRegistrationPoc:
         fft_frame_1 = np.fft.fftshift(fft_frame_1)
         fft_frame_2 = np.fft.fftshift(fft_frame_2)
         cross_power_spectrum = fft_frame_1 * np.conjugate(fft_frame_2)
-        # absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
-        # if np.all(absolute_cross_power_spectrum) > 0:
-        #     cross_power_spectrum /= absolute_cross_power_spectrum
         return cross_power_spectrum
 
-    def register(self) -> PhaseCorrelationResult:
+    def register(self) -> ImageRegistrationResult:
+        """
+        Description:
+            Register two current images (strictly speaking their FFTs) in deque.
+        @return: registration result
+        """
         if len(self.fft_deque) != 2:
             warnings.warn('Only one image provided for registration. '
                           'Add new image using ImageSequenceRegistrationPoc.update_deque() method')
-            return PhaseCorrelationResult(shift=(0, 0), peak_value=-1)
+            return ImageRegistrationResult(shift=(0, 0), confidence=-1)
 
         if self.fft_deque[0].shape != self.fft_deque[1].shape:
             raise ValueError('All images in deque should have the same shape')
 
         cross_power_spectrum = self.fft_deque[0] * np.ma.conjugate(self.fft_deque[1])
-        poc_result = self.registration_result_from_cross_power_spectrum(cross_power_spectrum)
-        return poc_result
+        registration_result = self.registration_result_from_cross_power_spectrum(cross_power_spectrum)
+        return registration_result
 
-    def registration_result_from_cross_power_spectrum(self, cross_power_spectrum) -> PhaseCorrelationResult:
+    def registration_result_from_cross_power_spectrum(self, cross_power_spectrum) -> ImageRegistrationResult:
+        """
+        Description:
+            Calculate pixel shift in images registration from cross power spectrum.
+        @return: registration result
+        """
         absolute_cross_power_spectrum = np.absolute(cross_power_spectrum)
         if np.all(absolute_cross_power_spectrum) > 0:
             cross_power_spectrum /= absolute_cross_power_spectrum
@@ -85,18 +103,19 @@ class ImageSequenceRegistrationPoc:
         peak_value = float(cross_correlation[pixel_shift])
         pixel_shift = np.array(pixel_shift)  # [row, column] format
 
-        #  negative shifts registration
+        #  negative pixel shift case
         if pixel_shift[0] > self.fft_deque[0].shape[0] / 2:
             pixel_shift[0] = self.fft_deque[0].shape[0] - 1 - pixel_shift[0]
         if pixel_shift[1] > self.fft_deque[0].shape[1] / 2:
             pixel_shift[1] = self.fft_deque[0].shape[1] - 1 - pixel_shift[1]
 
         pixel_shift = (int(pixel_shift[1]), int(pixel_shift[0]))  # convert [row, column] to (X, Y) format
-        return PhaseCorrelationResult(shift=pixel_shift, peak_value=peak_value)
+        return ImageRegistrationResult(shift=pixel_shift, confidence=peak_value)
 
-    def register_images(self, image_reference: ndimageNxMx3 | ndimageNxM, image_target: ndimageNxMx3 | ndimageNxM) -> PhaseCorrelationResult:
+    def register_images(self, image_reference: ndimageNxMx3 | ndimageNxM, image_target: ndimageNxMx3 | ndimageNxM) -> ImageRegistrationResult:
         """
-        Register images using POC
+        Description:
+            Register images using phase only correlation
         @param image_reference:  reference image
         @param image_target: target image
         @return:  images registration result
@@ -116,7 +135,8 @@ class ImageSequenceRegistrationPoc:
 
     def plot_windowing_2d(self) -> None:
         """
-        Plot current windowing 2D function values
+        Description:
+            Plot current windowing 2D function values
         @return: None
         """
         x = np.linspace(0, 1.5, 51)
@@ -134,9 +154,10 @@ class ImageSequenceRegistrationPoc:
     @staticmethod
     def image_windowing(shape: tuple[int, int] = (512, 512), windowing_function: callable = np.hamming) -> cv2.typing.MatLike:
         """
-        https://en.wikipedia.org/wiki/Window_function
-        What should be considered when selecting a windowing function when smoothing a time series:
-        https://dsp.stackexchange.com/questions/208/what-should-be-considered-when-selecting-a-windowing-function-when-smoothing-a-t
+        Description:
+            https://en.wikipedia.org/wiki/Window_function
+            What should be considered when selecting a windowing function when smoothing a time series:
+            https://dsp.stackexchange.com/questions/208/what-should-be-considered-when-selecting-a-windowing-function-when-smoothing-a-t
         @param shape: shape of 2D windowing function values in (width, height) format
         @param windowing_function: windowing function (Hamming by default)
         @return: 2D windowing function values
