@@ -12,7 +12,7 @@ videos_source_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/a
 videos_target_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_coarse_steady_camera'
 videos_extensions = ['.mp4', 'MP4', '.mkv', 'webm']
 
-use_multiprocessing = True
+use_multiprocessing = False
 number_processes = 4
 
 video_source_filepaths = [join(videos_source_folder, f) for f in listdir(videos_source_folder)

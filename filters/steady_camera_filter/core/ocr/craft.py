@@ -17,7 +17,7 @@ class Craft(OcrBase):
     arXiv PDF:
         https://arxiv.org/pdf/1904.01941
     """
-    def __init__(self, use_cuda=True, use_refiner=False, use_fp16=False):
+    def __init__(self, use_cuda=True, use_refiner=False, use_float16=False):
         """
         @use_cuda: use CUDA for text regions calculations
         @use_refiner:
@@ -27,7 +27,7 @@ class Craft(OcrBase):
             self.device = 'cuda'
         else:
             self.device = 'cpu'
-        self.craft = CRAFTModel(craft_weights_folder, self.device, use_refiner=use_refiner, fp16=use_fp16)
+        self.craft = CRAFTModel(craft_weights_folder, self.device, use_refiner=use_refiner, fp16=use_float16)
 
     def pixel_mask(self, image: typing.MatLike, output_resolution: tuple[int, int]) -> typing.MatLike:
         if len(image.shape) == 2:

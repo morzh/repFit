@@ -1,16 +1,37 @@
 
+
+
 video_segments_extraction:
-  minimum_dimension_resolution: 256
-  minimum_steady_camera_time_segment: 7  # time in seconds
-  number_frames_to_average: 15
-  poc_maximum_dimension: 512
-  poc_registration_verbose: false
-  poc_minimum_confidence: 0.1
-  poc_show_averaged_frames_pair: false
-  minimum_ocr_confidence: 0.1
-  maximum_shift_length: 1.0
   verbose_filename: true
-  verbose_segments: false
+
+  resolution_filter:
+    minimum_dimension_resolution: 256
+
+  image_registration:
+    minimum_steady_camera_time_segment: 7  # time in seconds
+    number_frames_to_average: 15
+    poc_maximum_dimension: 512
+    poc_registration_verbose: false
+    poc_minimum_confidence: 0.1
+    poc_show_averaged_frames_pair: true
+    maximum_shift_length: 1.0
+    verbose_segments: false
+    ocr_model: craft
+
+  ocr:
+    easy_ocr:
+      use_cuda: true
+      minimum_ocr_confidence: 0.1
+      minimal_resolution: 512
+      quantize: false
+
+    craft:
+      use_cuda: true
+      use_refiner: false
+      use_float_16: false
+
+    tesseract:
+      use_cuda: true
 
 video_segments_output:
   write_segments_gaps: false

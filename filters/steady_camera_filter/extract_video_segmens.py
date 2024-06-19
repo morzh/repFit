@@ -8,6 +8,8 @@ from typing import Annotated, Literal, TypeVar, Optional
 from numpy.typing import NDArray
 
 from filters.steady_camera_filter.core.ocr.craft import Craft
+from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
+from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
 from filters.steady_camera_filter.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from cv_utils.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
@@ -64,17 +66,34 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
         video_filename = os.path.basename(video_filepath)
         print(video_filename)
 
-    number_frames_to_average = parameters['number_frames_to_average']
+    image_registration_parameters = parameters['image_registration']
+    number_frames_to_average = image_registration_parameters['number_frames_to_average']
     if number_frames_to_average < 5:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
-    ocr_model = Craft()
+    match image_registration_parameters['ocr_model']:
+        case 'craft':
+            craft_parameters = parameters['ocr']['craft']
+            ocr_model = Craft(use_cuda=craft_parameters['use_cuda'],
+                              use_refiner=craft_parameters['use_refiner'],
+                              use_float16=craft_parameters['use_float_16'])
+        case 'easy_ocr':
+            easyocr_parameters = parameters['ocr']['easy_ocr']
+            ocr_model = EasyOcr(minimum_ocr_confidence=easyocr_parameters['minimum_ocr_confidence'],
+                                minimal_resolution=easyocr_parameters['minimal_resolution'])
+        case 'tesseract':
+            tesseract_parameters = parameters['ocr']['tesseract']
+            ocr_model = TesseractOcr()
+        case _:
+            raise ValueError('Models  for masking text other than Craft, Easy OCR and Tesseract are not provided.')
+
     camera_filter = SteadyCameraCoarseFilter(video_filepath,
                                              ocr_model,
                                              number_frames_to_average=number_frames_to_average,
-                                             maximum_shift_length=parameters['maximum_shift_length'],
-                                             poc_maximum_image_dimension=parameters['poc_maximum_dimension'],
-                                             registration_minimum_confidence=parameters['poc_minimum_confidence'])
+                                             maximum_shift_length=image_registration_parameters['maximum_shift_length'],
+                                             poc_maximum_image_dimension=image_registration_parameters['poc_maximum_dimension'],
+                                             registration_minimum_confidence=image_registration_parameters['poc_minimum_confidence'])
+
     camera_filter.process(parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.calculate_steady_camera_ranges()
     steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
@@ -114,7 +133,7 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     :param videos_target_folder: output folder for segmented videos
     :param parameters: extraction parameters
     """
-    minimum_resolution = parameters['video_segments_extraction']['minimum_dimension_resolution']
+    minimum_resolution = parameters['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         return
 

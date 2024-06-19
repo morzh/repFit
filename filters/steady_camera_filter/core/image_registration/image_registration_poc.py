@@ -17,7 +17,7 @@ ndimageNxMc = Annotated[NDArray[np.csingle], Literal["N", "M"]]
 @dataclass(frozen=True, slots=True)
 class ImageRegistrationResult:
     """
-    Data storage for ImageRegistrationPoc.register_images() and ImageRegistrationPoc.register() return value
+    Data storage for ImageRegistration classes registration results
     """
     shift: tuple[int, int] = (0, 0)
     confidence: float = 0
@@ -117,7 +117,7 @@ class ImageSequenceRegistrationPoc:
             Register images using phase only correlation
         :param image_reference:  reference image
         :param image_target: target image
-        :return:  images registration result
+        :return: images registration result
         """
         assert image_target.shape == image_reference.shape
 
