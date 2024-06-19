@@ -21,7 +21,7 @@ def yaml_parameters(filepath: str) -> dict:
     """
     Description:
         Read yaml file
-    :param filepath: filepath of a .yaml file
+    :param filepath: filepath to .yaml file
     :return: dictionary with yaml data
     """
     parameters = None
@@ -73,19 +73,19 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
 
     match image_registration_parameters['ocr_model']:
         case 'craft':
-            craft_parameters = parameters['ocr']['craft']
+            craft_parameters = parameters['text_mask']['craft']
             ocr_model = Craft(use_cuda=craft_parameters['use_cuda'],
                               use_refiner=craft_parameters['use_refiner'],
                               use_float16=craft_parameters['use_float_16'])
         case 'easy_ocr':
-            easyocr_parameters = parameters['ocr']['easy_ocr']
+            easyocr_parameters = parameters['text_mask']['easy_ocr']
             ocr_model = EasyOcr(minimum_ocr_confidence=easyocr_parameters['minimum_ocr_confidence'],
                                 minimal_resolution=easyocr_parameters['minimal_resolution'])
         case 'tesseract':
-            tesseract_parameters = parameters['ocr']['tesseract']
+            tesseract_parameters = parameters['text_mask']['tesseract']
             ocr_model = TesseractOcr()
         case _:
-            raise ValueError('Models  for masking text other than Craft, Easy OCR and Tesseract are not provided.')
+            raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
 
     camera_filter = SteadyCameraCoarseFilter(video_filepath,
                                              ocr_model,

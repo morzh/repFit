@@ -18,7 +18,7 @@ video_segments_extraction:
     verbose_segments: false
     ocr_model: craft
 
-  ocr:
+  text_mask:
     easy_ocr:
       use_cuda: true
       minimum_ocr_confidence: 0.1
