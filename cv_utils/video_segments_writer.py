@@ -1,16 +1,13 @@
 import os
 import shutil
 from pathlib import Path
-from dataclasses import dataclass
 import cv2
 import numpy as np
-import ffmpeg
-from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 
 from cv_utils.video_reader import VideoReader
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
-from typing import Annotated, Literal, TypeVar, Optional
+from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
@@ -72,7 +69,7 @@ class VideoSegmentsWriter:
             This method calculates segments between given video segments and video frames range.
             It could be used for debugging purposes to write video segments, where camera is not steady.
         :param video_segments: video segments
-        :param filter_name: name of the filter (prefix to frames range)
+        :param filter_name: name of the filter of filtering stage (in other words prefix to frames range)
         """
         video_segments_gaps = self.calculate_segments_gaps(video_segments)
         self.write_segments(video_segments_gaps, filter_name)
@@ -122,7 +119,7 @@ class VideoSegmentsWriter:
             segments = np.delete(segments, -1, axis=0)
         video_segments.segments = segments
 
-        return  video_segments
+        return video_segments
 
     def extract_filename_base_extension(self) -> tuple[str, str]:
         """
