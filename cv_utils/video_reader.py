@@ -51,12 +51,13 @@ class VideoReader:
             yield return_frame
 
     def __iter__(self):
-        while self.success:
-            self.success, _frame = self.video_capture.read()
-            return_frame = self.frame
-            self.frame = _frame
-            self._current_frame_index += 1
-            yield return_frame
+        return self.frame_generator()
+        # while self.success:
+        #     self.success, _frame = self.video_capture.read()
+        #     return_frame = self.frame
+        #     self.frame = _frame
+        #     self._current_frame_index += 1
+        #     yield return_frame
 
     @property
     def current_frame_index(self):

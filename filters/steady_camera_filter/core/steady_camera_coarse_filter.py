@@ -41,12 +41,12 @@ class SteadyCameraCoarseFilter:
                  registration_minimum_confidence=0.4,
                  ):
         """
-        @video_filepath: video file pathname
-        @ocr: ocr model to use for text masking
-        @number_frames_to_average: number of frames to average before registration
-        @maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
+        :param video_filepath: video file pathname
+        :param ocr: ocr model to use for text masking
+        :param number_frames_to_average: number of frames to average before registration
+        :param maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
         between respective frames.
-        @registration_minimum_confidence: registration confidence threshold. If registration confidence less than registration_minimum_confidence, then
+        :param registration_minimum_confidence: registration confidence threshold. If registration confidence less than registration_minimum_confidence, then
         camera is not considered as steady.
         """
         self.video_frames_batch = VideoFramesBatch(video_filepath, number_frames_to_average)
@@ -69,7 +69,6 @@ class SteadyCameraCoarseFilter:
         Description:
             Calculates factor for image resolution before using images registration. For computational reasons, all images fed to
             image registration procedure will have the same maximum resolution along some dimension.
-        @return:
         """
         poc_scale_factor = float(self.poc_maximum_image_dimension) / max(self.video_frames_batch.video_reader.resolution)
         original_resolution = self.video_frames_batch.video_reader.resolution
@@ -85,8 +84,7 @@ class SteadyCameraCoarseFilter:
             Sometimes number of frames, given by cv2.VideoCapture.get(cv2.CAP_PROP_FRAME_COUNT) is not precise.
             So, accumulated VideoFramesBatch.VideoReader.current_frame_index used as a video frames number (after all frames had been read).
 
-        @verbose: show reference and target image pair with registration results (for debug purposes)
-        @return:
+        :param verbose: show reference and target image pair with registration results (for debug purposes)
         """
 
         for current_image_frames_batch in self.video_frames_batch:
@@ -124,9 +122,9 @@ class SteadyCameraCoarseFilter:
         """
         Description:
             Filter video segments by duration. If segment duration is less than time_threshold, it will be deleted.
-        @video_segments: input video segments
-        @time_threshold: time threshold in seconds
-        @return filtered by time video segments
+        :param video_segments: input video segments
+        :param time_threshold: time threshold in seconds
+        :return: filtered by time video segments
         """
         fps = self.video_frames_batch.video_reader.fps
         for segment_index, segment in enumerate(video_segments.segments):
@@ -141,7 +139,7 @@ class SteadyCameraCoarseFilter:
         """
         Description:
             Calculate video segments in frames at which camera is steady
-        @return: video segments
+        :return: video segments
         """
         # self.print_registration_results()
         shifts_norms = np.linalg.norm(self.registration_shifts, axis=1)
@@ -173,8 +171,8 @@ class SteadyCameraCoarseFilter:
         Description:
             If two or more segments overlaps, this function unties them into one.
             Resulted number of segments will be less or equal to input number of segments.
-        @segments: input segments
-        @return: unified segments
+        :param segments: input segments
+        :return: unified segments
         """
         for index in range(len(segments) - 1):
             if segments[index, 1] > segments[index + 1, 0]:
@@ -188,7 +186,6 @@ class SteadyCameraCoarseFilter:
         """
         Description:
             Print registration results for all images in averaged images batch
-        @return: None
         """
         table = BeautifulTable()
         table.columns.header = ['Shifts', 'Confidence']
@@ -202,13 +199,13 @@ class SteadyCameraCoarseFilter:
         """
         Description:
             Apply mask to the image. Given a mask it will be:
-                1. Extended to cover more space
-                2. Blurred using Gaussian blur with the given sigma
+                #. Extended to cover more space
+                #. Blurred using Gaussian blur with the given sigma
             After that, grayscale image and monochrome image (whose color is the mean color of the whole image with the same shape)
             will be mixed up by calculated mask.
-        @image: input grayscale image
-        @mask: mask with float values in [0, 1] range
-        @return: masked image
+        :param image: input grayscale image
+        :param mask: mask with float values in [0, 1] range
+        :return: masked image
         """
         blurred_mask = cv2.GaussianBlur(mask, (sigma * 3, sigma * 3), sigma)
         blurred_mask = blurred_mask > 0.1

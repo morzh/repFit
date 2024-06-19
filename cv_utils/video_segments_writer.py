@@ -95,7 +95,6 @@ class VideoSegmentsWriter:
         r"""
         Description:
             Video segments inversion. Method calculates minus in sense of set theory  :math:`[0, N_{frames} - 1]  \ \backslash  \ segments`.
-        Parameters:
         :param video_segments: video segments information
         :return: inverted video segments
         """

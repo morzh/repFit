@@ -11,7 +11,7 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 class VideoSegments:
     """
     Description:
-        Data storage class for video steady camera segments info.
+        Data storage class for video segments information.
     """
     video_filename: str
     video_width: int

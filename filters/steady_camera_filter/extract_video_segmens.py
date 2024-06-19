@@ -15,7 +15,13 @@ from filters.steady_camera_filter.core.video_segments import VideoSegments
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
-def yaml_parameters(filepath: str) -> Optional[dict]:
+def yaml_parameters(filepath: str) -> dict:
+    """
+    Description:
+        Read yaml file
+    :param filepath: filepath of a .yaml file
+    :return: dictionary with yaml data
+    """
     parameters = None
     if not os.path.exists(filepath):
         raise FileNotFoundError('Parameters YAML file does not exist')
@@ -32,6 +38,11 @@ def yaml_parameters(filepath: str) -> Optional[dict]:
 
 
 def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 360) -> bool:
+    """
+    Description:
+        Check if video size is greater than a given threshold.
+    :return: True if (width, height) >  minimum_dimension_size, False otherwise
+    """
     video_capture = cv2.VideoCapture(video_filepath)
     video_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -43,6 +54,12 @@ def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 36
 
 
 def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, parameters: dict) -> VideoSegments:
+    """
+    Description:
+        Extract segments from video in frames, where camera is steady (meets steadiness criteria of coarse steady camera filter).
+    :param video_filepath: filepath of the video
+    :param parameters: parameters for steady camera filter
+    """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
         print(video_filename)
@@ -71,17 +88,32 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
 
 
 def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, parameters: dict) -> None:
+    """
+    Description:
+        Cuts input video according video_segments information.
+    :param video_filepath: input video filepath
+    :param output_folder: output folder for trimmed videos
+    :param video_segments information about video segments to trim
+    :param parameters: parameters to write videos
+    """
     if not os.path.exists(video_filepath):
         raise FileNotFoundError(f'File {video_filepath} does not exist')
 
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
                                                 fps=video_segments.video_fps,
-                                                scale=parameters['scale_factor'])
-    video_segments_writer.write(video_segments, write_method='cv2', write_gaps=parameters['use_segments_gaps'])
+                                                scale_factor=parameters['scale_factor'])
+    video_segments_writer.write(video_segments, write_gaps=parameters['use_segments_gaps'])
 
 
-def extract_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
+def extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
+    """
+    Description:
+        Convenient function for multiprocessing. It violates single responsibility principle, but who cares.
+    :param video_source_filepath: source video filepath
+    :param videos_target_folder: output folder for segmented videos
+    :param parameters: extraction parameters
+    """
     minimum_resolution = parameters['video_segments_extraction']['minimum_dimension_resolution']
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         return
