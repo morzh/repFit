@@ -39,6 +39,13 @@ class VideoSegmentsWriter:
         :param video_segments: video segments
         :param filter_name: name of the filter (prefix to frames range)
         """
+
+        if self.whole_video_segments_check(video_segments):
+            video_filename = os.path.basename(self.input_filepath)
+            output_filepath = os.path.join(os.path.join(self.output_folder, video_filename))
+            shutil.copy(self.input_filepath, output_filepath)
+            return
+
         video_reader = VideoReader(self.input_filepath, use_tqdm=False)
         resolution = (video_segments.video_width, video_segments.video_height)
         index_segment = 0
@@ -67,8 +74,8 @@ class VideoSegmentsWriter:
         :param video_segments: video segments
         :param filter_name: name of the filter (prefix to frames range)
         """
-        segments_gaps = self.calculate_segments_gaps(video_segments)
-        self.write_segments(segments_gaps, filter_name)
+        video_segments_gaps = self.calculate_segments_gaps(video_segments)
+        self.write_segments(video_segments_gaps, filter_name)
 
     def write(self, video_segments: VideoSegments, write_gaps: bool = False) -> None:
         """
@@ -83,14 +90,18 @@ class VideoSegmentsWriter:
         if write_gaps:
             self.write_segments_gaps(video_segments)
 
-        if (video_segments.segments.shape[0] == 1 and
-                video_segments.segments[0, 0] == 0 and video_segments.segments[-1, -1] == video_segments.frames_number - 1):
-            video_filename = os.path.basename(self.input_filepath)
-            output_filepath = os.path.join(os.path.join(self.output_folder, video_filename))
-            shutil.copy(self.input_filepath, output_filepath)
-            return
-
         self.write_segments(video_segments)
+
+    @staticmethod
+    def whole_video_segments_check(video_segments: VideoSegments) -> bool:
+        """
+        Description:
+            Checks if video_segments has only one segment with frame start equals zero and frame end equals frames number - 1
+        :return: True if there is only one whole range video segment, False otherwise
+        """
+        return (video_segments.segments.shape[0] == 1 and
+                video_segments.segments[0, 0] == 0 and
+                video_segments.segments[-1, -1] == video_segments.frames_number - 1)
 
     @staticmethod
     def calculate_segments_gaps(video_segments: VideoSegments) -> VideoSegments:

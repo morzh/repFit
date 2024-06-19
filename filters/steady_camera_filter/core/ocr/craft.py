@@ -20,7 +20,7 @@ class Craft(OcrBase):
     def __init__(self, use_cuda=True, use_refiner=False, use_float16=False):
         """
         @use_cuda: use CUDA for text regions calculations
-        @use_refiner:
+        @use_refiner: perform refinement step for text regions
         @use_fp16: if True, use float16 precision, float32 otherwise
         """
         if use_cuda:
