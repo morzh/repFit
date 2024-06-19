@@ -71,19 +71,19 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     if number_frames_to_average < 5:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
-    match image_registration_parameters['ocr_model']:
+    match image_registration_parameters['text_mask_model']:
         case 'craft':
-            craft_parameters = parameters['text_mask']['craft']
+            craft_parameters = parameters['text_mask_models']['craft']
             ocr_model = Craft(use_cuda=craft_parameters['use_cuda'],
                               use_refiner=craft_parameters['use_refiner'],
                               use_float16=craft_parameters['use_float_16'])
         case 'easy_ocr':
-            easyocr_parameters = parameters['text_mask']['easy_ocr']
-            ocr_model = EasyOcr(minimum_ocr_confidence=easyocr_parameters['minimum_ocr_confidence'],
+            easyocr_parameters = parameters['text_mask_models']['easy_ocr']
+            ocr_model = EasyOcr(confidence_threshold=easyocr_parameters['confidence_threshold'],
                                 minimal_resolution=easyocr_parameters['minimal_resolution'])
         case 'tesseract':
-            tesseract_parameters = parameters['text_mask']['tesseract']
-            ocr_model = TesseractOcr()
+            tesseract_parameters = parameters['text_mask_models']['tesseract']
+            ocr_model = TesseractOcr(confidence=tesseract_parameters['confidence_threshold'])
         case _:
             raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
 
@@ -94,9 +94,9 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
                                              poc_maximum_image_dimension=image_registration_parameters['poc_maximum_dimension'],
                                              registration_minimum_confidence=image_registration_parameters['poc_minimum_confidence'])
 
-    camera_filter.process(parameters['poc_show_averaged_frames_pair'])
+    camera_filter.process(image_registration_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.calculate_steady_camera_ranges()
-    steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
+    steady_segments = camera_filter.filter_segments_by_time(steady_segments, image_registration_parameters['minimum_steady_camera_time_segment'])
 
     if parameters['poc_registration_verbose']:
         camera_filter.print_registration_results()

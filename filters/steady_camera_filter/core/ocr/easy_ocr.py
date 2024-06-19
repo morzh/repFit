@@ -9,14 +9,14 @@ class EasyOcr(OcrBase):
     """
     Jaided EasyOCR for text recognition in images.
     """
-    def __init__(self, minimum_ocr_confidence, minimal_resolution: int = 512):
+    def __init__(self, confidence_threshold, minimal_resolution: int = 512):
         """
-        @minimum_ocr_confidence: minimum confidence for detected text
+        @confidence_threshold: minimum confidence for detected text
         @minimal resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
         """
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
         self.model_ocr = easyocr.Reader(self.ocr_lang_list)
-        self.ocr_confidence = minimum_ocr_confidence
+        self.ocr_confidence = confidence_threshold
         self.minimum_resolution = minimal_resolution
 
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
