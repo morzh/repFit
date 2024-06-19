@@ -1,17 +1,17 @@
 video_segments_extraction:
   verbose_filename: true
+  minimum_steady_camera_time_segment: 7  # time in seconds
+  number_frames_to_average: 15
 
   resolution_filter:
     minimum_dimension_resolution: 256
 
   image_registration:
-    minimum_steady_camera_time_segment: 7  # time in seconds
-    number_frames_to_average: 12
     poc_maximum_dimension: 512
     poc_registration_verbose: false
     poc_minimum_confidence: 0.1
-    poc_show_averaged_frames_pair: true
-    maximum_shift_length: 1.01
+    poc_show_averaged_frames_pair: false
+    maximum_shift_length: 1.0
     verbose_segments: false
     text_mask_model: craft
 
@@ -28,7 +28,7 @@ video_segments_extraction:
       use_float_16: false
 
     tesseract:
-      # produces unpleasant results
+      # produces incorrect results.
       use_cuda: true
       confidence_threshold: 0.1
 
@@ -36,4 +36,4 @@ video_segments_extraction:
 video_segments_output:
   write_segments_gaps: false
   scale_factor: 0.5
-  use_segments_gaps: false
+  use_segments_gaps: true

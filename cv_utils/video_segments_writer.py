@@ -32,11 +32,12 @@ class VideoSegmentsWriter:
         self.fps = fps
         self.scale = scale_factor
 
-    def write_segments(self, video_segments: VideoSegments) -> None:
+    def write_segments(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
         """
         Description:
             Write video segments as separate video files.
         :param video_segments: video segments
+        :param filter_name: name of the filter (prefix to frames range)
         """
         video_reader = VideoReader(self.input_filepath, use_tqdm=False)
         resolution = (video_segments.video_width, video_segments.video_height)
@@ -45,7 +46,7 @@ class VideoSegmentsWriter:
 
         for index_frame, frame in enumerate(video_reader):
             if index_frame == current_segment[0]:
-                current_output_filepath = self.current_filepath_segment(current_segment)
+                current_output_filepath = self.current_filepath_segment(current_segment, filter_name)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.fps, resolution)
 
             if current_segment[0] <= index_frame <= current_segment[1]:
@@ -58,15 +59,16 @@ class VideoSegmentsWriter:
                     return
                 current_segment = video_segments.segments[index_segment]
 
-    def write_segments_gaps(self, video_segments: VideoSegments) -> None:
+    def write_segments_gaps(self, video_segments: VideoSegments, filter_name='nonsteady') -> None:
         """
         Description:
             This method calculates segments between given video segments and video frames range.
             It could be used for debugging purposes to write video segments, where camera is not steady.
         :param video_segments: video segments
+        :param filter_name: name of the filter (prefix to frames range)
         """
         segments_gaps = self.calculate_segments_gaps(video_segments)
-        self.write_segments(segments_gaps)
+        self.write_segments(segments_gaps, filter_name)
 
     def write(self, video_segments: VideoSegments, write_gaps: bool = False) -> None:
         """
@@ -120,15 +122,16 @@ class VideoSegmentsWriter:
         video_filename = os.path.basename(self.input_filepath)
         return os.path.splitext(video_filename)
 
-    def current_filepath_segment(self, segment: np.ndarray) -> str:
+    def current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
         """
         Description:
             Get video file name for a given segment
         :param segment: video segment (just start and end frame)
+        :param frames_range_prefix: frames range prefix
         :return: filename
         """
         video_filename_base, _ = self.extract_filename_base_extension()
-        filename_postfix = '_' + str(segment[0]) + '-' + str(segment[1]) + '__'
-        video_filename = video_filename_base + '__steady' + filename_postfix + '.mp4'
+        filename_frames_range = '_' + str(segment[0]) + '-' + str(segment[1]) + '__'
+        video_filename = video_filename_base + '__' + frames_range_prefix + filename_frames_range + '.mp4'
         output_filepath = os.path.join(self.output_folder, video_filename)
         return output_filepath
