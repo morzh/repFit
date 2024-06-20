@@ -20,8 +20,9 @@ def filter_by_joints_credibility(threshold: float = credibility_threshold) -> di
                 joints_probs[frames_with_joints[i]] = frame_data['keypoints'][..., -1]
             average_cred = joints_probs.sum() / joints_probs.size
             if average_cred > threshold:
-                result[bboxes_fpath.stem].append((_id, average_cred))
-                # debug mode. result[bboxes_fpath.stem].append(_id)
+                result[bboxes_fpath.stem].append(_id)
+                # debug mode.
+                # result[bboxes_fpath.stem].append((_id, average_cred))
     return result
 
 

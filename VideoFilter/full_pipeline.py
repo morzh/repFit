@@ -75,4 +75,4 @@ def merge_filters(*args, drop_filtered=True) -> dict:
 
 
 if __name__ == '__main__':
-    debug()
+    run_full_pipeline()

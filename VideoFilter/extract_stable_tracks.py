@@ -88,4 +88,4 @@ def tracks_filter(tracks: dict, min_track_length_frames: int):
 
 if __name__ == '__main__':
     videos = list(VIDEO_DPATH.glob('*'))
-    extract(videos[0])
+    extract_stable_tracks(videos[0])
