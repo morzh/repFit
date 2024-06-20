@@ -21,9 +21,9 @@ class VideoReader:
         else:
             FileNotFoundError(f'Video file {self.fpath} does not exist')
 
-        self.n_frames = None
-        self._fps = None
-        self._current_frame_index = 0
+        self.n_frames: int = 0
+        self._fps: float = 0
+        self._current_frame_index: int = 0
         self.success = False
         self.frame = None
         self.use_tqdm = use_tqdm
@@ -99,6 +99,6 @@ class VideoReader:
         """
         return self.width, self.height
 
-    def __del__(self):
-        if self.video_capture is not None:
-            self.video_capture.release()
+    @property
+    def video_length(self) -> float:
+        return self.n_frames / self._fps

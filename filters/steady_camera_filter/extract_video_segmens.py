@@ -1,4 +1,5 @@
 import os.path
+import shutil
 import warnings
 import numpy as np
 import cv2
@@ -67,7 +68,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
         print(video_filename)
 
     image_registration_parameters = parameters['image_registration']
-    number_frames_to_average = image_registration_parameters['number_frames_to_average']
+    number_frames_to_average = parameters['number_frames_to_average']
     if number_frames_to_average < 5:
         warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
@@ -90,7 +91,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     camera_filter = SteadyCameraCoarseFilter(video_filepath,
                                              ocr_model,
                                              number_frames_to_average=number_frames_to_average,
-                                             maximum_shift_length=parameters['maximum_shift_length'],
+                                             maximum_shift_length=image_registration_parameters['maximum_shift_length'],
                                              poc_maximum_image_dimension=image_registration_parameters['poc_maximum_dimension'],
                                              registration_minimum_confidence=image_registration_parameters['poc_minimum_confidence'])
 
@@ -98,9 +99,9 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     steady_segments = camera_filter.calculate_steady_camera_ranges()
     steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
 
-    if parameters['poc_registration_verbose']:
+    if image_registration_parameters['poc_registration_verbose']:
         camera_filter.print_registration_results()
-    if parameters['verbose_segments']:
+    if image_registration_parameters['verbose_segments']:
         print(steady_segments)
 
     return steady_segments
@@ -139,3 +140,30 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
 
     video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, parameters['video_segments_extraction'])
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])
+
+
+def differentiate_steady_non_steady_to_subfolders(root_folder, steady_entry, non_steady_entry, subfolder_steady, subfolder_non_steady) -> None:
+    """
+    Description:
+        Move cut steady and non-steady video segments to different folders. If filename has steady_entry, it will bw moved to subfolder_steady subfolder of
+        the root_folder. If filename has non_steady_entry, it will bw moved to subfolder_non_steady subfolder of the root_folder
+    :param root_folder: folder with source  steady anf non-steady video files;
+    :param steady_entry: filename entry which that indicates video is (considered as) steady;
+    :param non_steady_entry: filename entry which that indicates video is (considered as) non-steady;
+    :param subfolder_steady: subfolder of the root folder to move steady videos to;
+    :param subfolder_non_steady: subfolder of the root folder to move non-steady videos to;
+    """
+    source_filepaths = [os.path.join(root_folder, f) for f in os.listdir(root_folder) if os.path.isfile(os.path.join(root_folder, f))]
+    target_steady_folder = os.path.join(root_folder, steady_entry)
+    target_non_steady_folder = os.path.join(root_folder, non_steady_entry)
+    os.makedirs(target_steady_folder, exist_ok=True)
+    os.makedirs(target_non_steady_folder, exist_ok=True)
+
+    for source_filepath in source_filepaths:
+        filename = os.path.basename(source_filepath)
+        if steady_entry in filename:
+            target_filepath = str(os.path.join(root_folder, subfolder_steady, filename))
+            shutil.move(source_filepath, target_filepath)
+        elif non_steady_entry in filename:
+            target_filepath = str(os.path.join(root_folder, subfolder_non_steady, filename))
+            shutil.move(source_filepath, target_filepath)

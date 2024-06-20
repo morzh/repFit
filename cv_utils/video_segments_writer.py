@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 from pathlib import Path
@@ -37,9 +38,12 @@ class VideoSegmentsWriter:
         :param filter_name: name of the filter (prefix to frames range)
         """
 
+        if video_segments.segments.size == 0:
+            return
+
         if self.whole_video_segments_check(video_segments):
-            video_filename = os.path.basename(self.input_filepath)
-            output_filepath = os.path.join(os.path.join(self.output_folder, video_filename))
+            video_filename_base, _ = self.extract_filename_base_extension()
+            output_filepath = os.path.join(os.path.join(self.output_folder, video_filename_base + '__' + filter_name + '__' + '.mp4'))
             shutil.copy(self.input_filepath, output_filepath)
             return
 
@@ -72,6 +76,8 @@ class VideoSegmentsWriter:
         :param filter_name: name of the filter of filtering stage (in other words prefix to frames range)
         """
         video_segments_gaps = self.calculate_segments_gaps(video_segments)
+        if video_segments_gaps.segments.size == 0:
+            return
         self.write_segments(video_segments_gaps, filter_name)
 
     def write(self, video_segments: VideoSegments, write_gaps: bool = False) -> None:
@@ -81,8 +87,6 @@ class VideoSegmentsWriter:
         :param video_segments: video segments
         :param write_gaps: write video segments and gaps between segments
         """
-        if video_segments.segments.size == 0:
-            return
 
         if write_gaps:
             self.write_segments_gaps(video_segments)
@@ -117,9 +121,11 @@ class VideoSegmentsWriter:
             segments = np.delete(segments, 0, axis=0)
         if segments[-1, 0] == segments[-1, 1]:
             segments = np.delete(segments, -1, axis=0)
-        video_segments.segments = segments
 
-        return video_segments
+        video_segments_gaps = copy.copy(video_segments)
+        video_segments_gaps.segments = segments
+
+        return video_segments_gaps
 
     def extract_filename_base_extension(self) -> tuple[str, str]:
         """
