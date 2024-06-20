@@ -154,16 +154,17 @@ def differentiate_steady_non_steady_to_subfolders(root_folder, steady_entry, non
     :param subfolder_non_steady: subfolder of the root folder to move non-steady videos to;
     """
     source_filepaths = [os.path.join(root_folder, f) for f in os.listdir(root_folder) if os.path.isfile(os.path.join(root_folder, f))]
-    target_steady_folder = os.path.join(root_folder, steady_entry)
-    target_non_steady_folder = os.path.join(root_folder, non_steady_entry)
+    target_steady_folder = os.path.join(root_folder, subfolder_steady)
+    target_non_steady_folder = os.path.join(root_folder, subfolder_non_steady)
     os.makedirs(target_steady_folder, exist_ok=True)
     os.makedirs(target_non_steady_folder, exist_ok=True)
 
     for source_filepath in source_filepaths:
         filename = os.path.basename(source_filepath)
-        if steady_entry in filename:
-            target_filepath = str(os.path.join(root_folder, subfolder_steady, filename))
-            shutil.move(source_filepath, target_filepath)
-        elif non_steady_entry in filename:
+        if non_steady_entry in filename:
             target_filepath = str(os.path.join(root_folder, subfolder_non_steady, filename))
             shutil.move(source_filepath, target_filepath)
+        elif steady_entry in filename:
+            target_filepath = str(os.path.join(root_folder, subfolder_steady, filename))
+            shutil.move(source_filepath, target_filepath)
+

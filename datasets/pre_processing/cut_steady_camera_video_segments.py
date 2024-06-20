@@ -15,7 +15,7 @@ videos_target_folder = os.path.join(videos_root_folder, 'squats_2022_coarse_stea
 videos_steady_subfolder = 'steady'
 videos_non_steady_subfolder = 'non_steady'
 videos_extensions = ['.mp4', 'MP4', '.mkv', '.webm']
-'''
+
 use_multiprocessing = True
 number_processes = 4
 
@@ -36,7 +36,7 @@ else:
         extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters)
 time_end = time.time()
 print(f'Filtering time for {len(video_source_filepaths)} videos took {time_end - time_start} seconds')
-'''
+
 differentiate_steady_non_steady_to_subfolders(videos_target_folder,
                                               'steady',
                                               'nonsteady',
