@@ -1,6 +1,6 @@
 video_segments_extraction:
   verbose_filename: true
-  minimum_steady_camera_time_segment: 7  # time in seconds
+  minimum_steady_camera_time_segment: 8  # time in seconds
   number_frames_to_average: 15
 
   resolution_filter:
