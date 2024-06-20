@@ -11,7 +11,7 @@ video_segments_extraction:
     poc_registration_verbose: false
     poc_minimum_confidence: 0.1
     poc_show_averaged_frames_pair: false
-    maximum_shift_length: 1.0
+    maximum_shift_length: 1.5
     verbose_segments: false
     text_mask_model: craft
 

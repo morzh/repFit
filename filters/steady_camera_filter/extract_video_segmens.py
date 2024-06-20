@@ -142,7 +142,11 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])
 
 
-def differentiate_steady_non_steady_to_subfolders(root_folder, steady_entry, non_steady_entry, subfolder_steady, subfolder_non_steady) -> None:
+def differentiate_steady_non_steady_to_subfolders(root_folder: str,
+                                                  steady_entry: str,
+                                                  non_steady_entry: str,
+                                                  subfolder_steady: str,
+                                                  subfolder_non_steady: str) -> None:
     """
     Description:
         Move cut steady and non-steady video segments to different folders. If filename has steady_entry, it will bw moved to subfolder_steady subfolder of
