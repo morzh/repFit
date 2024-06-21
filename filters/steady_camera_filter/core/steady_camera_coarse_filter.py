@@ -42,8 +42,8 @@ class SteadyCameraCoarseFilter:
         :keyword number_frames_to_average: -- number of frames to average before registration
         :keyword maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
         between respective frames.
-        :keyword registration_minimum_confidence: registration confidence threshold. If registration confidence less than registration_minimum_confidence, then
-        camera is not considered as steady.
+        :keyword registration_minimum_confidence: registration confidence threshold. If registration confidence less than
+        registration_minimum_confidence, then camera is not considered as steady.
         """
         self.video_frames_batch = VideoFramesBatch(video_filepath, kwargs['number_frames_to_average'])
         self.ocr = ocr

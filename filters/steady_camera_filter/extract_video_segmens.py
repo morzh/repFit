@@ -63,6 +63,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
         Extract segments from video in frames, where camera is steady (meets steadiness criteria of coarse steady camera filter).
     :param video_filepath: filepath of the video
     :param parameters: parameters for steady camera filter
+    :raises ValueError: when trying to use text masking with neural network models other than CRAFT, EasyOCR or Tesseract.
     """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
