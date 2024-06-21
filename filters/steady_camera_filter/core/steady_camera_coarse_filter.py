@@ -131,7 +131,7 @@ class SteadyCameraCoarseFilter:
         video_segments.segments = video_segments.segments[mask]
         return video_segments
 
-    def calculate_steady_camera_ranges(self) -> VideoSegments:
+    def steady_camera_video_segments(self) -> VideoSegments:
         """
         Description:
             Calculate video segments in frames at which camera is steady

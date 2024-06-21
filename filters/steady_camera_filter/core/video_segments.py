@@ -24,9 +24,9 @@ class VideoSegments:
     def filter_by_time_duration(self, time_period_threshold: float) -> None:
         """
         Description:
-            Filter video segments by duration. If segment duration is less than time_threshold, it will be deleted.
+            Filter video segments by duration in place.
+            If segment duration is less than time_period_threshold, it will be deleted.
         :param time_period_threshold: time threshold in seconds
-        :return: filtered by time segments of video segments class
         """
         for segment_index, segment in enumerate(self.segments):
             segment_length = segment[1] - segment[0]
@@ -35,7 +35,7 @@ class VideoSegments:
         mask = self.segments[:, 0] >= 0
         self.segments = self.segments[mask]
 
-    def segments_complement(self) -> Self:
+    def complement(self) -> Self:
         r"""
         Description:
             Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:
@@ -45,7 +45,7 @@ class VideoSegments:
 
             where :math:`N_f` -- number of frames, :math:`N_s` -- number of segments, :math:`\{s_n\}` -- segments,
             :math:`\mathbf{C}` -- set closure.
-        :return: inverted video segments
+        :return:  video segments complement
         """
         segments = self.segments.flatten()
         segments = np.insert(segments, 0, 0)

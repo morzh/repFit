@@ -35,6 +35,4 @@ video_segments_extraction:
 
 
 video_segments_output:
-  write_segments_gaps: false
-  scale_factor: 0.5
-  use_segments_gaps: true
+  write_segments_complement: false

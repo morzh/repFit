@@ -28,7 +28,6 @@ class VideoSegmentsWriter:
         self.input_filepath = input_filepath
         self.output_folder = output_folder
         self.fps = fps
-        self.scale = scale_factor
 
     def write(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
         """

@@ -92,7 +92,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
 
     camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, **steady_camera_coarse_parameters)
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
-    steady_segments = camera_filter.calculate_steady_camera_ranges()
+    steady_segments = camera_filter.steady_camera_video_segments()
 
     # steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
@@ -120,13 +120,12 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
 
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
-                                                fps=video_segments.video_fps,
-                                                scale_factor=parameters['scale_factor'])
+                                                fps=video_segments.video_fps)
 
     video_segments_writer.write(video_segments, filter_name='steady')
 
-    if parameters['use_segments_gaps']:
-        video_segments_complement = video_segments.segments_complement()
+    if parameters['write_segments_complement']:
+        video_segments_complement = video_segments.complement()
         video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
 
 

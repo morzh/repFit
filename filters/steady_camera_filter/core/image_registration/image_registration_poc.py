@@ -6,12 +6,6 @@ from typing import Annotated, Literal, Optional
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.typing import NDArray
-
-ndimageNxMx3 = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]
-ndimageNxM = Annotated[NDArray[np.uint8], Literal["N", "M"]]
-ndimageNxMf = Annotated[NDArray[np.float32], Literal["N", "M"]]
-ndimageNxMc = Annotated[NDArray[np.csingle], Literal["N", "M"]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,11 +28,11 @@ class ImageSequenceRegistrationPoc:
         :param windowing_function: windowing function for image FFT
         """
         self.fft_deque = deque(maxlen=2)
-        self.reference_fft: Optional[ndimageNxM] = None
-        self.target_fft: Optional[ndimageNxM] = None
+        self.reference_fft: Optional[cv2.typing.MatLike] = None
+        self.target_fft: Optional[cv2.typing.MatLike] = None
         self.windowing = self.image_windowing(images_resolution, windowing_function=windowing_function)
 
-    def update_deque(self, new_image: ndimageNxM) -> None:
+    def update_deque(self, new_image: cv2.typing.MatLike) -> None:
         """
         Description:
             Update filter's double queue (deque) with new image. Not, queue has fixed size, adding new image causes deleting the oldest one
@@ -50,7 +44,7 @@ class ImageSequenceRegistrationPoc:
         new_image_fft = np.fft.fftshift(new_image_fft)
         self.fft_deque.append(new_image_fft)
 
-    def cross_power_spectrum(self, image_reference: ndimageNxM, image_target: ndimageNxM) -> ndimageNxMc:
+    def cross_power_spectrum(self, image_reference: cv2.typing.MatLike, image_target: cv2.typing.MatLike) -> cv2.typing.MatLike:
         """
         Description:
             Cross power spectrum of reference and target images (from current deque)
@@ -111,7 +105,7 @@ class ImageSequenceRegistrationPoc:
         pixel_shift = (int(pixel_shift[1]), int(pixel_shift[0]))  # convert [row, column] to (X, Y) format
         return ImageRegistrationResult(shift=pixel_shift, confidence=peak_value)
 
-    def register_images(self, image_reference: ndimageNxMx3 | ndimageNxM, image_target: ndimageNxMx3 | ndimageNxM) -> ImageRegistrationResult:
+    def register_images(self, image_reference: cv2.typing.MatLike, image_target: cv2.typing.MatLike) -> ImageRegistrationResult:
         """
         Description:
             Register images using phase only correlation
