@@ -23,7 +23,7 @@ class SteadyCameraCoarseFilter:
     """
     Description:
         Steady camera filter. This filter extracts steady camera segments in video. Coarse in the name of the filter means, it uses averaged frames
-        to speedup video processing. The downside of the averaging is this filter mey not be precise enough.
+        to speedup video processing. The downside of the averaging is the filter mey not be that precise.
     Remarks:
         As this approach uses frames averaging, at the begging and at the end of a video segment camera could be slightly non-steady.
         Also, when camera angle changes fast enough (in the period of one or several frames), this algorithm may not catch it.
@@ -33,34 +33,32 @@ class SteadyCameraCoarseFilter:
     def __init__(self,
                  video_filepath: str,
                  ocr: OcrBase,
-                 number_frames_to_average=20,
-                 poc_maximum_image_dimension=512,
-                 maximum_shift_length=1.5,
-                 registration_minimum_confidence=0.4,
+                 **kwargs
                  ):
         """
-        :param video_filepath: video file pathname
-        :param ocr: ocr model to use for text masking
-        :param number_frames_to_average: number of frames to average before registration
-        :param maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
+        :param video_filepath: video file pathname;
+        :param ocr: ocr model to use for text masking;
+        :param kwargs: see below.
+        :keyword number_frames_to_average: -- number of frames to average before registration
+        :keyword maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
         between respective frames.
-        :param registration_minimum_confidence: registration confidence threshold. If registration confidence less than registration_minimum_confidence, then
+        :keyword registration_minimum_confidence: registration confidence threshold. If registration confidence less than registration_minimum_confidence, then
         camera is not considered as steady.
         """
-        self.video_frames_batch = VideoFramesBatch(video_filepath, number_frames_to_average)
+        self.video_frames_batch = VideoFramesBatch(video_filepath, kwargs['number_frames_to_average'])
         self.ocr = ocr
         # Image registration section
-        self.maximum_shift_length = maximum_shift_length
+        self.maximum_shift_length = kwargs['maximum_shift_length']
         self.steady_camera_frames_ranges: list[range] = []
         self.registration_shifts: np.ndarray = np.empty((0, 2))
         self.registration_confidence: np.ndarray = np.empty((0,))
         self.averaged_frames_pair_deque = deque(maxlen=2)
         # Phase only correlation section
         self.poc_resolution: tuple[int, int]
-        self.poc_maximum_image_dimension = poc_maximum_image_dimension
+        self.poc_maximum_image_dimension = kwargs['poc_maximum_image_dimension']
         self._calculate_poc_resolution()
         self.poc_engine = ImageSequenceRegistrationPoc(self.poc_resolution)
-        self.poc_minimum_confidence = registration_minimum_confidence
+        self.poc_minimum_confidence = kwargs['registration_minimum_confidence']
 
     def _calculate_poc_resolution(self) -> None:
         """
@@ -68,16 +66,16 @@ class SteadyCameraCoarseFilter:
             Calculates factor for image resolution before using images registration. For computational reasons, all images fed to
             image registration procedure will have the same maximum resolution along some dimension.
         """
-        poc_scale_factor = float(self.poc_maximum_image_dimension) / max(self.video_frames_batch.video_reader.resolution)
+        poc_scale_factor = self.poc_maximum_image_dimension / max(self.video_frames_batch.video_reader.resolution)
         original_resolution = self.video_frames_batch.video_reader.resolution
-        poc_resolution = (round(original_resolution[0] * poc_scale_factor), round(original_resolution[1] * poc_scale_factor))
-        self.poc_resolution = int(poc_resolution[0]), int(poc_resolution[1])
+        poc_resolution = (int(original_resolution[0] * poc_scale_factor + 0.5), int(original_resolution[1] * poc_scale_factor + 0.5))
+        self.poc_resolution = poc_resolution[0], poc_resolution[1]
 
     def process(self, verbose=False) -> None:
         """
         Description:
-            Register images sequence using phase only correlation. Before performing registration all text is softly masked,
-            cause POC is sensitive to high gradients regions.
+            Register images sequence using phase only correlation. Before performing registration all text regions are masked
+            by a soft blurred masks, cause POC is sensitive to a high gradients regions.
         Remarks:
             Sometimes number of frames, given by cv2.VideoCapture.get(cv2.CAP_PROP_FRAME_COUNT) is not precise.
             So, accumulated VideoFramesBatch.VideoReader.current_frame_index used as a video frames number (after all frames had been read).
