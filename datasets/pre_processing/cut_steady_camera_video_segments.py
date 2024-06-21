@@ -1,8 +1,6 @@
 import time
 import os
 from os import listdir
-from os.path import isfile, join, splitext
-from pathlib import Path
 from utils.multiprocess import run_pool_steady_camera_filter
 from filters.steady_camera_filter.extract_video_segmens import yaml_parameters
 from filters.steady_camera_filter.extract_video_segmens import extract_and_write_steady_camera_segments
@@ -19,8 +17,8 @@ videos_extensions = ['.mp4', '.MP4', '.mkv', '.webm']
 use_multiprocessing = True
 number_processes = 4
 
-video_source_filepaths = [join(videos_source_folder, f) for f in listdir(videos_source_folder)
-                          if isfile(join(videos_source_folder, f)) and splitext(f)[-1] in videos_extensions]
+video_source_filepaths = [os.path.join(videos_source_folder, f) for f in listdir(videos_source_folder)
+                          if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
 os.makedirs(videos_target_folder, exist_ok=True)
 
 parameters = yaml_parameters('steady_camera_filter_parameters.yaml')

@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from CRAFT import CRAFTModel
-from cv2 import typing
 
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
@@ -29,7 +28,7 @@ class Craft(OcrBase):
             self.device = 'cpu'
         self.craft = CRAFTModel(craft_weights_folder, self.device, use_refiner=use_refiner, fp16=use_float16)
 
-    def pixel_mask(self, image: typing.MatLike, output_resolution: tuple[int, int]) -> typing.MatLike:
+    def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
         if len(image.shape) == 2:
             image = np.repeat(np.expand_dims(image, axis=2), 3, axis=2)
         image_dimensions = (image.shape[0], image.shape[1])
@@ -39,7 +38,7 @@ class Craft(OcrBase):
         return mask
 
     @staticmethod
-    def draw_polygons(image_shape: tuple[int, int], polygons: list[list[list[int]]]) -> np.ndarray:
+    def draw_polygons(image_shape: tuple[int, int], polygons: list) -> np.ndarray:
         """
         CRAFT outputs set of polygons to mask text in an image. This polygons then should be converted to an image mask.
         @image_shape: input image resolution
