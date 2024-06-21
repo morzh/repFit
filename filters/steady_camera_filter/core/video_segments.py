@@ -1,11 +1,7 @@
 import copy
 from dataclasses import dataclass
-from typing import Annotated, Literal, Self
-
+from typing import Self
 import numpy as np
-from numpy.typing import NDArray
-
-segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
 @dataclass(slots=True)
@@ -19,7 +15,7 @@ class VideoSegments:
     video_height: int
     video_fps: float
     frames_number: int
-    segments: segments_list
+    segments: np.ndarray
 
     def filter_by_time_duration(self, time_period_threshold: float) -> None:
         """

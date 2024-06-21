@@ -47,7 +47,8 @@ class VideoReader:
             return_frame = self.frame
             self.frame = _frame
             self._current_frame_index += 1
-            self._progress.update()
+            if self.use_tqdm:
+                self._progress.update()
             yield return_frame
 
     def __iter__(self):

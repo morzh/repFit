@@ -1,7 +1,7 @@
 import warnings
 from collections import deque
 from dataclasses import dataclass
-from typing import Annotated, Literal, Optional
+from typing import Optional
 
 import cv2
 import matplotlib.pyplot as plt

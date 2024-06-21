@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import ffmpeg
 
 
 def cut_by_bbox(image: np.ndarray, bbox: np.ndarray, w, h) -> np.ndarray:

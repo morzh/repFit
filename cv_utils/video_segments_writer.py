@@ -84,7 +84,9 @@ class VideoSegmentsWriter:
         :return: filename
         """
         video_filename_base, _ = self.extract_filename_base_extension()
-        filename_frames_range = '_' + str(segment[0]) + '-' + str(segment[1]) + '__'
+        start_frame = str(segment[0])
+        end_frame = str(segment[1])
+        filename_frames_range = '_' + start_frame + '-' + end_frame + '__'
         video_filename = video_filename_base + '__' + frames_range_prefix + filename_frames_range + '.mp4'
         output_filepath = os.path.join(self.output_folder, video_filename)
         return output_filepath
