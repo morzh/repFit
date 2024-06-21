@@ -30,7 +30,7 @@ class VideoSegmentsWriter:
         self.fps = fps
         self.scale = scale_factor
 
-    def write_segments(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
+    def write(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
         """
         Description:
             Write video segments as separate video files.
@@ -41,7 +41,7 @@ class VideoSegmentsWriter:
         if video_segments.segments.size == 0:
             return
 
-        if self.whole_video_segments_check(video_segments):
+        if video_segments.whole_video_segments_check():
             video_filename_base, _ = self.extract_filename_base_extension()
             output_filepath = os.path.join(os.path.join(self.output_folder, video_filename_base + '__' + filter_name + '__' + '.mp4'))
             shutil.copy(self.input_filepath, output_filepath)
@@ -66,72 +66,6 @@ class VideoSegmentsWriter:
                 if index_segment == video_segments.segments.shape[0]:
                     return
                 current_segment = video_segments.segments[index_segment]
-
-    def write_segments_gaps(self, video_segments: VideoSegments, filter_name='nonsteady') -> None:
-        """
-        Description:
-            This method calculates segments between given video segments and video frames range.
-            It could be used for debugging purposes to write video segments, where camera is not steady.
-        :param video_segments: video segments
-        :param filter_name: name of the filter of filtering stage (in other words prefix to frames range)
-        """
-        video_segments_gaps = self.calculate_segments_gaps(video_segments)
-        if video_segments_gaps.segments.size == 0:
-            return
-        self.write_segments(video_segments_gaps, filter_name)
-
-    def write(self, video_segments: VideoSegments, write_gaps: bool = False) -> None:
-        """
-        Description:
-            Write video segments.
-        :param video_segments: video segments
-        :param write_gaps: write video segments and gaps between segments
-        """
-
-        if write_gaps:
-            self.write_segments_gaps(video_segments)
-
-        self.write_segments(video_segments)
-
-    @staticmethod
-    def whole_video_segments_check(video_segments: VideoSegments) -> bool:
-        """
-        Description:
-            Checks if video_segments has only one segment with frame start equals zero and frame end equals frames number - 1
-        :return: True if there is only one whole range video segment, False otherwise
-        """
-        return (video_segments.segments.shape[0] == 1 and
-                video_segments.segments[0, 0] == 0 and
-                video_segments.segments[-1, -1] == video_segments.frames_number - 1)
-
-    @staticmethod
-    def calculate_segments_gaps(video_segments: VideoSegments) -> VideoSegments:
-        r"""
-        Description:
-            Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:
-
-            .. math::
-                \mathbf{C} \Big \{ [0, N_f - 1]  \ \backslash  \  \left ( \cup_{n=1}^{N_s} s_n \right) \Big \}
-
-            where :math:`N_f` -- number of frames, :math:`N_s` -- number of segments, :math:`\{s_n\}` -- segments,
-            :math:`\mathbf{C}` -- set closure.
-        :param video_segments: video segments information
-        :return: inverted video segments
-        """
-        segments = video_segments.segments.flatten()
-        segments = np.insert(segments, 0, 0)
-        segments = np.append(segments, video_segments.frames_number - 1)
-        segments = segments.reshape(-1, 2)
-
-        if segments[0, 0] == segments[0, 1]:
-            segments = np.delete(segments, 0, axis=0)
-        if segments[-1, 0] == segments[-1, 1]:
-            segments = np.delete(segments, -1, axis=0)
-
-        video_segments_gaps = copy.copy(video_segments)
-        video_segments_gaps.segments = segments
-
-        return video_segments_gaps
 
     def extract_filename_base_extension(self) -> tuple[str, str]:
         """

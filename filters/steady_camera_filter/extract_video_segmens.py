@@ -93,7 +93,9 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, **steady_camera_coarse_parameters)
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.calculate_steady_camera_ranges()
-    steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
+
+    # steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
+    steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
 
     if steady_camera_coarse_parameters['poc_registration_verbose']:
         camera_filter.print_registration_results()
@@ -111,6 +113,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     :param output_folder: output folder for trimmed videos
     :param video_segments information about video segments to trim
     :param parameters: parameters to write videos
+    :raises FileNotFoundError: when video_filepath does not exist
     """
     if not os.path.exists(video_filepath):
         raise FileNotFoundError(f'File {video_filepath} does not exist')
@@ -119,7 +122,12 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
                                                 output_folder=output_folder,
                                                 fps=video_segments.video_fps,
                                                 scale_factor=parameters['scale_factor'])
-    video_segments_writer.write(video_segments, write_gaps=parameters['use_segments_gaps'])
+
+    video_segments_writer.write(video_segments, filter_name='steady')
+
+    if parameters['use_segments_gaps']:
+        video_segments_complement = video_segments.segments_complement()
+        video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
 
 
 def extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
