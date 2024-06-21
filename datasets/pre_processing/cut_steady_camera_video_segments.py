@@ -14,7 +14,7 @@ videos_steady_subfolder = 'steady'
 videos_non_steady_subfolder = 'non_steady'
 videos_extensions = ['.mp4', '.MP4', '.mkv', '.webm']
 
-use_multiprocessing = True
+use_multiprocessing = False
 number_processes = 4
 
 video_source_filepaths = [os.path.join(videos_source_folder, f) for f in listdir(videos_source_folder)

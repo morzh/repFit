@@ -49,16 +49,16 @@ class SteadyCameraCoarseFilter:
         self.ocr = ocr
         # Image registration section
         self.maximum_shift_length = kwargs['maximum_shift_length']
-        self.steady_camera_frames_ranges: list[range] = []
+        # self.steady_camera_frames_ranges: list = []
         self.registration_shifts: np.ndarray = np.empty((0, 2))
         self.registration_confidence: np.ndarray = np.empty((0,))
         self.averaged_frames_pair_deque = deque(maxlen=2)
         # Phase only correlation section
         self.poc_resolution: tuple[int, int]
-        self.poc_maximum_image_dimension = kwargs['poc_maximum_image_dimension']
+        self.poc_maximum_image_dimension = kwargs['poc_maximum_dimension']
         self._calculate_poc_resolution()
         self.poc_engine = ImageSequenceRegistrationPoc(self.poc_resolution)
-        self.poc_minimum_confidence = kwargs['registration_minimum_confidence']
+        self.poc_minimum_confidence = kwargs['poc_minimum_confidence']
 
     def _calculate_poc_resolution(self) -> None:
         """
