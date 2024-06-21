@@ -1,12 +1,12 @@
 import warnings
-from dataclasses import dataclass
 from collections import deque
-import numpy as np
-import cv2
-from scipy import ndimage
-from numpy.typing import NDArray
+from dataclasses import dataclass
 from typing import Annotated, Literal, Optional
+
+import cv2
 import matplotlib.pyplot as plt
+import numpy as np
+from numpy.typing import NDArray
 
 ndimageNxMx3 = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]
 ndimageNxM = Annotated[NDArray[np.uint8], Literal["N", "M"]]

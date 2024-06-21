@@ -2,14 +2,14 @@ import copy
 import os
 import shutil
 from pathlib import Path
+from typing import Annotated, Literal
+
 import cv2
 import numpy as np
+from numpy.typing import NDArray
 
 from cv_utils.video_reader import VideoReader
 from filters.steady_camera_filter.core.video_segments import VideoSegments
-
-from typing import Annotated, Literal
-from numpy.typing import NDArray
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
@@ -108,7 +108,13 @@ class VideoSegmentsWriter:
     def calculate_segments_gaps(video_segments: VideoSegments) -> VideoSegments:
         r"""
         Description:
-            Video segments inversion. Method calculates minus in sense of set theory  :math:`[0, N_{frames} - 1]  \ \backslash  \ segments`.
+            Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:
+
+            .. math::
+                \mathbf{C} \Big \{ [0, N_f - 1]  \ \backslash  \  \left ( \cup_{n=1}^{N_s} s_n \right) \Big \}
+
+            where :math:`N_f` -- number of frames, :math:`N_s` -- number of segments, :math:`\{s_n\}` -- segments,
+            :math:`\mathbf{C}` -- set closure.
         :param video_segments: video segments information
         :return: inverted video segments
         """

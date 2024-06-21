@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 from cv2 import typing
 
 

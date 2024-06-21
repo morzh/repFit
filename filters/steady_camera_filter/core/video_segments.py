@@ -1,7 +1,7 @@
-import numpy as np
-
 from dataclasses import dataclass
 from typing import Annotated, Literal
+
+import numpy as np
 from numpy.typing import NDArray
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]

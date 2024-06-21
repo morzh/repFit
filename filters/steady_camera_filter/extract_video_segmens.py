@@ -1,18 +1,19 @@
 import os.path
 import shutil
 import warnings
-import numpy as np
-import cv2
-import yaml
+from typing import Annotated, Literal
 
-from typing import Annotated, Literal, TypeVar, Optional
+import cv2
+import numpy as np
+import yaml
 from numpy.typing import NDArray
 
+from cv_utils.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.ocr.craft import Craft
 from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
 from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
-from filters.steady_camera_filter.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
-from cv_utils.video_segments_writer import VideoSegmentsWriter
+from filters.steady_camera_filter.core.steady_camera_coarse_filter import \
+    SteadyCameraCoarseFilter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]

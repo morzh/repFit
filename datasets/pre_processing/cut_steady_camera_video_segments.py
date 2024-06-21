@@ -14,7 +14,7 @@ videos_source_folder = os.path.join(videos_root_folder, 'squats_2022')
 videos_target_folder = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera')
 videos_steady_subfolder = 'steady'
 videos_non_steady_subfolder = 'non_steady'
-videos_extensions = ['.mp4', 'MP4', '.mkv', '.webm']
+videos_extensions = ['.mp4', '.MP4', '.mkv', '.webm']
 
 use_multiprocessing = True
 number_processes = 4

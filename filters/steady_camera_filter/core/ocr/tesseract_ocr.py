@@ -1,6 +1,7 @@
-import pytesseract
-import numpy as np
 import cv2
+import numpy as np
+import pytesseract
+
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
 

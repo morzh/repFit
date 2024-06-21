@@ -1,10 +1,10 @@
-import numpy as np
-from CRAFT import CRAFTModel, draw_polygons
 import cv2
+import numpy as np
+from CRAFT import CRAFTModel
 from cv2 import typing
+
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
-from easyocr.craft import CRAFT
 craft_weights_folder = '/home/anton/work/fitMate/repFit/3rd_party/weights/craft'
 
 
