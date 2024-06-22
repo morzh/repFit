@@ -4,7 +4,7 @@ from os import listdir
 from utils.multiprocess import run_pool_steady_camera_filter
 from filters.steady_camera_filter.extract_video_segmens import yaml_parameters
 from filters.steady_camera_filter.extract_video_segmens import extract_and_write_steady_camera_segments
-from filters.steady_camera_filter.extract_video_segmens import differentiate_steady_non_steady_to_subfolders
+from filters.steady_camera_filter.extract_video_segmens import move_steady_non_steady_videos_to_subfolders
 
 
 videos_root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'
@@ -35,8 +35,8 @@ else:
 time_end = time.time()
 print(f'Filtering time for {len(video_source_filepaths)} videos took {time_end - time_start} seconds')
 
-differentiate_steady_non_steady_to_subfolders(videos_target_folder,
-                                              'steady',
-                                              'nonsteady',
-                                              videos_steady_subfolder,
-                                              videos_non_steady_subfolder)
+move_steady_non_steady_videos_to_subfolders(videos_target_folder,
+                                            'steady',
+                                            'nonsteady',
+                                            videos_steady_subfolder,
+                                            videos_non_steady_subfolder)
