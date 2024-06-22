@@ -27,5 +27,5 @@ class VideoFramesBatch:
                 index = 0
                 yield batch
         video_frames_number = self.video_reader.current_frame_index
-        last_batch_frames_number = self.video_reader.n_frames - int(video_frames_number / self.batch_size) * self.batch_size
+        last_batch_frames_number = video_frames_number - int(video_frames_number / self.batch_size) * self.batch_size
         yield batch[:last_batch_frames_number]

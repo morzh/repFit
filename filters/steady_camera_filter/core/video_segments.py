@@ -53,10 +53,10 @@ class VideoSegments:
         if segments[-1, 0] == segments[-1, 1]:
             segments = np.delete(segments, -1, axis=0)
 
-        video_segments_gaps = copy.copy(self)
-        video_segments_gaps.segments = segments
+        video_segments_complement = copy.copy(self)
+        video_segments_complement.segments = segments
 
-        return video_segments_gaps
+        return video_segments_complement
 
     def whole_video_segments_check(self) -> bool:
         """

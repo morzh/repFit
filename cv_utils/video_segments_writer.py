@@ -42,7 +42,8 @@ class VideoSegmentsWriter:
 
         if video_segments.whole_video_segments_check():
             video_filename_base, _ = self.extract_filename_base_extension()
-            output_filepath = os.path.join(os.path.join(self.output_folder, video_filename_base + '__' + filter_name + '__' + '.mp4'))
+            video_filename = f'{video_filename_base}' + '__' + filter_name + '__' + '.mp4'
+            output_filepath = os.path.join(self.output_folder, video_filename)
             shutil.copy(self.input_filepath, output_filepath)
             return
 
@@ -50,16 +51,18 @@ class VideoSegmentsWriter:
         resolution = (video_segments.video_width, video_segments.video_height)
         index_segment = 0
         current_segment = video_segments.segments[index_segment]
+        current_segment_start = current_segment[0]
+        current_segment_end = current_segment[1]
 
         for index_frame, frame in enumerate(video_reader):
-            if index_frame == current_segment[0]:
+            if index_frame == current_segment_start:
                 current_output_filepath = self.current_filepath_segment(current_segment, filter_name)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.fps, resolution)
 
-            if current_segment[0] <= index_frame <= current_segment[1]:
+            if current_segment_start <= index_frame <= current_segment_end:
                 current_video_writer.write(frame)
 
-            if index_frame == current_segment[1]:
+            if index_frame == current_segment_end:
                 current_video_writer.release()
                 index_segment += 1
                 if index_segment == video_segments.segments.shape[0]:
@@ -86,7 +89,6 @@ class VideoSegmentsWriter:
         video_filename_base, _ = self.extract_filename_base_extension()
         start_frame = str(segment[0])
         end_frame = str(segment[1])
-        filename_frames_range = '_' + start_frame + '-' + end_frame + '__'
-        video_filename = video_filename_base + '__' + frames_range_prefix + filename_frames_range + '.mp4'
+        video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
         output_filepath = os.path.join(self.output_folder, video_filename)
         return output_filepath
