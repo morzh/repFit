@@ -1,6 +1,6 @@
 import os.path
 from ultralytics import YOLO
-from paths import YOLO_BBOXES_DPATH, VIDEO_DPATH
+from paths import YOLO_BBOXES_DPATH, VIDEO_DPATH, STABLE_FILTER_DPATH
 from pathlib import Path
 from constants import min_track_length_sec, min_occurrence_rate
 from cv_utils.video_reader import VideoReader
@@ -8,7 +8,7 @@ from utils.file_reader import write_pickle
 
 
 class HumanTracker:
-    def __init__(self, model_name: str = 'yolov8x.pt'):
+    def __init__(self, model_name: str = 'yolov8x-pose.pt'):
         self.detector_model = YOLO(model_name)
         self.detector_params = dict(
             classes=0,
@@ -28,14 +28,24 @@ class HumanTracker:
         self.video_reader = VideoReader(video_fpath)
         tracks = {}
         for frame in self.video_reader.frame_generator():
-            results = self.detector_model.track(frame, **self.detector_params)
-            idxs = results[0].boxes.id
+            results = self.detector_model.track(frame, **self.detector_params)[0]
+            idxs = results.boxes.id
             if idxs is not None:
-                for idx in results[0].boxes.id:
-                    idx = int(idx)
+                for bbox, keypoints in zip(
+                        results.boxes.data.numpy(),
+                        results.keypoints.data.cpu().numpy()
+                ):
+                    try:
+                        idx = int(bbox[4])
+                    except Exception as ex:
+                        continue
                     if idx not in tracks:
                         tracks[idx] = {}
-                    tracks[idx][self.video_reader.progress] = results[0].boxes.data.numpy()
+                    tracks[idx][self.video_reader.progress] = {
+                        "bbox": bbox,
+                        "keypoints": keypoints
+                        }
+
         return tracks
 
 
@@ -44,6 +54,7 @@ def extract_stable_tracks(video_fpath: Path):
     video_fname = video_fpath.name
     try:
         result_fpath = (YOLO_BBOXES_DPATH / video_fname).with_suffix('.pickle')
+        filtered_fpath = (STABLE_FILTER_DPATH / video_fname).with_suffix('.pickle')
         if result_fpath.is_file():
             print(f"Skip processed video {video_fname}. Result fpath: {str(result_fpath)}")
             return
@@ -52,12 +63,13 @@ def extract_stable_tracks(video_fpath: Path):
 
         tracker = HumanTracker()
         tracks = tracker.extract_tracks(video_fpath)
+        write_pickle(tracks, result_fpath)
 
         min_track_length_frames = min_track_length_sec * tracker.video_reader.fps
         stable_tracks = tracks_filter(tracks, min_track_length_frames)
 
-        write_pickle(stable_tracks, result_fpath)
-        print(f"Save stable track detection results to: {str(result_fpath)}")
+        write_pickle(stable_tracks, filtered_fpath)
+        print(f"Save stable track detection results to: {str(filtered_fpath)}")
     except Exception as ex:
         print(ex)
 
@@ -76,4 +88,4 @@ def tracks_filter(tracks: dict, min_track_length_frames: int):
 
 if __name__ == '__main__':
     videos = list(VIDEO_DPATH.glob('*'))
-    extract(videos[0])
+    extract_stable_tracks(videos[0])

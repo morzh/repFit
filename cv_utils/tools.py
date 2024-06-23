@@ -18,27 +18,12 @@ def cut_by_bbox(image: np.ndarray, bbox: np.ndarray, w, h) -> np.ndarray:
     return bbox_img
 
 
-def run_trim():
-    # cut part of a video by time
-    video_fname = '140kg Squat 6 reps-viZUvjS0RGY.mkv'
-    video_fpath = VIDEO_DPATH/video_fname
-    with open((YOLO_BBOXES_DPATH/video_fname).with_suffix('.json'), 'r') as file:
-        video_info = json.load(file)
-
-    cap = cv2.VideoCapture(str(video_fpath))
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    result_fpath = CUT_VIDEO_DPATH / video_fname
-    trim(str(video_fpath), str(result_fpath), video_info['1'][0]*fps, video_info['1'][-1]*fps)
-
-
 def trim(in_file: str, out_file: str, start: int, end: int):
-    in_file_probe_result = ffmpeg.probe(in_file)
-    in_file_duration = in_file_probe_result.get("format", {}).get("duration", None)
-    print(in_file_duration)
-
+    in_file = str(in_file)
     input_stream = ffmpeg.input(in_file)
-
-    pts = "PTS-STARTPTS"
-    video = input_stream.trim(start=start, end=end).setpts(pts)
-    output = ffmpeg.output(video, out_file, format="mp4")
+    probe = ffmpeg.probe(in_file)
+    _fps = probe['streams'][0]['r_frame_rate'].split('/')
+    fps = float(_fps[0]) / float(_fps[1])
+    video = input_stream.trim(start=start/fps, end=end/fps).setpts("PTS-STARTPTS")
+    output = ffmpeg.output(video, str(out_file), format="mp4")
     output.run()
