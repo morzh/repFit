@@ -2,7 +2,6 @@ import os
 import numpy as np
 import argparse
 from tqdm import tqdm
-import imageio
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -10,8 +9,6 @@ from lib.utils.tools import *
 from lib.utils.learning import *
 from lib.utils.utils_data import flip_data
 from lib.data.dataset_wild import WildDetDataset
-from lib.utils.vismo import render_and_save
-from pathlib import Path
 import shutil
 
 
@@ -62,11 +59,8 @@ testloader_params = {
 }
 
 sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
-from VideoFilter.paths import (
-    RESULTS_DPATH,
-    CRED_FILTERED_VIDEO_DPATH,
+from filters.video_filter.paths import (
     JOINTS2d_TRACK_DPATH,
-    JOINTS2d_EXTRA_INFO_DPATH,
     VIDEO_WITH_2D_JOINTS,
     FINAL_VIDEOS_DPATH,
     JOINTS_3D_DPATH
