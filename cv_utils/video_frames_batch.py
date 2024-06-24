@@ -18,9 +18,10 @@ class VideoFramesBatch:
         self.video_reader = VideoReader(video_filepath, use_tqdm=False)
 
     def __iter__(self):
-        batch = np.empty((self.batch_size, self.video_reader.height, self.video_reader.width, 3))
         index = 0
         for frame in self.video_reader:
+            if not index:
+                batch = np.empty((self.batch_size, self.video_reader.height, self.video_reader.width, 3))
             batch[index] = frame
             index += 1
             if index == self.batch_size:
