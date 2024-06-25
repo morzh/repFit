@@ -23,7 +23,7 @@ class PrintColors:
     """
     Description:
         This class helps with colored text printing/
-        Usage: print(f'{PrintColors.BOLD}some text{PrintColors.ENDC}')
+        Example of usage: print(f'{PrintColors.BOLD}some text{PrintColors.ENDC}')
     """
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
