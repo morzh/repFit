@@ -26,6 +26,7 @@ class VideoReader:
         self._current_frame_index: int = 0
         self.success = False
         self.frame = None
+        self.skip_frames: int = 0
         self.use_tqdm = use_tqdm
         self._init_info()
 
@@ -50,6 +51,15 @@ class VideoReader:
             if self.use_tqdm:
                 self._progress.update()
             yield return_frame
+
+    def frames_skip_generator(self):
+        while self.success:
+            self.success, _frame = self.video_capture.read()
+            return_frame = self.frame
+            self.frame = _frame
+            self._current_frame_index += 1
+            yield return_frame
+        pass
 
     def __iter__(self):
         while self.success:
