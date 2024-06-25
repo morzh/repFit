@@ -94,13 +94,10 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     match steady_camera_coarse_parameters['text_mask_model']:
         case 'craft':
             craft_parameters = steady_camera_coarse_parameters['text_mask_models']['craft']
-            ocr_model = Craft(use_cuda=craft_parameters['use_cuda'],
-                              use_refiner=craft_parameters['use_refiner'],
-                              use_float16=craft_parameters['use_float_16'])
+            ocr_model = Craft(**craft_parameters)
         case 'easy_ocr':
             easyocr_parameters = steady_camera_coarse_parameters['text_mask_models']['easy_ocr']
-            ocr_model = EasyOcr(confidence_threshold=easyocr_parameters['confidence_threshold'],
-                                minimal_resolution=easyocr_parameters['minimal_resolution'])
+            ocr_model = EasyOcr(**easyocr_parameters)
         case 'tesseract':
             tesseract_parameters = steady_camera_coarse_parameters['text_mask_models']['tesseract']
             ocr_model = TesseractOcr(confidence=tesseract_parameters['confidence_threshold'])

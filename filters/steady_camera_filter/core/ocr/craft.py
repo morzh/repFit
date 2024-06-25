@@ -16,16 +16,22 @@ class Craft(OcrBase):
     arXiv PDF:
         https://arxiv.org/pdf/1904.01941
     """
-    def __init__(self, use_cuda=True, use_refiner=False, use_float16=False):
+    def __init__(self, **kwargs):
         """
         @use_cuda: use CUDA for text regions calculations
         @use_refiner: perform refinement step for text regions
         @use_fp16: if True, use float16 precision, float32 otherwise
         """
+
+        use_refiner = kwargs.get('use_refiner', False)
+        use_float16 = kwargs.get('use_float16', False)
+        use_cuda = kwargs.get('use_cuda', True)
+
         if use_cuda:
             self.device = 'cuda'
         else:
             self.device = 'cpu'
+
         self.craft = CRAFTModel(craft_weights_folder, self.device, use_refiner=use_refiner, fp16=use_float16)
 
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:

@@ -9,13 +9,16 @@ class EasyOcr(OcrBase):
     """
     Jaided EasyOCR for text recognition in images.
     """
-    def __init__(self, confidence_threshold, minimal_resolution: int = 512):
+    def __init__(self, **kwargs):
         """
         @confidence_threshold: minimum confidence for detected text
         @minimal resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
         """
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
         self.model_ocr = easyocr.Reader(self.ocr_lang_list)
+
+        confidence_threshold = kwargs.get('confidence_threshold', 0.1)
+        minimal_resolution = kwargs.get('minimal_resolution', 512)
         self.ocr_confidence = confidence_threshold
         self.minimum_resolution = minimal_resolution
 
