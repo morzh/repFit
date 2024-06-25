@@ -20,6 +20,11 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
 class PrintColors:
+    """
+    Description:
+        This class helps with colored text printing/
+        Usage: print(f'{PrintColors.BOLD}some text{PrintColors.ENDC}')
+    """
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'
@@ -105,8 +110,6 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, **steady_camera_coarse_parameters)
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
-
-    # steady_segments = camera_filter.filter_segments_by_time(steady_segments, parameters['minimum_steady_camera_time_segment'])
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
 
     if steady_camera_coarse_parameters['poc_registration_verbose']:
