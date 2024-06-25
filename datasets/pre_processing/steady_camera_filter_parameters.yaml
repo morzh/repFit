@@ -1,7 +1,7 @@
 video_segments_extraction:
   verbose_filename: true
-  minimum_steady_camera_time_segment: 8  # time in seconds
-  minimum_non_steady_camera_time_segment: 2 # time in seconds
+  minimum_steady_camera_time_segment: 5  # time in seconds
+
 
 
   resolution_filter:
@@ -36,4 +36,5 @@ video_segments_extraction:
 
 
 video_segments_output:
-  write_segments_complement: false
+  write_segments_complement: true
+  minimum_non_steady_camera_time_segment: 2 # time in seconds

@@ -19,6 +19,18 @@ from filters.steady_camera_filter.core.video_segments import VideoSegments
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
+class PrintColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
 def yaml_parameters(filepath: str) -> dict:
     """
     Description:
@@ -67,7 +79,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        print(video_filename)
+        print(f'{PrintColors.BOLD}{video_filename}{PrintColors.ENDC}')
 
     steady_camera_coarse_parameters = parameters['steady_camera_coarse_filter']
     number_frames_to_average = steady_camera_coarse_parameters['number_frames_to_average']
@@ -126,7 +138,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
 
     if parameters['write_segments_complement']:
         video_segments_complement = video_segments.complement()
-        time_threshold = parameters['video_segments_extraction']['minimum_non_steady_camera_time_segment']
+        time_threshold = parameters['minimum_non_steady_camera_time_segment']
         video_segments_complement.filter_by_time_duration(time_threshold)
         video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
 
