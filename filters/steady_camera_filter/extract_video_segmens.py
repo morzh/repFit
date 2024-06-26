@@ -100,7 +100,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
             ocr_model = EasyOcr(**easyocr_parameters)
         case 'tesseract':
             tesseract_parameters = steady_camera_coarse_parameters['text_mask_models']['tesseract']
-            ocr_model = TesseractOcr(confidence=tesseract_parameters['confidence_threshold'])
+            ocr_model = TesseractOcr(**tesseract_parameters)
         case _:
             raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
 

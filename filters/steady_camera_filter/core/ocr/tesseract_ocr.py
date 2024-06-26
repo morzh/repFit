@@ -9,7 +9,8 @@ class TesseractOcr(OcrBase):
     """
     Google Tesseract text recognition engine for text masking
     """
-    def __init__(self, confidence=0.1):
+    def __init__(self, **kwargs):
+        confidence = kwargs.get('confidence', 0.1)
         self.confidence = 100 * confidence
 
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
