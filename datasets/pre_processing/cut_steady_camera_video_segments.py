@@ -22,6 +22,8 @@ video_source_filepaths = [os.path.join(videos_source_folder, f) for f in listdir
 os.makedirs(videos_target_folder, exist_ok=True)
 
 parameters = yaml_parameters('steady_camera_filter_parameters.yaml')
+
+['Squats onthe Cable Core-Xwocbi-tp2o.mkv', 'тётка', '500LB SQUAT!!-LVvxnPXRrbs',  бразилка, 'LEGS _ I LOVE SQUAT MACHINES-o2R4TZouG1I_', 'Over 35yr VS 100 Rep Squat Challenge-zPn0yFrJ3_Y__steady_0-644__']
 time_start = time.time()
 if use_multiprocessing:
     run_pool_steady_camera_filter(extract_and_write_steady_camera_segments,

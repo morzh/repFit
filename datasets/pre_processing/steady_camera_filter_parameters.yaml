@@ -2,8 +2,6 @@ video_segments_extraction:
   verbose_filename: true
   minimum_steady_camera_time_segment: 5  # time in seconds
 
-
-
   resolution_filter:
     minimum_dimension_resolution: 256
 
