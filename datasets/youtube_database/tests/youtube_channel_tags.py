@@ -23,13 +23,12 @@ database_channel_tags = []
 cursor.execute("""
     SELECT youtube_id, GROUP_CONCAT(tag,'\n') AS tags_for_this_object 
     FROM ChannelToTagsMapping 
-    JOIN YoutubeChannels ON from_youtube_channel_id = YoutubeChannels.id
+    JOIN YoutubeChannels ON from_channel_id = YoutubeChannels.id
     JOIN ChannelTags ON to_channel_tag_id = ChannelTags.tag_id
     GROUP BY youtube_id
 """)
 database_tags_data = cursor.fetchall()
 database_tags_data = {entry[0]: entry[1].split('\n') for entry in database_tags_data}
-# pprint.pprint(database_tags_data)
 
 for excel_index, current_excel_filename in enumerate(excel_filenames):
     if excel_index == 10:
@@ -50,5 +49,3 @@ for excel_index, current_excel_filename in enumerate(excel_filenames):
     print(current_database_tags)
     print(current_channel_fetched_tags)
     print(current_database_tags == current_channel_fetched_tags)
-
-
