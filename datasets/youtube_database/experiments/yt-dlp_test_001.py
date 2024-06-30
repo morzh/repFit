@@ -71,17 +71,6 @@ def yt_dlp_extract_video_information(video_url, print_info=False):
     return video_info
 
 
-'''
-yt_opts = {
-    'verbose': True,
-    'skip_download': True,
-    'dump_single_json': True,
-    'write_json': True,
-    'write_info_json': True,
-    'write_annotations': True,
-    'write_thumbnail': True,
-}
-'''
 
 url = "https://www.youtube.com/watch?v=b1Fo_M_tj6w"
 current_info = yt_dlp_extract_video_information(url, print_info=True)

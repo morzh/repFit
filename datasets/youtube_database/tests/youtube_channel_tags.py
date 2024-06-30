@@ -3,7 +3,7 @@ import pprint
 import sqlite3
 from deep_translator import GoogleTranslator
 
-from utils.youtube.youtube_information import extract_youtube_channel_information
+from utils.youtube.fetch_information import fetch_youtube_channel_information
 
 
 root_filepath = '/home/anton/work/fitMate/datasets'
@@ -35,7 +35,7 @@ for excel_index, current_excel_filename in enumerate(excel_filenames):
         break
     current_excel_basename, _ = os.path.splitext(current_excel_filename)
     current_youtube_channel_url = 'https://www.youtube.com/@' + current_excel_basename
-    current_information = extract_youtube_channel_information(current_youtube_channel_url, print_info=False)
+    current_information = fetch_youtube_channel_information(current_youtube_channel_url, print_info=False)
 
     current_channel_tags = current_information.get('tags', [])
     current_youtube_id = current_information.get('id', None)

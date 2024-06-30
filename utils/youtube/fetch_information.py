@@ -86,7 +86,7 @@ def delete_redundant_channel_keys(info: dict) -> None:
     info.pop('channel_is_verified', None)
 
 
-def extract_youtube_video_information(video_url, print_info=False):
+def fetch_youtube_video_information(video_url, print_info=False):
     with yt_dlp.YoutubeDL({}) as ydl:
         video_info = ydl.extract_info(video_url, download=False)
         delete_redundant_video_keys(video_info)
@@ -95,7 +95,7 @@ def extract_youtube_video_information(video_url, print_info=False):
     return video_info
 
 
-def extract_youtube_channel_information(youtube_channel_url, print_info=False):
+def fetch_youtube_channel_information(youtube_channel_url, print_info=False):
     ydl_opts = {
         'playlist_items': '1',
         'extract_flat': 'in_playlist',
