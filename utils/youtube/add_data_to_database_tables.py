@@ -20,7 +20,6 @@ def add_channel_data(current_channel_id: str, connection) -> None:
     del channel_information['id']
     del channel_information['channel_id']
     del channel_information['channel']
-    # channel_information['excel_filename'] = excel_filename
 
     channel_information['description'] = GoogleTranslator(source='auto', target='en').translate(channel_information['description'])
     channel_information['tags'] = GoogleTranslator(source='auto', target='en').translate_batch(channel_information['tags'])
@@ -38,6 +37,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: any) -> d
     video_title = GoogleTranslator(source='auto', target='en').translate(video_information['title'])
     video_duration = video_information['duration']
     video_chapters = video_information['chapters']
+    del video_information['id']
     del video_information['title']
     del video_information['duration']
     del video_information['chapters']

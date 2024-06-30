@@ -11,8 +11,10 @@ from utils.youtube.fetch_information import fetch_youtube_channel_information
 print(f'{sqlite3.sqlite_version=}')
 
 root_filepath = '/home/anton/work/fitMate/datasets'
+
 excel_links_folder = 'youtube_channels_links'
 excel_links_path = os.path.join(root_filepath, excel_links_folder)
+
 database_filename = 'youtube_rep_fit_database.db'
 database_filepath = os.path.join(root_filepath, database_filename)
 
