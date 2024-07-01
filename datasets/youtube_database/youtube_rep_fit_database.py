@@ -22,7 +22,7 @@ connection = sqlite3.connect(database_filepath)
 cursor = connection.cursor()
 
 """
-Tables for YouTube database. There are three tables, one of them for channels, one for videos and the last for video chapters.
+Tables for YouTube database. There are three tables, first for channels, second for videos and third for video chapters.
 """
 cursor.execute('''PRAGMA foreign_keys = ON;''')
 cursor.execute('''
@@ -32,7 +32,6 @@ cursor.execute('''
         info TEXT
         )
     ''')
-
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS YoutubeVideo (
         id TEXT PRIMARY KEY,
@@ -43,27 +42,27 @@ cursor.execute('''
         FOREIGN KEY (channel_id_fk) REFERENCES YoutubeChannel(id) ON DELETE CASCADE
         )
 ''')
-
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS VideosChapter (
         chapter_id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
         start_time INTEGER,
         end_time INTEGER,
-        is_youtube_chapter INTEGER,
-        video_id TEXT,
-        FOREIGN KEY (video_id) REFERENCES YoutubeVideo(id) ON DELETE CASCADE
+        chapter_source TEXT,
+        video_id_fk TEXT,
+        FOREIGN KEY (video_id_fk) REFERENCES YoutubeVideo(id) ON DELETE CASCADE
         )
 ''')
 connection.commit()
 
 excel_filenames = [f for f in os.listdir(excel_links_path) if os.path.isfile(os.path.join(excel_links_path, f)) and f.endswith('xlsx')]
+
 for excel_file_index, excel_filename in enumerate(excel_filenames):
     excel_basename, _ = os.path.splitext(excel_filename)
     current_channel_id = '@' + excel_basename
     cursor.execute("""SELECT id FROM YoutubeChannel""")
     channels_ids = cursor.fetchall()
-    if current_channel_id not in channels_ids:
+    if (current_channel_id,) not in channels_ids:
         add_channel_data(current_channel_id, connection)
 
     excel_filepath = os.path.join(excel_links_path, excel_filename)
@@ -77,7 +76,7 @@ for excel_file_index, excel_filename in enumerate(excel_filenames):
         cursor.execute("""SELECT id FROM YoutubeVideo""")
         database_video_ids = cursor.fetchall()
         current_video_id = video_url.split('&t=')[0][-11:]
-        if current_video_id not in database_video_ids:
+        if (current_video_id,) not in database_video_ids:
             current_chapters = add_channel_video_data(current_video_id, current_channel_id, connection)
             add_video_chapters_data(current_chapters, current_video_id, connection)
 
