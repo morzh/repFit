@@ -5,8 +5,8 @@ import json
 import pandas as pd
 from deep_translator import GoogleTranslator
 
-from utils.youtube.add_data_to_database_tables import add_channel_data, add_channel_video_data, add_video_chapters_data
-from utils.youtube.fetch_information import fetch_youtube_channel_information
+from utils.youtube_database.add_data_to_database_tables import add_channel_data, add_channel_video_data, add_video_chapters_data
+from utils.youtube_database.fetch_information import fetch_youtube_channel_information
 
 print(f'{sqlite3.sqlite_version=}')
 
@@ -46,9 +46,9 @@ cursor.execute('''
     CREATE TABLE IF NOT EXISTS VideosChapter (
         chapter_id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
-        start_time INTEGER,
-        end_time INTEGER,
-        chapter_source TEXT,
+        start_time REAL,
+        end_time REAL,
+        source TEXT,
         video_id_fk TEXT,
         FOREIGN KEY (video_id_fk) REFERENCES YoutubeVideo(id) ON DELETE CASCADE
         )
