@@ -114,8 +114,8 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             video_information['description'] = GoogleTranslator(source='auto', target='en').translate(video_information['description'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating video {video_id} description to English request error::{error.message}')
-        except deep_translator.exceptions.NotValidLength as error:
-            logger.info(f'{video_id} video description is too long::{error.message}')
+        except deep_translator.exceptions.NotValidLength:
+            logger.info(f'{video_id} video description is too long.')
 
     if len(video_information['categories']):
         try:
