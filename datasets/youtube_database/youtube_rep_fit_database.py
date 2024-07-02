@@ -6,8 +6,8 @@ from loguru import logger
 from utils.youtube_database.add_data_to_database_tables import add_channel_data, add_channel_video_data, add_video_chapters_data, define_database_tables
 
 
-print(f'{sqlite3.sqlite_version=}')
-logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="10 days", compression="zip")
+logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
+logger.info(f'{sqlite3.sqlite_version=}')
 
 
 @logger.catch
