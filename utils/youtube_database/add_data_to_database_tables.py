@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import yt_dlp
 from deep_translator import GoogleTranslator
 import deep_translator.exceptions
 from loguru import logger
@@ -58,7 +59,12 @@ def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
     cursor = connection.cursor()
     youtube_channel_url = f'https://www.youtube.com/{channel_id}'
 
-    channel_information = fetch_youtube_channel_information(youtube_channel_url, verbose=False)
+    try:
+        channel_information = fetch_youtube_channel_information(youtube_channel_url, verbose=False)
+    except (yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError) as error:
+        logger.error(error.msg)
+        return
+
     current_channel_name = channel_information['channel']
     channel_information_delete_keys_list = ['id', 'channel_id', 'channel']
     delete_keys_from_dictionary(channel_information, channel_information_delete_keys_list)
@@ -95,7 +101,11 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
     :return: list of chapters of the YouTube video or None
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
-    video_information = fetch_youtube_video_information(video_url, verbose=False)
+    try:
+        video_information = fetch_youtube_video_information(video_url, verbose=False)
+    except (yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError) as error:
+        logger.error(error.msg)
+        return
 
     video_title = video_information['title']
     video_duration = video_information['duration']
