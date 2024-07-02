@@ -5,6 +5,7 @@ from loguru import logger
 
 from utils.youtube_database.add_data_to_database_tables import add_channel_data, add_channel_video_data, add_video_chapters_data, define_database_tables
 
+
 print(f'{sqlite3.sqlite_version=}')
 
 root_filepath = '/home/anton/work/fitMate/datasets'
@@ -17,7 +18,7 @@ connection = sqlite3.connect(database_filepath)
 cursor = connection.cursor()
 excel_filenames = [f for f in os.listdir(excel_links_path) if os.path.isfile(os.path.join(excel_links_path, f)) and f.endswith('xlsx')]
 
-logger.add('fetch_database.log', format="{time} {level} {message}", level="DEBUG", retention="10 days", compression="zip")
+logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="10 days", compression="zip")
 define_database_tables(connection)
 
 for excel_file_index, excel_filename in enumerate(excel_filenames):
