@@ -1,9 +1,8 @@
 import json
 import sqlite3
-import yt_dlp
 from deep_translator import GoogleTranslator
 import deep_translator.exceptions
-from retry import retry
+from loguru import logger
 
 from utils.youtube_database.fetch_information import (fetch_youtube_channel_information,
                                                       fetch_youtube_video_information,
@@ -68,15 +67,15 @@ def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
         try:
             channel_information['description'] = GoogleTranslator(source='auto', target='en').translate(channel_information['description'])
         except deep_translator.exceptions.RequestError as error:
-            print(f'Translating channel description to English error::{error.message}')
-        except deep_translator.exceptions.NotValidLength as error:
-            print(f'Channel description is too long::{error.message}')
+            logger.info(f'Translating channel {channel_id} description to English error::{error.message}')
+        except deep_translator.exceptions.NotValidLength:
+            logger.info(f'Channel {channel_id} description is too long.')
 
     if len(channel_information['tags']):
         try:
             channel_information['tags'] = GoogleTranslator(source='auto', target='en').translate_batch(channel_information['tags'])
         except deep_translator.exceptions.RequestError as error:
-            print(f'Translating channel tags to English error::{error.message}')
+            logger.info(f'Translating channel {channel_id} tags to English error::{error.message}')
 
     current_information_json = json.dumps(channel_information)
     cursor.execute("""INSERT INTO YoutubeChannel (id, name, info) VALUES (?, ?, ?)""",
@@ -108,21 +107,21 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
     try:
         video_title = GoogleTranslator(source='auto', target='en').translate(video_title)
     except deep_translator.exceptions.RequestError as error:
-        print(f'Translating video title to English error::{error.message}')
+        logger.info(f'Translating {video_id} video title to English error::{error.message}')
 
     if len(video_information['description']):
         try:
             video_information['description'] = GoogleTranslator(source='auto', target='en').translate(video_information['description'])
         except deep_translator.exceptions.RequestError as error:
-            print(f'Translating video description to English error::{error.message}')
+            logger.info(f'Translating video {video_id} description to English request error::{error.message}')
         except deep_translator.exceptions.NotValidLength as error:
-            print(f'Video description is too long::{error.message}')
+            logger.info(f'{video_id} video description is too long::{error.message}')
 
     if len(video_information['categories']):
         try:
             video_information['categories'] = GoogleTranslator(source='auto', target='en').translate_batch(video_information['categories'])
         except deep_translator.exceptions.RequestError as error:
-            print(f'Translating video categories to English error::{error.message}')
+            logger.info(f'Translating {video_id} video categories to English request error::{error.message}')
 
     information_json = json.dumps(video_information)
     cursor = connection.cursor()
@@ -151,7 +150,7 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
         try:
             chapter['title'] = GoogleTranslator(source='auto', target='en').translate(chapter['title'])
         except deep_translator.exceptions.RequestError as error:
-            print(f'Translating chapter title to English error::{error.message}')
+            logger.info(f'Translating chapter title to English request error::{error.message}')
 
         cursor.execute("""INSERT INTO VideosChapter (title, start_time, end_time, source, video_id_fk) VALUES (?, ?, ?, ?, ?)""",
                        (chapter['title'], float(chapter['start_time']), float(chapter['end_time']), 'youtube', video_id)
