@@ -102,7 +102,7 @@ def delete_keys_from_dictionary(video_information: dict, keys: list) -> None:
         video_information.pop(key, None)
 
 
-@retry((yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError), delay=1, backoff=2, max_delay=4, tries=5)
+@retry((yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError), delay=1, backoff=2, max_delay=4, tries=5, )
 def fetch_youtube_video_information(video_url: str, verbose: bool = False) -> dict:
     """
     Description:

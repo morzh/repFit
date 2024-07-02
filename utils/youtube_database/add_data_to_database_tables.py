@@ -151,7 +151,7 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
         try:
             chapter['title'] = GoogleTranslator(source='auto', target='en').translate(chapter['title'])
         except deep_translator.exceptions.RequestError as error:
-            print(f'Translating chapter title ot English error::{error.message}')
+            print(f'Translating chapter title to English error::{error.message}')
 
         cursor.execute("""INSERT INTO VideosChapter (title, start_time, end_time, source, video_id_fk) VALUES (?, ?, ?, ?, ?)""",
                        (chapter['title'], float(chapter['start_time']), float(chapter['end_time']), 'youtube', video_id)
