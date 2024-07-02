@@ -1,6 +1,8 @@
 import yt_dlp
 import pprint
 
+from retry import retry
+
 """Video information which is redundant for repFit database"""
 redundant_video_keys_list = [
     'abr',
@@ -89,26 +91,18 @@ redundant_channel_keys_list = [
 ] 
 
 
-def delete_redundant_video_keys(video_information: dict) -> None:
+def delete_keys_from_dictionary(video_information: dict, keys: list) -> None:
     """
     Description:
-        Delete redundant YouTube video information using redundant_video_keys_list
+        Delete given keys from dictionary
     :param video_information: video information dict
+    :param keys: keys to delete from dictionary
     """
-    for key in redundant_video_keys_list:
+    for key in keys:
         video_information.pop(key, None)
 
 
-def delete_redundant_channel_keys(channel_information: dict) -> None:
-    """
-    Description:
-        Delete redundant YouTube channel information using redundant_channel_keys_list
-    :param channel_information: channel information dict
-    """
-    for key in redundant_channel_keys_list:
-        channel_information.pop(key, None)
-
-
+@retry((yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError), delay=1, backoff=2, max_delay=4, tries=5)
 def fetch_youtube_video_information(video_url: str, verbose: bool = False) -> dict:
     """
     Description:
@@ -119,12 +113,13 @@ def fetch_youtube_video_information(video_url: str, verbose: bool = False) -> di
     """
     with yt_dlp.YoutubeDL({}) as ydl:
         video_info = ydl.extract_info(video_url, download=False)
-        delete_redundant_video_keys(video_info)
+        delete_keys_from_dictionary(video_info, redundant_video_keys_list)
         if verbose:
             pprint.pprint(video_info)
     return video_info
 
 
+@retry((yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError), delay=1, backoff=2, max_delay=4, tries=5)
 def fetch_youtube_channel_information(youtube_channel_url: str, verbose: bool = False) -> dict:
     """
     Description:
@@ -139,7 +134,7 @@ def fetch_youtube_channel_information(youtube_channel_url: str, verbose: bool = 
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         channel_info = ydl.extract_info(youtube_channel_url, download=False)
-        delete_redundant_channel_keys(channel_info)
+        delete_keys_from_dictionary(channel_info, redundant_channel_keys_list)
         if verbose:
             pprint.pprint(channel_info)
     return channel_info
