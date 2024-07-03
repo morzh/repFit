@@ -16,36 +16,36 @@ def define_database_tables(connection: sqlite3.Connection) -> None:
         Tables for YouTube database. There are three tables, first for channels, second for videos and third for video chapters.
     :param connection: connection to SQLite3 database
     """
-    cursor = connection.cursor()
-    cursor.execute('''PRAGMA foreign_keys = ON;''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS YoutubeChannel (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            info TEXT
-            )
+    with connection.cursor() as cursor:
+        cursor.execute('''PRAGMA foreign_keys = ON;''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS YoutubeChannel (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                info TEXT
+                )
+            ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS YoutubeVideo (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                duration INTEGER NOT NULL,
+                info TEXT,
+                channel_id_fk TEXT,
+                FOREIGN KEY (channel_id_fk) REFERENCES YoutubeChannel(id) ON DELETE CASCADE
+                )
         ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS YoutubeVideo (
-            id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            duration INTEGER NOT NULL,
-            info TEXT,
-            channel_id_fk TEXT,
-            FOREIGN KEY (channel_id_fk) REFERENCES YoutubeChannel(id) ON DELETE CASCADE
-            )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS VideosChapter (
-            chapter_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            start_time REAL,
-            end_time REAL,
-            source TEXT,
-            video_id_fk TEXT,
-            FOREIGN KEY (video_id_fk) REFERENCES YoutubeVideo(id) ON DELETE CASCADE
-            )
-    ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS VideosChapter (
+                chapter_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT,
+                start_time REAL,
+                end_time REAL,
+                source TEXT,
+                video_id_fk TEXT,
+                FOREIGN KEY (video_id_fk) REFERENCES YoutubeVideo(id) ON DELETE CASCADE
+                )
+        ''')
     connection.commit()
 
 
@@ -84,10 +84,10 @@ def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
 
     current_information_json = json.dumps(channel_information)
     try:
-        cursor = connection.cursor()
-        cursor.execute("""INSERT INTO YoutubeChannel (id, name, info) VALUES (?, ?, ?)""",
-                       (channel_id, current_channel_name, current_information_json)
-                       )
+        with connection.cursor() as cursor:
+            cursor.execute("""INSERT INTO YoutubeChannel (id, name, info) VALUES (?, ?, ?)""",
+                           (channel_id, current_channel_name, current_information_json)
+                           )
         connection.commit()
     except sqlite3.Error as error:
         logger.error(error.sqlite_errorname)
@@ -143,6 +143,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             cursor.execute("""INSERT INTO YoutubeVideo (id, title, duration, info, channel_id_fk) VALUES (?, ?, ?, ?, ?)""",
                            (video_id, video_title, video_duration, information_json, channel_id)
                            )
+            connection.commit()
     except sqlite3.Error as error:
         if error.sqlite_errorname == 'SQLITE_CONSTRAINT_FOREIGNKEY':
             logger.debug(f'Error inserting foreign key {channel_id=} in table YoutubeVideo with {video_id=}')
@@ -175,5 +176,6 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
                 cursor.execute("""INSERT INTO VideosChapter (title, start_time, end_time, source, video_id_fk) VALUES (?, ?, ?, ?, ?)""",
                                (chapter['title'], float(chapter['start_time']), float(chapter['end_time']), 'youtube', video_id)
                                )
+                connection.commit()
         except sqlite3.Error as error:
             logger.error(error.sqlite_errorname)
