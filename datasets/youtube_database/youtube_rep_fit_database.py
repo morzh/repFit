@@ -13,18 +13,20 @@ from utils.youtube_database.add_data_to_database_tables import (
 
 
 @logger.catch
-def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
+def main(excel_files_path: str, database_folder: str, database_file: str) -> None:
     """
     Description:
         Adding information to SQLite3 database from Excel files. Script was designed in such a way to continue
         processing data regardless of any kinds of errors. All errors are logged.
         Naming convention: YouTube channel's name is the Excel filename (without '.xlsx' extension) with '@' prefix added.
+    :param excel_files_path: Excel files folder path
+    :param database_folder: database file folder
+    :param database_file: output database filename
     """
 
-    excel_links_path = os.path.join(root_folder, excel_files_folder)
-    database_filepath = os.path.join(root_folder, database_file)
+    database_filepath = os.path.join(database_folder, database_file)
     connection = sqlite3.connect(database_filepath)
-    excel_filepaths = Path(excel_links_path).glob("*.xlsx")
+    excel_filepaths = Path(excel_files_path).glob("*.xlsx")
     cursor = connection.cursor()
 
     define_database_tables(connection)
@@ -34,9 +36,9 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
         logger.info(f'Excel filename: {excel_filename}')
         excel_basename, _ = os.path.splitext(excel_filename)
         current_channel_id = '@' + excel_basename
-        cursor.execute("""SELECT id FROM YoutubeChannel""")
-        channels_ids = cursor.fetchall()
-        if (current_channel_id,) not in channels_ids:
+        cursor.execute(f"""SELECT id FROM YoutubeChannel WHERE id={current_channel_id}""")
+        channels_ids = cursor.fetchone()
+        if channels_ids is None:
             add_channel_data(current_channel_id, connection)
 
         try:
@@ -46,10 +48,10 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
             continue
 
         for video_url_index, video_url in enumerate(current_excel_data.values[:, 1]):
-            cursor.execute("""SELECT id FROM YoutubeVideo""")
-            database_video_ids = cursor.fetchall()
             current_video_id = video_url.split('&t=')[0][-11:]
-            if (current_video_id,) not in database_video_ids:
+            cursor.execute(f"""SELECT id FROM YoutubeVideo WHERE id={current_video_id}""")
+            database_video_ids = cursor.fetchone()
+            if database_video_ids is None:
                 current_chapters = add_channel_video_data(current_video_id, current_channel_id, connection)
                 add_video_chapters_data(current_chapters, current_video_id, connection)
 
@@ -57,11 +59,11 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
 
 
 if __name__ == '__main__':
-    root_dataset_filepath = '/home/anton/work/fitMate/datasets'
-    excel_files_youtube_links_folder = 'youtube_channels_links'
-    database_filename = 'youtube_rep_fit_database.db'
+    dataset_filepath = '/home/anton/work/fitMate/datasets/youtube_channels_links'
+    output_folder = 'youtube_channels_links'
+    data_filename = 'youtube_rep_fit_database.db'
 
     logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
     logger.info(f'{sqlite3.sqlite_version=}')
 
-    main(root_dataset_filepath, excel_files_youtube_links_folder, database_filename)
+    main(dataset_filepath, output_folder, data_filename)
