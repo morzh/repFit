@@ -1,12 +1,15 @@
 import os
 import sqlite3
 import pandas as pd
+from pathlib import Path
 from loguru import logger
 
-from utils.youtube_database.add_data_to_database_tables import (add_channel_data,
-                                                                add_channel_video_data,
-                                                                add_video_chapters_data,
-                                                                define_database_tables)
+from utils.youtube_database.add_data_to_database_tables import (
+    add_channel_data,
+    add_channel_video_data,
+    add_video_chapters_data,
+    define_database_tables
+)
 
 
 @logger.catch
@@ -21,13 +24,13 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
     excel_links_path = os.path.join(root_folder, excel_files_folder)
     database_filepath = os.path.join(root_folder, database_file)
     connection = sqlite3.connect(database_filepath)
+    excel_filepaths = Path(excel_links_path).glob("*.xlsx")
     cursor = connection.cursor()
-    excel_filenames = [f for f in os.listdir(str(excel_links_path))
-                       if os.path.isfile(os.path.join(str(excel_links_path), f)) and f.endswith('xlsx')]
 
     define_database_tables(connection)
 
-    for excel_file_index, excel_filename in enumerate(excel_filenames):
+    for excel_file_index, excel_filepath in enumerate(excel_filepaths):
+        excel_filename = os.path.basename(excel_filepath)
         logger.info(f'Excel filename: {excel_filename}')
         excel_basename, _ = os.path.splitext(excel_filename)
         current_channel_id = '@' + excel_basename
@@ -36,7 +39,6 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
         if (current_channel_id,) not in channels_ids:
             add_channel_data(current_channel_id, connection)
 
-        excel_filepath = os.path.join(excel_links_path, excel_filename)
         try:
             current_excel_data = pd.read_excel(excel_filepath)
         except OSError:

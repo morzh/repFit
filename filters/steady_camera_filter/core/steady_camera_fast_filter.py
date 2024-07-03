@@ -1,0 +1,3 @@
+
+class SteadyCameraFastFilter:
+    pass
