@@ -56,11 +56,12 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
     connection.close()
 
 
-root_dataset_filepath = '/home/anton/work/fitMate/datasets'
-excel_files_youtube_links_folder = 'youtube_channels_links'
-database_filename = 'youtube_rep_fit_database.db'
+if __name__ == '__main__':
+    root_dataset_filepath = '/home/anton/work/fitMate/datasets'
+    excel_files_youtube_links_folder = 'youtube_channels_links'
+    database_filename = 'youtube_rep_fit_database.db'
 
-logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
-logger.info(f'{sqlite3.sqlite_version=}')
+    logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
+    logger.info(f'{sqlite3.sqlite_version=}')
 
-main(root_dataset_filepath, excel_files_youtube_links_folder, database_filename)
+    main(root_dataset_filepath, excel_files_youtube_links_folder, database_filename)

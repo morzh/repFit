@@ -5,9 +5,11 @@ from deep_translator import GoogleTranslator
 import deep_translator.exceptions
 from loguru import logger
 
-from utils.youtube_database.fetch_information import (fetch_youtube_channel_information,
-                                                      fetch_youtube_video_information,
-                                                      delete_keys_from_dictionary)
+from utils.youtube_database.fetch_information import (
+    fetch_youtube_channel_information,
+    fetch_youtube_video_information,
+    delete_keys_from_dictionary
+)
 
 
 def define_database_tables(connection: sqlite3.Connection) -> None:
@@ -143,7 +145,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             cursor.execute("""INSERT INTO YoutubeVideo (id, title, duration, info, channel_id_fk) VALUES (?, ?, ?, ?, ?)""",
                            (video_id, video_title, video_duration, information_json, channel_id)
                            )
-            connection.commit()
+        connection.commit()
     except sqlite3.Error as error:
         if error.sqlite_errorname == 'SQLITE_CONSTRAINT_FOREIGNKEY':
             logger.debug(f'Error inserting foreign key {channel_id=} in table YoutubeVideo with {video_id=}')
@@ -176,6 +178,6 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
                 cursor.execute("""INSERT INTO VideosChapter (title, start_time, end_time, source, video_id_fk) VALUES (?, ?, ?, ?, ?)""",
                                (chapter['title'], float(chapter['start_time']), float(chapter['end_time']), 'youtube', video_id)
                                )
-                connection.commit()
+            connection.commit()
         except sqlite3.Error as error:
             logger.error(error.sqlite_errorname)

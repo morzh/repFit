@@ -21,6 +21,7 @@ def run():
         links_number += current_links_number
         excel_files_number += 1
 
+    print('\n')
     print('STATISTICS:')
     print('-' * 35)
     print(f'YouTube links to videos number: {links_number}')
