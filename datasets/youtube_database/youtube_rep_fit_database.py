@@ -27,18 +27,18 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
     database_filepath = os.path.join(database_folder, database_file)
     connection = sqlite3.connect(database_filepath)
     excel_filepaths = Path(excel_files_path).glob("*.xlsx")
-    cursor = connection.cursor()
 
     define_database_tables(connection)
+    with connection.cursor() as cursor:
+        cursor.execute(f"""SELECT id FROM YoutubeChannel""")
+        channels_ids = cursor.fetchall()
 
     for excel_file_index, excel_filepath in enumerate(excel_filepaths):
         excel_filename = os.path.basename(excel_filepath)
         logger.info(f'Excel filename: {excel_filename}')
-        excel_basename, _ = os.path.splitext(excel_filename)
-        current_channel_id = '@' + excel_basename
-        cursor.execute(f"""SELECT id FROM YoutubeChannel WHERE id={current_channel_id}""")
-        channels_ids = cursor.fetchone()
-        if channels_ids is None:
+        excel_file_basename, _ = os.path.splitext(excel_filename)
+        current_channel_id = '@' + excel_file_basename
+        if (current_channel_id,) not in channels_ids:
             add_channel_data(current_channel_id, connection)
 
         try:
