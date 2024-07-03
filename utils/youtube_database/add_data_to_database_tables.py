@@ -56,7 +56,6 @@ def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
     :param channel_id: YouTube channel id
     :param connection: connection to SQLite3 database
     """
-    cursor = connection.cursor()
     youtube_channel_url = f'https://www.youtube.com/{channel_id}'
 
     try:
@@ -84,10 +83,14 @@ def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
             logger.info(f'Translating channel {channel_id} tags to English error::{error.message}')
 
     current_information_json = json.dumps(channel_information)
-    cursor.execute("""INSERT INTO YoutubeChannel (id, name, info) VALUES (?, ?, ?)""",
-                   (channel_id, current_channel_name, current_information_json)
-                   )
-    connection.commit()
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""INSERT INTO YoutubeChannel (id, name, info) VALUES (?, ?, ?)""",
+                       (channel_id, current_channel_name, current_information_json)
+                       )
+        connection.commit()
+    except sqlite3.Error as error:
+        logger.error(error.sqlite_errorname)
 
 
 def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.Connection) -> list | None:
@@ -134,11 +137,17 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             logger.info(f'Translating {video_id} video categories to English request error::{error.message}')
 
     information_json = json.dumps(video_information)
-    cursor = connection.cursor()
-    cursor.execute("""INSERT INTO YoutubeVideo (id, title, duration, info, channel_id_fk) VALUES (?, ?, ?, ?, ?)""",
-                   (video_id, video_title, video_duration, information_json, channel_id)
-                   )
-    connection.commit()
+
+    try:
+        cursor = connection.cursor()
+        cursor.execute("""INSERT INTO YoutubeVideo (id, title, duration, info, channel_id_fk) VALUES (?, ?, ?, ?, ?)""",
+                       (video_id, video_title, video_duration, information_json, channel_id)
+                       )
+        connection.commit()
+    except sqlite3.Error as error:
+        if error.sqlite_errorname == 'SQLITE_CONSTRAINT_FOREIGNKEY':
+            logger.debug(f'Error inserting foreign key {channel_id=} in table YoutubeVideo with {video_id=}')
+        logger.error(error.sqlite_errorname)
     return video_chapters
 
 
@@ -155,14 +164,18 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
     """
     if chapters is None:
         return
-    cursor = connection.cursor()
+
     for chapter in chapters:
         try:
             chapter['title'] = GoogleTranslator(source='auto', target='en').translate(chapter['title'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating chapter title to English request error::{error.message}')
 
-        cursor.execute("""INSERT INTO VideosChapter (title, start_time, end_time, source, video_id_fk) VALUES (?, ?, ?, ?, ?)""",
-                       (chapter['title'], float(chapter['start_time']), float(chapter['end_time']), 'youtube', video_id)
-                       )
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""INSERT INTO VideosChapter (title, start_time, end_time, source, video_id_fk) VALUES (?, ?, ?, ?, ?)""",
+                           (chapter['title'], float(chapter['start_time']), float(chapter['end_time']), 'youtube', video_id)
+                           )
+        except sqlite3.Error as error:
+            logger.error(error.sqlite_errorname)
     connection.commit()

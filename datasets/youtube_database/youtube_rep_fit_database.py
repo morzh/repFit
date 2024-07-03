@@ -3,28 +3,32 @@ import sqlite3
 import pandas as pd
 from loguru import logger
 
-from utils.youtube_database.add_data_to_database_tables import add_channel_data, add_channel_video_data, add_video_chapters_data, define_database_tables
-
-
-logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
-logger.info(f'{sqlite3.sqlite_version=}')
+from utils.youtube_database.add_data_to_database_tables import (add_channel_data,
+                                                                add_channel_video_data,
+                                                                add_video_chapters_data,
+                                                                define_database_tables)
 
 
 @logger.catch
-def main():
-    root_filepath = '/home/anton/work/fitMate/datasets'
-    excel_links_folder = 'youtube_channels_links'
-    database_filename = 'youtube_rep_fit_database.db'
+def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
+    """
+    Description:
+        Adding information to SQLite3 database from Excel files. Script was designed in such a way to continue
+        processing data regardless of any kinds of errors. All errors are logged.
+        Naming convention: YouTube channel's name is Excel filename (without '.xlsx' extension) with '@' prefix.
+    """
 
-    excel_links_path = os.path.join(root_filepath, excel_links_folder)
-    database_filepath = os.path.join(root_filepath, database_filename)
+    excel_links_path = os.path.join(root_folder, excel_files_folder)
+    database_filepath = os.path.join(root_folder, database_file)
     connection = sqlite3.connect(database_filepath)
     cursor = connection.cursor()
-    excel_filenames = [f for f in os.listdir(excel_links_path) if os.path.isfile(os.path.join(excel_links_path, f)) and f.endswith('xlsx')]
+    excel_filenames = [f for f in os.listdir(str(excel_links_path))
+                       if os.path.isfile(os.path.join(str(excel_links_path), f)) and f.endswith('xlsx')]
 
     define_database_tables(connection)
 
     for excel_file_index, excel_filename in enumerate(excel_filenames):
+        logger.info(f'Excel filename: {excel_filename}')
         excel_basename, _ = os.path.splitext(excel_filename)
         current_channel_id = '@' + excel_basename
         cursor.execute("""SELECT id FROM YoutubeChannel""")
@@ -50,4 +54,11 @@ def main():
     connection.close()
 
 
-main()
+root_dataset_filepath = '/home/anton/work/fitMate/datasets'
+excel_links_folder = 'youtube_channels_links'
+database_filename = 'youtube_rep_fit_database.db'
+
+logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
+logger.info(f'{sqlite3.sqlite_version=}')
+
+main(root_dataset_filepath, excel_links_folder, database_filename)
