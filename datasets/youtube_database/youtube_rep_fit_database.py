@@ -15,7 +15,7 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
     Description:
         Adding information to SQLite3 database from Excel files. Script was designed in such a way to continue
         processing data regardless of any kinds of errors. All errors are logged.
-        Naming convention: YouTube channel's name is Excel filename (without '.xlsx' extension) with '@' prefix.
+        Naming convention: YouTube channel's name is the Excel filename (without '.xlsx' extension) with '@' prefix added.
     """
 
     excel_links_path = os.path.join(root_folder, excel_files_folder)
@@ -55,10 +55,10 @@ def main(root_folder: str, excel_files_folder: str, database_file: str) -> None:
 
 
 root_dataset_filepath = '/home/anton/work/fitMate/datasets'
-excel_links_folder = 'youtube_channels_links'
+excel_files_youtube_links_folder = 'youtube_channels_links'
 database_filename = 'youtube_rep_fit_database.db'
 
 logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
 logger.info(f'{sqlite3.sqlite_version=}')
 
-main(root_dataset_filepath, excel_links_folder, database_filename)
+main(root_dataset_filepath, excel_files_youtube_links_folder, database_filename)
