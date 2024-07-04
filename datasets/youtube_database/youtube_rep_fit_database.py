@@ -29,9 +29,9 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
     excel_filepaths = Path(excel_files_path).glob("*.xlsx")
 
     define_database_tables(connection)
-    with connection.cursor() as cursor:
-        cursor.execute(f"""SELECT id FROM YoutubeChannel""")
-        existing_channels_ids = cursor.fetchall()
+    cursor = connection.cursor()
+    cursor.execute(f"""SELECT id FROM YoutubeChannel""")
+    existing_channels_ids = cursor.fetchall()
 
     for excel_file_index, excel_filepath in enumerate(excel_filepaths):
         excel_filename = os.path.basename(excel_filepath)
@@ -46,10 +46,15 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
         except OSError:
             logger.debug(f'Read of {excel_filepath} failed.')
             continue
+        except ValueError as error:
+            logger.debug(f'Value error, file {excel_filepath}::Excel file format cannot be determined, you must specify an engine manually.')
+            continue
 
         for video_url_index, video_url in enumerate(current_excel_data.values[:, 1]):
+            if not (isinstance(video_url, str) and len(video_url) >= 11):
+                continue
             current_video_id = video_url.split('&t=')[0][-11:]
-            cursor.execute(f"""SELECT id FROM YoutubeVideo WHERE id={current_video_id}""")
+            cursor.execute(f"""SELECT id FROM YoutubeVideo WHERE id='{current_video_id}'""")
             database_existing_video_ids = cursor.fetchone()
             if database_existing_video_ids is None:
                 current_chapters = add_channel_video_data(current_video_id, current_channel_id, connection)
@@ -60,7 +65,7 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
 
 if __name__ == '__main__':
     dataset_filepath = '/home/anton/work/fitMate/datasets/youtube_channels_links'
-    output_folder = 'youtube_channels_links'
+    output_folder = '/home/anton/work/fitMate/datasets'
     data_filename = 'youtube_rep_fit_database.db'
 
     logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
