@@ -31,14 +31,14 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
     define_database_tables(connection)
     with connection.cursor() as cursor:
         cursor.execute(f"""SELECT id FROM YoutubeChannel""")
-        channels_ids = cursor.fetchall()
+        existing_channels_ids = cursor.fetchall()
 
     for excel_file_index, excel_filepath in enumerate(excel_filepaths):
         excel_filename = os.path.basename(excel_filepath)
         logger.info(f'Excel filename: {excel_filename}')
         excel_file_basename, _ = os.path.splitext(excel_filename)
         current_channel_id = '@' + excel_file_basename
-        if (current_channel_id,) not in channels_ids:
+        if (current_channel_id,) not in existing_channels_ids:
             add_channel_data(current_channel_id, connection)
 
         try:
@@ -50,8 +50,8 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
         for video_url_index, video_url in enumerate(current_excel_data.values[:, 1]):
             current_video_id = video_url.split('&t=')[0][-11:]
             cursor.execute(f"""SELECT id FROM YoutubeVideo WHERE id={current_video_id}""")
-            database_video_ids = cursor.fetchone()
-            if database_video_ids is None:
+            database_existing_video_ids = cursor.fetchone()
+            if database_existing_video_ids is None:
                 current_chapters = add_channel_video_data(current_video_id, current_channel_id, connection)
                 add_video_chapters_data(current_chapters, current_video_id, connection)
 
