@@ -2,8 +2,6 @@ video_segments_extraction:
   verbose_filename: true
   minimum_steady_camera_time_segment: 5  # time in seconds
 
-
-
   resolution_filter:
     minimum_dimension_resolution: 256
 
@@ -12,10 +10,11 @@ video_segments_extraction:
     poc_maximum_dimension: 512
     poc_registration_verbose: false
     poc_minimum_confidence: 0.1
-    poc_show_averaged_frames_pair: false
+    poc_show_averaged_frames_pair: true
     maximum_shift_length: 1.5
     verbose_segments: false
     text_mask_model: craft
+    persons_mask_model: yolo_segmentation
 
     persons_mask_models:
       yolo_segmentation:

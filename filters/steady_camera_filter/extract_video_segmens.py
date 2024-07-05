@@ -12,6 +12,7 @@ from cv_utils.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.ocr.craft import Craft
 from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
 from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
+from filters.steady_camera_filter.core.persons_mask.persons_mask_segmentation_yolo import PersonsMaskYoloSegmentation
 from filters.steady_camera_filter.core.steady_camera_coarse_filter import \
     SteadyCameraCoarseFilter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
@@ -94,17 +95,24 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     match steady_camera_coarse_parameters['text_mask_model']:
         case 'craft':
             craft_parameters = steady_camera_coarse_parameters['text_mask_models']['craft']
-            ocr_model = Craft(**craft_parameters)
+            ocr_detector = Craft(**craft_parameters)
         case 'easy_ocr':
             easyocr_parameters = steady_camera_coarse_parameters['text_mask_models']['easy_ocr']
-            ocr_model = EasyOcr(**easyocr_parameters)
+            ocr_detector = EasyOcr(**easyocr_parameters)
         case 'tesseract':
             tesseract_parameters = steady_camera_coarse_parameters['text_mask_models']['tesseract']
-            ocr_model = TesseractOcr(**tesseract_parameters)
+            ocr_detector = TesseractOcr(**tesseract_parameters)
         case _:
             raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
 
-    camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, **steady_camera_coarse_parameters)
+    match steady_camera_coarse_parameters['persons_mask_model']:
+        case 'yolo_segmentation':
+            yolo_segmentation_parameters = steady_camera_coarse_parameters['persons_mask_models']['yolo_segmentation']
+            persons_detector = PersonsMaskYoloSegmentation(**yolo_segmentation_parameters)
+        case _:
+            raise ValueError('Models for masking persons other than Yolo Segmentation are not provided.')
+
+    camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_detector, persons_detector, **steady_camera_coarse_parameters)
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])

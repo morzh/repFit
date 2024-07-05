@@ -5,7 +5,7 @@ import cv2
 from filters.steady_camera_filter.core.persons_mask.person_mask_base import PersonsMaskBase
 
 
-class PersonsMaskSegmentationYolo(PersonsMaskBase):
+class PersonsMaskYoloSegmentation(PersonsMaskBase):
     def __init__(self, **kwargs):
         self.detector = YOLO('yolov8m-seg.pt')
         self.detector_confidence: float = kwargs.get('confidence_threshold', 0.4)
@@ -27,6 +27,6 @@ class PersonsMaskSegmentationYolo(PersonsMaskBase):
             persons_masks = prediction_result[0].masks[current_person_confident_indices].cpu().data.numpy()
             unified_mask = np.sum(persons_masks, axis=0)
             unified_mask = np.clip(unified_mask, 0.0, 1.0)
-            unified_mask = cv2.resize(unified_mask, output_resolution)
+            # unified_mask = cv2.resize(unified_mask, output_resolution)
 
         return unified_mask

@@ -86,6 +86,7 @@ class SteadyCameraCoarseFilter:
 
             if self.ocr_detector is not None:
                 current_text_mask = self.ocr_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
+                current_averaged_frames = cv2.resize(current_averaged_frames, self.poc_resolution)
                 current_averaged_frames = self._apply_mask(current_averaged_frames, current_text_mask)
             if self.persons_detector is not None:
                 current_persons_mask = self.persons_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
@@ -209,4 +210,13 @@ class SteadyCameraCoarseFilter:
         blurred_mask = blurred_mask > mask_extend_threshold
         blurred_mask = blurred_mask.astype(np.float32)
         blurred_mask = cv2.GaussianBlur(blurred_mask, (sigma * 3, sigma * 3), sigma)
-        return image * (1 - blurred_mask) + image.mean() * blurred_mask
+
+        image_channels = image.shape[2]
+        if image_channels == 1:
+            image_masked = image * (1 - blurred_mask) + image.mean() * blurred_mask
+        elif image_channels == 3:
+            blurred_mask = np.expand_dims(blurred_mask, axis=2)
+            blurred_mask = np.repeat(blurred_mask, image_channels, axis=2)
+            image_masked = image * (1 - blurred_mask) + image.mean(axis=(0, 1)) * blurred_mask
+
+        return image_masked
