@@ -137,6 +137,8 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             video_information['categories'] = GoogleTranslator(source='auto', target='en').translate_batch(video_information['categories'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating {video_id} video categories to English request error::{error.message}')
+        except deep_translator.exceptions.TranslationNotFound as error:
+            logger.info(f'Translating {video_id} video error: {error.message}')
 
     information_json = json.dumps(video_information)
 
