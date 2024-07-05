@@ -108,7 +108,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
     video_url = f'https://www.youtube.com/watch?v={video_id}'
     try:
         video_information = fetch_youtube_video_information(video_url, verbose=False)
-    except (yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError) as error:
+    except (yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError, yt_dlp.networking.exceptions.TransportError) as error:
         logger.error(error.msg)
         return
 

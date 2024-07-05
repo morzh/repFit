@@ -17,10 +17,8 @@ class EasyOcr(OcrBase):
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
         self.model_ocr = easyocr.Reader(self.ocr_lang_list)
 
-        confidence_threshold = kwargs.get('confidence_threshold', 0.1)
-        minimal_resolution = kwargs.get('minimal_resolution', 512)
-        self.ocr_confidence = confidence_threshold
-        self.minimum_resolution = minimal_resolution
+        self.ocr_confidence = kwargs.get('confidence_threshold', 0.1)
+        self.minimum_resolution = kwargs.get('minimal_resolution', 512)
 
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
         if max(image.shape) < self.minimum_resolution:

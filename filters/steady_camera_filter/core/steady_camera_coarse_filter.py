@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 from cv_utils.video_frames_batch import VideoFramesBatch
 from filters.steady_camera_filter.core.image_registration.image_registration_poc import \
     ImageSequenceRegistrationPoc
-from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
+from filters.steady_camera_filter.core.persons_mask.person_mask_base import PersonsMaskBase
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
@@ -30,14 +30,10 @@ class SteadyCameraCoarseFilter:
         There also could be some issues  with sidebars videos (videos originally vertical with added sidebars to produce horizontal ones).
         Text regions smooth masking is mandatory to produce correct results.
     """
-    def __init__(self,
-                 video_filepath: str,
-                 ocr: OcrBase,
-                 **kwargs
-                 ):
+    def __init__(self, video_filepath: str, ocr_detector: OcrBase = None, persons_detector: PersonsMaskBase = None, **kwargs):
         """
         :param video_filepath: video file pathname;
-        :param ocr: ocr model to use for text masking;
+        :param ocr_detector: ocr model to use for text masking;
         :param kwargs: see below.
         :keyword number_frames_to_average: -- number of frames to average before registration
         :keyword maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
@@ -46,7 +42,8 @@ class SteadyCameraCoarseFilter:
         registration_minimum_confidence, then camera is not considered as steady.
         """
         self.video_frames_batch = VideoFramesBatch(video_filepath, kwargs['number_frames_to_average'])
-        self.ocr = ocr
+        self.ocr_detector = ocr_detector
+        self.persons_detector = persons_detector
         # Image registration section
         self.maximum_shift_length = kwargs['maximum_shift_length']
         # self.steady_camera_frames_ranges: list = []
@@ -84,12 +81,17 @@ class SteadyCameraCoarseFilter:
         """
 
         for current_image_frames_batch in self.video_frames_batch:
-            current_averaged_frames = np.mean(current_image_frames_batch, axis=(0, 3)).astype(np.uint8)
+            current_averaged_frames = np.mean(current_image_frames_batch, axis=0).astype(np.uint8)  # averaging images across batch dimension
             # print(f'Mean of empty slice, Filename {self.video_frames_batch.video_filepath}, {current_averaged_frames.shape=}')
 
-            current_text_mask = self.ocr.pixel_mask(current_averaged_frames, self.poc_resolution)
-            current_averaged_frames = cv2.resize(current_averaged_frames, self.poc_resolution)
-            current_averaged_frames = self._apply_text_mask(current_averaged_frames, current_text_mask)
+            if self.ocr_detector is not None:
+                current_text_mask = self.ocr_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
+                current_averaged_frames = self._apply_mask(current_averaged_frames, current_text_mask)
+            if self.persons_detector is not None:
+                current_persons_mask = self.persons_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
+                current_averaged_frames = self._apply_mask(current_averaged_frames, current_persons_mask)
+
+            current_averaged_frames = np.mean(current_averaged_frames, axis=2).astype(np.uint8)  # making grayscale image from color one
             self.poc_engine.update_deque(current_averaged_frames)
 
             if verbose:
@@ -191,7 +193,7 @@ class SteadyCameraCoarseFilter:
         print(table)
 
     @staticmethod
-    def _apply_text_mask(image: image_grayscale, mask: image_grayscale, sigma=7) -> image_grayscale:
+    def _apply_mask(image: image_grayscale, mask: image_grayscale, sigma=7, mask_extend_threshold=0.1) -> image_grayscale:
         """
         Description:
             Apply mask to the image. Given a mask it will be:
@@ -204,7 +206,7 @@ class SteadyCameraCoarseFilter:
         :return: masked image
         """
         blurred_mask = cv2.GaussianBlur(mask, (sigma * 3, sigma * 3), sigma)
-        blurred_mask = blurred_mask > 0.1
+        blurred_mask = blurred_mask > mask_extend_threshold
         blurred_mask = blurred_mask.astype(np.float32)
         blurred_mask = cv2.GaussianBlur(blurred_mask, (sigma * 3, sigma * 3), sigma)
         return image * (1 - blurred_mask) + image.mean() * blurred_mask

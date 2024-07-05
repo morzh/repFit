@@ -8,7 +8,7 @@ video_segments_extraction:
     minimum_dimension_resolution: 256
 
   steady_camera_coarse_filter:
-    number_frames_to_average: 15
+    number_frames_to_average: 20
     poc_maximum_dimension: 512
     poc_registration_verbose: false
     poc_minimum_confidence: 0.1
@@ -16,6 +16,10 @@ video_segments_extraction:
     maximum_shift_length: 1.5
     verbose_segments: false
     text_mask_model: craft
+
+    persons_mask_models:
+      yolo_segmentation:
+        confidence_threshold: 0.4
 
     text_mask_models:
       easy_ocr:
