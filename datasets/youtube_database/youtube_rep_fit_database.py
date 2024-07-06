@@ -35,7 +35,7 @@ def main(excel_files_path: str, database_folder: str, database_file: str) -> Non
 
     for excel_file_index, excel_filepath in enumerate(excel_filepaths):
         excel_filename = os.path.basename(excel_filepath)
-        logger.info(f'Excel filename: {excel_filename}')
+        logger.info(f'Processing filename: {excel_filename}')
         excel_file_basename, _ = os.path.splitext(excel_filename)
         current_channel_id = '@' + excel_file_basename
         if (current_channel_id,) not in existing_channels_ids:

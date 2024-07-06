@@ -12,8 +12,8 @@ def run_pool(func, args: list, n_process: int = 10):
     return results
 
 
-def run_pool_steady_camera_filter(func, filepaths: list, output_folder: str, parameters: dict, n_process: int = 12):
-    with Pool(n_process) as pool:
+def run_pool_steady_camera_filter(func, filepaths: list, output_folder: str, parameters: dict, number_processes: int = 12):
+    with Pool(number_processes) as pool:
         results = pool.starmap(func, zip(filepaths, repeat(output_folder), repeat(parameters)))
     return results
 
