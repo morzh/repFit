@@ -3,7 +3,7 @@ from ultralytics import YOLO
 from paths import YOLO_BBOXES_DPATH, VIDEO_DPATH, STABLE_FILTER_DPATH
 from pathlib import Path
 from constants import min_track_length_sec, min_occurrence_rate
-from cv_utils.video_reader import VideoReader
+from utils.cv_utils.video_reader import VideoReader
 from utils.file_reader import write_pickle
 
 

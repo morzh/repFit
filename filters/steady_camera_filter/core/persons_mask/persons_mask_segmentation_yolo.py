@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch
 from ultralytics import YOLO
@@ -7,7 +9,25 @@ from filters.steady_camera_filter.core.persons_mask.person_mask_base import Pers
 
 class PersonsMaskYoloSegmentation(PersonsMaskBase):
     def __init__(self, **kwargs):
-        self.detector = YOLO('yolov8m-seg.pt')
+        weights_path = kwargs.get('weights_path', '')
+        if not os.path.exists(weights_path):
+            weights_path = ''
+
+        model_type = kwargs.get('model_type', 'medium')
+
+        match model_type:
+            case 'nano':
+                model_file = 'yolov8n-seg.pt'
+            case 'small':
+                model_file = 'yolov8s-seg.pt'
+            case 'medium':
+                model_file = 'yolov8m-seg.pt'
+            case 'large':
+                model_file = 'yolov8l-seg.pt'
+            case _:
+                raise ValueError("Models other than 'n', 's', 'm' or 'l' are not supported.")
+
+        self.detector = YOLO(os.path.join(weights_path, model_file))
         self.detector_confidence: float = kwargs.get('confidence_threshold', 0.4)
         self._person_class_index: int = 0
 

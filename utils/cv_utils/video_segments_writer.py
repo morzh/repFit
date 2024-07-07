@@ -1,4 +1,3 @@
-import copy
 import os
 import shutil
 from pathlib import Path
@@ -8,7 +7,7 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from cv_utils.video_reader import VideoReader
+from utils.cv_utils.video_reader import VideoReader
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
@@ -42,7 +41,7 @@ class VideoSegmentsWriter:
 
         if video_segments.whole_video_segments_check():
             video_filename_base, _ = self.extract_filename_base_extension()
-            video_filename = f'{video_filename_base}' + '__' + filter_name + '__' + '.mp4'
+            video_filename = f'{video_filename_base}__{filter_name}__.mp4'
             output_filepath = os.path.join(self.output_folder, video_filename)
             shutil.copy(self.input_filepath, output_filepath)
             return
@@ -92,3 +91,18 @@ class VideoSegmentsWriter:
         video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
         output_filepath = os.path.join(self.output_folder, video_filename)
         return output_filepath
+
+    def write_segments_values(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
+        """
+        Write segments values. This feature is for debug purposes
+        :param video_segments: video segments
+        :param filter_name: filter name (e.g. steady or nonsteady)
+        """
+        video_filename_base, _ = self.extract_filename_base_extension()
+        segments_values_filename = f'{video_filename_base}__{filter_name}__'
+        segments_values_filepath = os.path.join(self.output_folder, segments_values_filename)
+
+        video_segments.write_segments(segments_values_filepath)
+
+
+

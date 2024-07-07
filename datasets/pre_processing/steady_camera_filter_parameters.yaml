@@ -16,9 +16,12 @@ video_segments_extraction:
     text_mask_model: craft
     persons_mask_model: yolo_segmentation
 
+
     persons_mask_models:
       yolo_segmentation:
+        weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_segmentation
         confidence_threshold: 0.4
+        model_type: medium
 
     text_mask_models:
       easy_ocr:
@@ -39,5 +42,7 @@ video_segments_extraction:
 
 
 video_segments_output:
+  save_steady_camera_segments_values: true
+  save_non_steady_camera_segments_values: true
   write_segments_complement: true
   minimum_non_steady_camera_time_segment: 2 # time in seconds

@@ -9,14 +9,15 @@ from filters.steady_camera_filter.extract_video_segmens import extract_and_write
 from filters.steady_camera_filter.extract_video_segmens import move_steady_non_steady_videos_to_subfolders
 
 
-def cut_video(**kwargs):
+@logger.catch
+def cut_videos(**kwargs):
     videos_source_folder = kwargs['videos_source_folder']
     videos_target_folder = kwargs['videos_target_folder']
     videos_steady_subfolder = kwargs['videos_steady_subfolder']
     videos_non_steady_subfolder = kwargs['videos_non_steady_subfolder']
     videos_extensions = kwargs['videos_extensions']
-    use_multiprocessing = kwargs['use_multiprocessing']
-    number_processes = kwargs['number_processes']
+    use_multiprocessing = kwargs.get('use_multiprocessing', False)
+    number_processes = kwargs.get('number_processes', 4)
 
     video_source_filepaths = [os.path.join(videos_source_folder, f) for f in listdir(videos_source_folder)
                               if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
@@ -57,9 +58,4 @@ if __name__ == '__main__':
 
     logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
 
-    cut_video(**parameters)
-
-
-
-
-
+    cut_videos(**parameters)

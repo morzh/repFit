@@ -1,14 +1,15 @@
 import os.path
 import shutil
-import warnings
-from typing import Annotated, Literal
+from loguru import logger
 
 import cv2
 import numpy as np
 import yaml
+
+from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from cv_utils.video_segments_writer import VideoSegmentsWriter
+from utils.cv_utils.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.ocr.craft import Craft
 from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
 from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
@@ -23,7 +24,7 @@ segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 class PrintColors:
     """
     Description:
-        This class helps with colored text printing/
+        This class helps with colored text printing.
         Example of usage: print(f'{PrintColors.BOLD}some text{PrintColors.ENDC}')
     """
     HEADER = '\033[95m'
@@ -63,6 +64,7 @@ def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 36
     """
     Description:
         Check if video size is greater than a given threshold.
+
     :return: True if (width, height) >  minimum_dimension_size, False otherwise
     """
     video_capture = cv2.VideoCapture(video_filepath)
@@ -79,18 +81,19 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     """
     Description:
         Extract segments from video in frames, where camera is steady (meets steadiness criteria of coarse steady camera filter).
+
     :param video_filepath: filepath of the video
     :param parameters: parameters for steady camera filter
     :raises ValueError: when trying to use text masking with neural network models other than CRAFT, EasyOCR or Tesseract.
     """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        print(f'{PrintColors.BOLD}{video_filename}{PrintColors.ENDC}')
+        logger.info(f'{PrintColors.BOLD}{video_filename}{PrintColors.ENDC}')
 
     steady_camera_coarse_parameters = parameters['steady_camera_coarse_filter']
     number_frames_to_average = steady_camera_coarse_parameters['number_frames_to_average']
     if number_frames_to_average < 5:
-        warnings.warn(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
+        logger.warning(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
     match steady_camera_coarse_parameters['text_mask_model']:
         case 'craft':
@@ -103,24 +106,30 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
             tesseract_parameters = steady_camera_coarse_parameters['text_mask_models']['tesseract']
             ocr_detector = TesseractOcr(**tesseract_parameters)
         case _:
+            logger.error('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
             raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
+    logger.info(f"Using {steady_camera_coarse_parameters['text_mask_model']} text model.")
 
     match steady_camera_coarse_parameters['persons_mask_model']:
         case 'yolo_segmentation':
             yolo_segmentation_parameters = steady_camera_coarse_parameters['persons_mask_models']['yolo_segmentation']
             persons_detector = PersonsMaskYoloSegmentation(**yolo_segmentation_parameters)
         case _:
+            logger.error('Models for masking persons other than Yolo Segmentation are not provided.')
             raise ValueError('Models for masking persons other than Yolo Segmentation are not provided.')
+    logger.info(f"Using {steady_camera_coarse_parameters['persons_mask_model']} model for persons masking.")
 
     camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_detector, persons_detector, **steady_camera_coarse_parameters)
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
+    logger.info(f'Unfiltered steady segments: {steady_segments}')
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
+    logger.info(f"Filtered by {parameters['minimum_steady_camera_time_segment']} seconds steady segments: {steady_segments}")
 
     if steady_camera_coarse_parameters['poc_registration_verbose']:
         camera_filter.print_registration_results()
     if steady_camera_coarse_parameters['verbose_segments']:
-        print(steady_segments)
+        logger.info(steady_segments)
 
     return steady_segments
 
@@ -129,6 +138,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     """
     Description:
         Cuts input video according video_segments information.
+
     :param video_filepath: input video filepath
     :param output_folder: output folder for trimmed videos
     :param video_segments information about video segments to trim
@@ -143,24 +153,31 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
                                                 fps=video_segments.video_fps)
 
     video_segments_writer.write(video_segments, filter_name='steady')
+    if parameters['save_steady_camera_segments_values']:
+        video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
     if parameters['write_segments_complement']:
         video_segments_complement = video_segments.complement()
         time_threshold = parameters['minimum_non_steady_camera_time_segment']
         video_segments_complement.filter_by_time_duration(time_threshold)
         video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
+        if parameters['save_non_steady_camera_segments_values']:
+            video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
 
 
 def extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
     """
     Description:
         Convenient function for multiprocessing. It violates single responsibility principle, but who cares.
+
     :param video_source_filepath: source video filepath
     :param videos_target_folder: output folder for segmented videos
     :param parameters: extraction parameters
     """
     minimum_resolution = parameters['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
+        video_filename = os.path.basename(video_source_filepath)
+        logger.info(f'Video {video_filename} has resolution less than {minimum_resolution}')
         return
 
     video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, parameters['video_segments_extraction'])
@@ -176,6 +193,7 @@ def move_steady_non_steady_videos_to_subfolders(root_folder: str,
     Description:
         Move cut steady and non-steady video segments to different folders. If filename has steady_entry, it will bw moved to subfolder_steady subfolder of
         the root_folder. If filename has non_steady_entry, it will bw moved to subfolder_non_steady subfolder of the root_folder
+
     :param root_folder: folder with source  steady anf non-steady video files;
     :param steady_entry: filename entry which that indicates video is (considered as) steady;
     :param non_steady_entry: filename entry which that indicates video is (considered as) non-steady;

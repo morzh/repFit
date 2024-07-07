@@ -4,6 +4,7 @@ import yt_dlp
 from deep_translator import GoogleTranslator
 import deep_translator.exceptions
 from loguru import logger
+import requests, http.client
 
 from utils.youtube_database.fetch_information import (
     fetch_youtube_channel_information,
@@ -174,6 +175,10 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
             chapter['title'] = GoogleTranslator(source='auto', target='en').translate(chapter['title'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating chapter title to English request error::{error.message}')
+        except http.client.RemoteDisconnected:
+            logger.info(f'Translating chapter title to English remote disconnected.')
+        except requests.exceptions.ConnectionError:
+            logger.info(f'Translating chapter title to English connection aborted.')
 
         try:
             cursor = connection.cursor()
