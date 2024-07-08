@@ -1,10 +1,11 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Annotated, Literal
-
 import cv2
 import numpy as np
+from loguru import logger
+
+from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 from utils.cv_utils.video_reader import VideoReader
@@ -46,6 +47,7 @@ class VideoSegmentsWriter:
             shutil.copy(self.input_filepath, output_filepath)
             return
 
+        # logger.info(f'Video segments: \n {video_segments.segments}')
         video_reader = VideoReader(self.input_filepath, use_tqdm=False)
         resolution = (video_segments.video_width, video_segments.video_height)
         index_segment = 0
@@ -57,16 +59,24 @@ class VideoSegmentsWriter:
             if index_frame == current_segment_start:
                 current_output_filepath = self.current_filepath_segment(current_segment, filter_name)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.fps, resolution)
+                # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
+                # logger.info(f'Video segments \n: {video_segments.segments}')
 
             if current_segment_start <= index_frame <= current_segment_end:
                 current_video_writer.write(frame)
 
             if index_frame == current_segment_end:
                 current_video_writer.release()
+                # logger.info(f"Released video with segment {video_segments.segments[index_segment]}, {index_segment=}")
+                # logger.info(f'Video segments \n: {video_segments.segments}')
                 index_segment += 1
                 if index_segment == video_segments.segments.shape[0]:
+                    # logger.info(f'Video writer exit condition {index_segment=} == {video_segments.segments.shape[0]=}')
                     return
                 current_segment = video_segments.segments[index_segment]
+                current_segment_start = current_segment[0]
+                current_segment_end = current_segment[1]
+                # logger.info(f'{current_segment=}')
 
     def extract_filename_base_extension(self) -> tuple[str, str]:
         """
@@ -99,7 +109,7 @@ class VideoSegmentsWriter:
         :param filter_name: filter name (e.g. steady or nonsteady)
         """
         video_filename_base, _ = self.extract_filename_base_extension()
-        segments_values_filename = f'{video_filename_base}__{filter_name}__'
+        segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
         segments_values_filepath = os.path.join(self.output_folder, segments_values_filename)
 
         video_segments.write_segments(segments_values_filepath)

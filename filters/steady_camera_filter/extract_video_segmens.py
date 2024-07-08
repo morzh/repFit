@@ -13,7 +13,8 @@ from utils.cv_utils.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.ocr.craft import Craft
 from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
 from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
-from filters.steady_camera_filter.core.persons_mask.persons_mask_segmentation_yolo import PersonsMaskYoloSegmentation
+from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_segmentation import PersonsMaskYoloSegmentation
+from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_detector import PersonsMaskYoloDetector
 from filters.steady_camera_filter.core.steady_camera_coarse_filter import \
     SteadyCameraCoarseFilter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
@@ -88,7 +89,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        logger.info(f'{PrintColors.BOLD}{video_filename}{PrintColors.ENDC}')
+        logger.info(f'{video_filename} : :calculating segments')
 
     steady_camera_coarse_parameters = parameters['steady_camera_coarse_filter']
     number_frames_to_average = steady_camera_coarse_parameters['number_frames_to_average']
@@ -108,27 +109,26 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
         case _:
             logger.error('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
             raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
-    logger.info(f"Using {steady_camera_coarse_parameters['text_mask_model']} text model.")
 
     match steady_camera_coarse_parameters['persons_mask_model']:
         case 'yolo_segmentation':
             yolo_segmentation_parameters = steady_camera_coarse_parameters['persons_mask_models']['yolo_segmentation']
             persons_detector = PersonsMaskYoloSegmentation(**yolo_segmentation_parameters)
+        case 'yolo_detector':
+            yolo_detector_parameters = steady_camera_coarse_parameters['persons_mask_models']['yolo_detector']
+            persons_detector = PersonsMaskYoloDetector(**yolo_detector_parameters)
         case _:
-            logger.error('Models for masking persons other than Yolo Segmentation are not provided.')
-            raise ValueError('Models for masking persons other than Yolo Segmentation are not provided.')
-    logger.info(f"Using {steady_camera_coarse_parameters['persons_mask_model']} model for persons masking.")
+            logger.error('Models for masking persons other than YOLO Segmentation are not provided.')
+            raise ValueError('Models for masking persons other than YOLO Segmentation are not provided.')
 
     camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_detector, persons_detector, **steady_camera_coarse_parameters)
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
-    logger.info(f'Unfiltered steady segments: {steady_segments}')
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
-    logger.info(f"Filtered by {parameters['minimum_steady_camera_time_segment']} seconds steady segments: {steady_segments}")
 
     if steady_camera_coarse_parameters['poc_registration_verbose']:
-        camera_filter.print_registration_results()
-    if steady_camera_coarse_parameters['verbose_segments']:
+        camera_filter.log_registration_results()
+    if steady_camera_coarse_parameters['verbose_steady_segments']:
         logger.info(steady_segments)
 
     return steady_segments
@@ -148,6 +148,10 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     if not os.path.exists(video_filepath):
         raise FileNotFoundError(f'File {video_filepath} does not exist')
 
+    if parameters['verbose_filename']:
+        video_filename = os.path.basename(video_filepath)
+        logger.info(f'{video_filename} : :writing video(s) segment(s)')
+
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
                                                 fps=video_segments.video_fps)
@@ -157,11 +161,12 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
         video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
     if parameters['write_segments_complement']:
-        video_segments_complement = video_segments.complement()
         time_threshold = parameters['minimum_non_steady_camera_time_segment']
+        video_segments_complement = video_segments.complement()
         video_segments_complement.filter_by_time_duration(time_threshold)
         video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
-        if parameters['save_non_steady_camera_segments_values']:
+
+        if parameters['save_non_steady_camera_segments_values'] and video_segments_complement.segments.size > 0:
             video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
 
 
@@ -177,11 +182,11 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     minimum_resolution = parameters['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         video_filename = os.path.basename(video_source_filepath)
-        logger.info(f'Video {video_filename} has resolution less than {minimum_resolution}')
+        logger.info(f"{video_filename} :: one of the resolution dimension has size less than {minimum_resolution} pixels")
         return
 
     video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, parameters['video_segments_extraction'])
-    write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_output'])
+    write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_writer'])
 
 
 def move_steady_non_steady_videos_to_subfolders(root_folder: str,

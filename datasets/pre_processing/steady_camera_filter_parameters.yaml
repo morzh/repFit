@@ -9,10 +9,10 @@ video_segments_extraction:
     number_frames_to_average: 20
     poc_maximum_dimension: 512
     poc_registration_verbose: false
-    poc_minimum_confidence: 0.1
-    poc_show_averaged_frames_pair: true
+    poc_minimum_confidence: 0.2
+    poc_show_averaged_frames_pair: false
     maximum_shift_length: 1.5
-    verbose_segments: false
+    verbose_steady_segments: false
     text_mask_model: craft
     persons_mask_model: yolo_segmentation
 
@@ -23,6 +23,11 @@ video_segments_extraction:
         confidence_threshold: 0.4
         model_type: medium
 
+      yolo_detector:
+        weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_detector
+        confidence_threshold: 0.4
+        model_type: nano
+
     text_mask_models:
       easy_ocr:
         use_cuda: true
@@ -31,6 +36,7 @@ video_segments_extraction:
         quantize: false
 
       craft:
+        weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/craft
         use_cuda: true
         use_refiner: false
         use_float_16: false
@@ -41,7 +47,8 @@ video_segments_extraction:
         confidence_threshold: 0.1
 
 
-video_segments_output:
+video_segments_writer:
+  verbose_filename: true
   save_steady_camera_segments_values: true
   save_non_steady_camera_segments_values: true
   write_segments_complement: true

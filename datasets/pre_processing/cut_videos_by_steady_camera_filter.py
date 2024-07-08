@@ -53,9 +53,9 @@ if __name__ == '__main__':
     parameters['videos_steady_subfolder'] = 'steady'
     parameters['videos_non_steady_subfolder'] = 'non_steady'
     parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']
-    parameters['use_multiprocessing'] = False
-    parameters['number_processes'] = 4
+    parameters['use_multiprocessing'] = True
+    parameters['number_processes'] = 3
 
-    logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
+    logger.add('cut_videos_by_steady_camera_filter.log', format="{time}", level="DEBUG", retention="11 days", compression='zip')
 
     cut_videos(**parameters)

@@ -82,21 +82,21 @@ class SteadyCameraCoarseFilter:
 
         for current_image_frames_batch in self.video_frames_batch:
             current_averaged_frames = np.mean(current_image_frames_batch, axis=0).astype(np.uint8)  # averaging images across batch dimension
-            logger.info(f'Read batch of frames with shape {current_averaged_frames.shape}')
+            # logger.info(f'Read batch of frames with shape {current_averaged_frames.shape}')
 
             if self.ocr_detector is not None:
                 current_text_mask = self.ocr_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
                 current_averaged_frames = cv2.resize(current_averaged_frames, self.poc_resolution)
                 current_averaged_frames = self._apply_mask(current_averaged_frames, current_text_mask)
-                logger.info(f'Applied text mask, averaged frame shape is: {current_averaged_frames.shape}')
+                # logger.info(f'Applied text mask with shape {current_text_mask.shape} to averaged frame with shape {current_averaged_frames.shape}')
             if self.persons_detector is not None:
                 current_persons_mask = self.persons_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
+                # logger.info(f'Current persons mask shape is {current_persons_mask.shape}')
                 current_averaged_frames = self._apply_mask(current_averaged_frames, current_persons_mask)
-                logger.info(f'Applied persons mask, averaged frame shape is: {current_averaged_frames.shape}')
+                # logger.info(f'Applied persons mask with shape {current_persons_mask.shape} to averaged frame with shape {current_averaged_frames.shape}')
 
             current_averaged_frames = np.mean(current_averaged_frames, axis=2).astype(np.uint8)  # making grayscale image from color one
             self.poc_engine.update_deque(current_averaged_frames)
-
             self.averaged_frames_pair_deque.append(current_averaged_frames)
 
             if len(self.poc_engine.fft_deque) == 2:
@@ -183,7 +183,7 @@ class SteadyCameraCoarseFilter:
         segments = segments[nans_mask]
         return segments
 
-    def print_registration_results(self) -> None:
+    def log_registration_results(self) -> None:
         """
         Description:
             Print registration results for all images in averaged images batch
@@ -199,7 +199,7 @@ class SteadyCameraCoarseFilter:
         pass
 
     @staticmethod
-    def _apply_mask(image: image_grayscale, mask: image_grayscale, sigma=7, mask_extend_threshold=0.1) -> image_grayscale:
+    def _apply_mask(image: image_color | image_grayscale, mask: image_grayscale, sigma=7, mask_extend_threshold=0.1) -> image_color | image_grayscale:
         """
         Description:
             Apply mask to the image. Given a mask it will be:

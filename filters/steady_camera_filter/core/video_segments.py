@@ -68,9 +68,6 @@ class VideoSegments:
                 self.segments[0, 0] == 0 and
                 self.segments[-1, -1] == self.frames_number - 1)
 
-    def write_segments(self, filepath: str, compressed: bool = True):
-        if compressed:
-            np.savez(filepath, self.segments)
-        else:
-            np.save(filepath, self.segments)
+    def write_segments(self, filepath: str):
+        np.save(filepath, self.segments)
 
