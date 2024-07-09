@@ -18,7 +18,7 @@ def cut_videos(**kwargs):
     videos_extensions = kwargs['videos_extensions']
     use_multiprocessing = kwargs.get('use_multiprocessing', False)
     number_processes = kwargs.get('number_processes', 4)
-    sort_to_folder_criteria = kwargs.get('sort_to_folder_criteria', 'none')
+    move_to_folders_strategy = kwargs.get('move_to_folders_strategy', 'none')
 
     video_source_filepaths = [os.path.join(videos_source_folder, f) for f in listdir(videos_source_folder)
                               if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
@@ -38,7 +38,7 @@ def cut_videos(**kwargs):
     time_end = time.time()
     logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {time_end - time_start} seconds')
 
-    match sort_to_folder_criteria:
+    match move_to_folders_strategy:
         case 'stead_non_steady':
             move_steady_non_steady_videos_to_subfolders(videos_target_folder,
                                                         'steady',
@@ -54,8 +54,8 @@ if __name__ == '__main__':
 
     processing_parameters = dict()
     processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
-    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera')
-    processing_parameters['move_to_folder_criteria'] = 'by_source_filename'
+    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_sort_by_filename')
+    processing_parameters['move_to_folders_strategy'] = 'by_source_filename'
     processing_parameters['videos_steady_subfolder'] = 'steady'
     processing_parameters['videos_non_steady_subfolder'] = 'non_steady'
     processing_parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']
@@ -63,5 +63,4 @@ if __name__ == '__main__':
     processing_parameters['number_processes'] = 2
 
     logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="11 days", compression='zip')
-
     cut_videos(**processing_parameters)

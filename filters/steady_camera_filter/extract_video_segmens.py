@@ -152,7 +152,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
 
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        logger.info(f'{video_filename} : :writing video segment(s)')
+        logger.info(f'{video_filename} :: writing video segment(s)')
 
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
@@ -203,7 +203,8 @@ def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: 
     :param videos_source_folder: folder with source video files;
     :param processed_videos_folder: folder with processed steady and non-steady video files;
     """
-    source_files_basename = [os.path.basename(f) for f in os.listdir(videos_source_folder) if os.path.isfile(os.path.join(videos_source_folder, f))]
+    source_filenames = [os.path.basename(f) for f in os.listdir(videos_source_folder) if os.path.isfile(os.path.join(videos_source_folder, f))]
+    source_files_basename = [os.path.splitext(f)[0] for f in source_filenames]
     if not len(source_files_basename):
         return
 
@@ -213,11 +214,11 @@ def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: 
 
     for source_file_basename in source_files_basename:
         processed_videos_basename_entry = [f for f in processed_filenames if source_file_basename in f]
-        print(f'{processed_videos_basename_entry=}')
         for processed_video in processed_videos_basename_entry:
-            source_filepath = os.path.join(videos_source_folder, processed_video)
-            target_filepath = os.path.join(processed_videos_folder, source_file_basename, processed_video)
-            os.makedirs(target_filepath, exist_ok=True)
+            source_filepath = os.path.join(processed_videos_folder, processed_video)
+            target_folder = os.path.join(processed_videos_folder, source_file_basename)
+            target_filepath = os.path.join(target_folder, processed_video)
+            os.makedirs(target_folder, exist_ok=True)
             shutil.move(source_filepath, target_filepath)
 
 

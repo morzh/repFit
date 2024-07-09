@@ -11,7 +11,14 @@ def check_sorting_steady_non_steady(folder_1: str | Path, folder_2: str | Path, 
     if not kwargs.get('folder_sorting', '') == 'steady_non_steady':
         raise NotImplementedError('Folder organization other than steady_non_steady is not implemented')
 
+    steady_subfolder = kwargs['steady_folder']
+    non_steady_subfolder = kwargs['non_steady_folder']
 
+    steady_path_1 = os.path.join(folder_1, steady_subfolder)
+    non_steady_path_1 = os.path.join(folder_2, non_steady_subfolder)
+
+    if not os.path.exists(steady_path_1):
+        pass
 
 
 def load_segments_data(folder_1: str | Path, folder_2: str | Path) -> tuple[dict, dict]:
