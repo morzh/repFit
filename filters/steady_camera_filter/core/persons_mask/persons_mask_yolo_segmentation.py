@@ -8,6 +8,9 @@ from filters.steady_camera_filter.core.persons_mask.person_mask_base import Pers
 
 class PersonsMaskYoloSegmentation(PersonsMaskBase):
     def __init__(self, **kwargs):
+        """
+
+        """
         weights_path = kwargs.get('weights_path', '')
         if not os.path.exists(weights_path):
             weights_path = ''

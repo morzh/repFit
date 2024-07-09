@@ -8,7 +8,7 @@ from loguru import logger
 from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from utils.cv_utils.video_frames_batch import VideoFramesBatch
+from utils.cv.video_frames_batch import VideoFramesBatch
 from filters.steady_camera_filter.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
 from filters.steady_camera_filter.core.persons_mask.person_mask_base import PersonsMaskBase
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
@@ -105,7 +105,7 @@ class SteadyCameraCoarseFilter:
                 self.registration_confidence = np.append(self.registration_confidence, current_registration_result.confidence)
 
                 if verbose:
-                    logger.info(f'Registration value: {current_registration_result.shift}, confidence: {current_registration_result.confidence:1.2f}.')
+                    # logger.info(f'Registration value: {current_registration_result.shift}, confidence: {current_registration_result.confidence:1.2f}.')
                     registration_result = f'Shift: {current_registration_result.shift}, peak value: {current_registration_result.confidence:1.2f}'
                     reference_target_image = np.hstack((self.averaged_frames_pair_deque[0].astype(np.uint8),
                                                         self.averaged_frames_pair_deque[1].astype(np.uint8)))

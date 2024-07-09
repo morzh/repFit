@@ -20,7 +20,6 @@ class Craft(OcrBase):
         @use_refiner: perform refinement step for text regions
         @use_fp16: if True, use float16 precision, float32 otherwise
         """
-
         craft_weights_folder = kwargs['weights_path']
         use_refiner = kwargs.get('use_refiner', False)
         use_float16 = kwargs.get('use_float16', False)

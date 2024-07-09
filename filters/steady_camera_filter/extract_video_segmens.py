@@ -1,5 +1,7 @@
 import os.path
 import shutil
+import time
+
 from loguru import logger
 
 import cv2
@@ -9,7 +11,7 @@ import yaml
 from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from utils.cv_utils.video_segments_writer import VideoSegmentsWriter
+from utils.cv.video_segments_writer import VideoSegmentsWriter
 from filters.steady_camera_filter.core.ocr.craft import Craft
 from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
 from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
@@ -39,7 +41,7 @@ class PrintColors:
     UNDERLINE = '\033[4m'
 
 
-def yaml_parameters(filepath: str) -> dict:
+def read_yaml(filepath: str) -> dict:
     """
     Description:
         Read yaml file
@@ -89,7 +91,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        logger.info(f'{video_filename} : :calculating segments')
+        logger.info(f'{video_filename} :: calculating segments')
 
     steady_camera_coarse_parameters = parameters['steady_camera_coarse_filter']
     number_frames_to_average = steady_camera_coarse_parameters['number_frames_to_average']
@@ -150,14 +152,14 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
 
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        logger.info(f'{video_filename} : :writing video(s) segment(s)')
+        logger.info(f'{video_filename} : :writing video segment(s)')
 
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
                                                 fps=video_segments.video_fps)
 
     video_segments_writer.write(video_segments, filter_name='steady')
-    if parameters['save_steady_camera_segments_values']:
+    if parameters['save_steady_camera_segments_values'] and video_segments.segments.size > 0:
         video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
     if parameters['write_segments_complement']:
@@ -179,43 +181,75 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     :param videos_target_folder: output folder for segmented videos
     :param parameters: extraction parameters
     """
+    video_processing_start_time = time.time()
     minimum_resolution = parameters['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
+    video_filename = os.path.basename(video_source_filepath)
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
-        video_filename = os.path.basename(video_source_filepath)
         logger.info(f"{video_filename} :: one of the resolution dimension has size less than {minimum_resolution} pixels")
         return
 
     video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, parameters['video_segments_extraction'])
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_writer'])
+    video_processing_end_time = time.time()
+    logger.info(f'{video_filename} :: processing took {video_processing_end_time - video_processing_start_time} seconds, '
+                f'video duration is  {video_segments.frames_number / video_segments.video_fps} seconds.')
 
 
-def move_steady_non_steady_videos_to_subfolders(root_folder: str,
+def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: str) -> None:
+    """
+    Description:
+        Move processed steady and non-steady videos and (probably) their segments to different folders.
+
+    :param videos_source_folder: folder with source video files;
+    :param processed_videos_folder: folder with processed steady and non-steady video files;
+    """
+    source_files_basename = [os.path.basename(f) for f in os.listdir(videos_source_folder) if os.path.isfile(os.path.join(videos_source_folder, f))]
+    if not len(source_files_basename):
+        return
+
+    processed_filenames = [f for f in os.listdir(processed_videos_folder) if os.path.isfile(os.path.join(processed_videos_folder, f))]
+    if not len(processed_filenames):
+        return
+
+    for source_file_basename in source_files_basename:
+        processed_videos_basename_entry = [f for f in processed_filenames if source_file_basename in f]
+        print(f'{processed_videos_basename_entry=}')
+        for processed_video in processed_videos_basename_entry:
+            source_filepath = os.path.join(videos_source_folder, processed_video)
+            target_filepath = os.path.join(processed_videos_folder, source_file_basename, processed_video)
+            os.makedirs(target_filepath, exist_ok=True)
+            shutil.move(source_filepath, target_filepath)
+
+
+def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,
                                                 steady_entry: str,
                                                 non_steady_entry: str,
                                                 subfolder_steady: str,
                                                 subfolder_non_steady: str) -> None:
     """
     Description:
-        Move cut steady and non-steady video segments to different folders. If filename has steady_entry, it will bw moved to subfolder_steady subfolder of
-        the root_folder. If filename has non_steady_entry, it will bw moved to subfolder_non_steady subfolder of the root_folder
+        Move processed steady and non-steady videos and (probably) their segments to different folders. If filename has steady_entry,
+        it will bw moved to subfolder_steady subfolder of the root_folder.
+        If filename has non_steady_entry, it will bw moved to subfolder_non_steady subfolder of the root_folder.
 
-    :param root_folder: folder with source  steady anf non-steady video files;
+    :param videos_source_folder: folder with source video files;
     :param steady_entry: filename entry which that indicates video is (considered as) steady;
     :param non_steady_entry: filename entry which that indicates video is (considered as) non-steady;
     :param subfolder_steady: subfolder of the root folder to move steady videos to;
     :param subfolder_non_steady: subfolder of the root folder to move non-steady videos to;
     """
-    source_filepaths = [os.path.join(root_folder, f) for f in os.listdir(root_folder) if os.path.isfile(os.path.join(root_folder, f))]
-    target_steady_folder = os.path.join(root_folder, subfolder_steady)
-    target_non_steady_folder = os.path.join(root_folder, subfolder_non_steady)
+    source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
+                        if os.path.isfile(os.path.join(videos_source_folder, f))]
+    target_steady_folder = os.path.join(videos_source_folder, subfolder_steady)
+    target_non_steady_folder = os.path.join(videos_source_folder, subfolder_non_steady)
     os.makedirs(target_steady_folder, exist_ok=True)
     os.makedirs(target_non_steady_folder, exist_ok=True)
 
     for source_filepath in source_filepaths:
         filename = os.path.basename(source_filepath)
         if non_steady_entry in filename:
-            target_filepath = str(os.path.join(root_folder, subfolder_non_steady, filename))
+            target_filepath = str(os.path.join(videos_source_folder, subfolder_non_steady, filename))
             shutil.move(source_filepath, target_filepath)
         elif steady_entry in filename:
-            target_filepath = str(os.path.join(root_folder, subfolder_steady, filename))
+            target_filepath = str(os.path.join(videos_source_folder, subfolder_steady, filename))
             shutil.move(source_filepath, target_filepath)

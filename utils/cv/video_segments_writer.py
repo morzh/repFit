@@ -8,7 +8,7 @@ from loguru import logger
 from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from utils.cv_utils.video_reader import VideoReader
+from utils.cv.video_reader import VideoReader
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
@@ -96,8 +96,8 @@ class VideoSegmentsWriter:
         :return: filename
         """
         video_filename_base, _ = self.extract_filename_base_extension()
-        start_frame = str(segment[0])
-        end_frame = str(segment[1])
+        start_frame = str(segment[0]).zfill(5)
+        end_frame = str(segment[1]).zfill(5)
         video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
         output_filepath = os.path.join(self.output_folder, video_filename)
         return output_filepath

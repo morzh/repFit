@@ -3,11 +3,15 @@ import numpy as np
 import torch
 from ultralytics import YOLO
 import cv2
+
 from filters.steady_camera_filter.core.persons_mask.person_mask_base import PersonsMaskBase
 
 
 class PersonsMaskYoloDetector(PersonsMaskBase):
     def __init__(self, **kwargs):
+        """
+        Persons mask class built upon ultralytics YOLO object detector.
+        """
         weights_path = kwargs.get('weights_path', '')
         if not os.path.exists(weights_path):
             weights_path = ''
@@ -39,12 +43,15 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
         current_person_masks_indices = current_person_masks_indices.cpu().data.numpy().flatten()
         current_person_classes_indices = current_person_classes_indices.cpu().data.numpy().flatten()
         current_person_confident_indices = np.intersect1d(current_person_masks_indices, current_person_classes_indices)
+        predicted_boxes_xyxy = prediction_result[0].boxes.xyxy[current_person_confident_indices]
 
-        if prediction_result[0].masks is None:
-            unified_mask = np.zeros((output_resolution[1], output_resolution[0]))
-        else:
-            persons_masks = prediction_result[0].masks[current_person_confident_indices].cpu().data.numpy()
-            unified_mask = np.sum(persons_masks, axis=0)
-            unified_mask = np.clip(unified_mask, 0.0, 1.0)
+        unified_mask = np.zeros((output_resolution[1], output_resolution[0]))
+        if predicted_boxes_xyxy is not None:
+            for mask_rectangle in predicted_boxes_xyxy:
+                cv2.rectangle(unified_mask,
+                              (int(mask_rectangle[0]), int(mask_rectangle[1])),
+                              (int(mask_rectangle[2]), int(mask_rectangle[3])),
+                              1,
+                              -1)
 
         return unified_mask
