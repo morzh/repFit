@@ -13,8 +13,6 @@ from filters.steady_camera_filter.extract_video_segmens import move_steady_non_s
 def cut_videos(**kwargs):
     videos_source_folder = kwargs['videos_source_folder']
     videos_target_folder = kwargs['videos_target_folder']
-    videos_steady_subfolder = kwargs['videos_steady_subfolder']
-    videos_non_steady_subfolder = kwargs['videos_non_steady_subfolder']
     videos_extensions = kwargs['videos_extensions']
     use_multiprocessing = kwargs.get('use_multiprocessing', False)
     number_processes = kwargs.get('number_processes', 4)
@@ -36,10 +34,10 @@ def cut_videos(**kwargs):
         for video_source_filepath in video_source_filepaths:
             extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, steady_camera_filter_parameters)
     time_end = time.time()
-    logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {time_end - time_start} seconds')
+    logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
 
     match move_to_folders_strategy:
-        case 'stead_non_steady':
+        case 'steady_non_steady':
             move_steady_non_steady_videos_to_subfolders(videos_target_folder,
                                                         'steady',
                                                         'nonsteady')
@@ -51,9 +49,9 @@ if __name__ == '__main__':
     videos_root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'
 
     processing_parameters = dict()
-    processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
-    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera')
-    processing_parameters['move_to_folders_strategy'] = 'stead_non_steady'   # 'by_source_filename'
+    processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022_abriged')
+    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera__')
+    processing_parameters['move_to_folders_strategy'] = 'steady_non_steady'   # 'by_source_filename'
     processing_parameters['videos_steady_subfolder'] = 'steady'
     processing_parameters['videos_non_steady_subfolder'] = 'non_steady'
     processing_parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']

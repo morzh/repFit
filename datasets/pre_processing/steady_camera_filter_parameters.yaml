@@ -1,7 +1,7 @@
 video_segments_extraction:
   verbose_filename: true
   minimum_steady_camera_time_segment: 5  # time in seconds
-  unify_adjacent_segments: true
+  combine_adjacent_segments: true
 
   resolution_filter:
     minimum_dimension_resolution: 256
@@ -15,7 +15,7 @@ video_segments_extraction:
     maximum_shift_length: 2.0
     verbose_steady_segments: false
     text_mask_model: craft
-    persons_mask_model: yolo_segmentation
+    persons_mask_model: yolo_detector
 
 
     persons_mask_models:
@@ -27,7 +27,7 @@ video_segments_extraction:
       yolo_detector:
         weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_detector
         confidence_threshold: 0.4
-        model_type: nano
+        model_type: medium
 
     text_mask_models:
       easy_ocr:

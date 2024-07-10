@@ -91,7 +91,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     """
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        logger.info(f'{video_filename} :: calculating segments')
+        logger.info(f'{video_filename} :: calculating segments.')
 
     steady_camera_coarse_parameters = parameters['steady_camera_coarse_filter']
     number_frames_to_average = steady_camera_coarse_parameters['number_frames_to_average']
@@ -127,7 +127,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
-    if parameters['minimum_steady_camera_time_segment']:
+    if parameters['combine_adjacent_segments']:
         steady_segments.combine_adjacent_segments()
 
     if steady_camera_coarse_parameters['poc_registration_verbose']:
@@ -154,7 +154,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
 
     if parameters['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
-        logger.info(f'{video_filename} :: writing video segment(s)')
+        logger.info(f'{video_filename} :: writing video segment(s).')
 
     video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
                                                 output_folder=output_folder,
@@ -194,7 +194,7 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_writer'])
     video_processing_end_time = time.time()
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
-                f'video duration is  {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
+                f'video duration is {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
 
 
 def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: str) -> None:

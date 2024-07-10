@@ -1,0 +1,3 @@
+
+class PersonsMaskFactory:
+    pass

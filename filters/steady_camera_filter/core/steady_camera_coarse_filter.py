@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 
 from utils.cv.video_frames_batch import VideoFramesBatch
 from filters.steady_camera_filter.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
-from filters.steady_camera_filter.core.persons_mask.person_mask_base import PersonsMaskBase
+from filters.steady_camera_filter.core.persons_mask.persons_mask_base import PersonsMaskBase
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
@@ -162,8 +162,8 @@ class SteadyCameraCoarseFilter:
             if segments[index, 1] > segments[index + 1, 0]:
                 segments[index + 1, 0] = segments[index, 0]
                 segments[index] = -1
-        nans_mask = segments[:, 0] >= 0
-        segments = segments[nans_mask]
+        mask = segments[:, 0] >= 0
+        segments = segments[mask]
         return segments
 
     def log_registration_results(self) -> None:

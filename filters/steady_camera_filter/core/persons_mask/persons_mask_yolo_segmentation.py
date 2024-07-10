@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from ultralytics import YOLO
 import cv2
-from filters.steady_camera_filter.core.persons_mask.person_mask_base import PersonsMaskBase
+from filters.steady_camera_filter.core.persons_mask.persons_mask_base import PersonsMaskBase
 
 
 class PersonsMaskYoloSegmentation(PersonsMaskBase):

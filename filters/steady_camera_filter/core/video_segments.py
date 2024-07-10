@@ -79,8 +79,9 @@ class VideoSegments:
             TO_DO: Make this algorithm more efficient in terms of memory and speed
         """
         for index in range(1, len(self.segments)):
-            if self.segments[index - 1][1] + 1 == self.segments[index][0]:
-                self.segments[index - 1][1] = self.segments[index][1]
-                self.segments[index][0] = self.segments[index - 1][0]
+            if self.segments[index - 1, 1] + 1 == self.segments[index, 0]:
+                self.segments[index, 0] = self.segments[index - 1, 0]
+                self.segments[index - 1] = -1
 
-        self.segments = np.unique(self.segments, axis=0)
+        mask = self.segments[:, 0] >= 0
+        self.segments = self.segments[mask]
