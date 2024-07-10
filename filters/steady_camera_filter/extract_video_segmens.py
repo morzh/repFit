@@ -127,6 +127,8 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
+    if parameters['minimum_steady_camera_time_segment']:
+        steady_segments.combine_adjacent_segments()
 
     if steady_camera_coarse_parameters['poc_registration_verbose']:
         camera_filter.log_registration_results()
@@ -191,8 +193,8 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, parameters['video_segments_extraction'])
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_writer'])
     video_processing_end_time = time.time()
-    logger.info(f'{video_filename} :: processing took {video_processing_end_time - video_processing_start_time} seconds, '
-                f'video duration is  {video_segments.frames_number / video_segments.video_fps} seconds.')
+    logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
+                f'video duration is  {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
 
 
 def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: str) -> None:
@@ -223,10 +225,9 @@ def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: 
 
 
 def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,
-                                                steady_entry: str,
-                                                non_steady_entry: str,
-                                                subfolder_steady: str,
-                                                subfolder_non_steady: str) -> None:
+                                                steady_suffix: str,
+                                                non_steady_suffix: str,
+                                                ) -> None:
     """
     Description:
         Move processed steady and non-steady videos and (probably) their segments to different folders. If filename has steady_entry,
@@ -234,23 +235,21 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,
         If filename has non_steady_entry, it will bw moved to subfolder_non_steady subfolder of the root_folder.
 
     :param videos_source_folder: folder with source video files;
-    :param steady_entry: filename entry which that indicates video is (considered as) steady;
-    :param non_steady_entry: filename entry which that indicates video is (considered as) non-steady;
-    :param subfolder_steady: subfolder of the root folder to move steady videos to;
-    :param subfolder_non_steady: subfolder of the root folder to move non-steady videos to;
+    :param steady_suffix: filename entry which  indicates that video is (considered as) steady. Also, subfolder to move steady file to;
+    :param non_steady_suffix: filename entry which that indicates video is (considered as) non-steady. Also, subfolder to move non-steady file to;
     """
     source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
                         if os.path.isfile(os.path.join(videos_source_folder, f))]
-    target_steady_folder = os.path.join(videos_source_folder, subfolder_steady)
-    target_non_steady_folder = os.path.join(videos_source_folder, subfolder_non_steady)
+    target_steady_folder = os.path.join(videos_source_folder, steady_suffix)
+    target_non_steady_folder = os.path.join(videos_source_folder, non_steady_suffix)
     os.makedirs(target_steady_folder, exist_ok=True)
     os.makedirs(target_non_steady_folder, exist_ok=True)
 
     for source_filepath in source_filepaths:
         filename = os.path.basename(source_filepath)
-        if non_steady_entry in filename:
-            target_filepath = str(os.path.join(videos_source_folder, subfolder_non_steady, filename))
+        if non_steady_suffix in filename:
+            target_filepath = str(os.path.join(videos_source_folder, non_steady_suffix, filename))
             shutil.move(source_filepath, target_filepath)
-        elif steady_entry in filename:
-            target_filepath = str(os.path.join(videos_source_folder, subfolder_steady, filename))
+        elif steady_suffix in filename:
+            target_filepath = str(os.path.join(videos_source_folder, steady_suffix, filename))
             shutil.move(source_filepath, target_filepath)

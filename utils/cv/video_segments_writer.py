@@ -112,7 +112,7 @@ class VideoSegmentsWriter:
         segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
         segments_values_filepath = os.path.join(self.output_folder, segments_values_filename)
 
-        video_segments.write_segments(segments_values_filepath)
+        video_segments.write(segments_values_filepath)
 
 
 

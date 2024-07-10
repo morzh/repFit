@@ -42,9 +42,7 @@ def cut_videos(**kwargs):
         case 'stead_non_steady':
             move_steady_non_steady_videos_to_subfolders(videos_target_folder,
                                                         'steady',
-                                                        'nonsteady',
-                                                        videos_steady_subfolder,
-                                                        videos_non_steady_subfolder)
+                                                        'nonsteady')
         case 'by_source_filename':
             move_videos_by_filename(videos_source_folder, videos_target_folder)
 
@@ -54,8 +52,8 @@ if __name__ == '__main__':
 
     processing_parameters = dict()
     processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
-    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_sort_by_filename')
-    processing_parameters['move_to_folders_strategy'] = 'by_source_filename'
+    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera')
+    processing_parameters['move_to_folders_strategy'] = 'stead_non_steady'   # 'by_source_filename'
     processing_parameters['videos_steady_subfolder'] = 'steady'
     processing_parameters['videos_non_steady_subfolder'] = 'non_steady'
     processing_parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']

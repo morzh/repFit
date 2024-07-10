@@ -119,23 +119,6 @@ class SteadyCameraCoarseFilter:
                     cv2.imshow('POC', reference_target_image)
                     cv2.waitKey(10)
 
-    def filter_segments_by_time(self, video_segments: VideoSegments, time_threshold: float) -> VideoSegments:
-        """
-        Description:
-            Filter video segments by duration. If segment duration is less than time_threshold, it will be deleted.
-        :param video_segments: input video segments
-        :param time_threshold: time threshold in seconds
-        :return: filtered by time video segments
-        """
-        fps = self.video_frames_batch.video_reader.fps
-        for segment_index, segment in enumerate(video_segments.segments):
-            segment_length = segment[1] - segment[0]
-            if (segment_length / fps) < time_threshold:
-                video_segments.segments[segment_index] = np.array([-1, -1])
-        mask = video_segments.segments[:, 0] >= 0
-        video_segments.segments = video_segments.segments[mask]
-        return video_segments
-
     def steady_camera_video_segments(self) -> VideoSegments:
         """
         Description:
