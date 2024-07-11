@@ -1,41 +1,29 @@
 import cv2
 from loguru import logger
-import numpy as np
 import os.path
 import shutil
 import time
 import yaml
 
-from typing import Annotated, Literal
-from numpy.typing import NDArray
-
-from utils.cv.video_segments_writer import VideoSegmentsWriter
 import filters.steady_camera_filter.core.ocr.factory as ocr_factory
 import filters.steady_camera_filter.core.persons_mask.factory as persons_mask_factory
-
-from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_segmentation import PersonsMaskYoloSegmentation
-from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_detector import PersonsMaskYoloDetector
-
-from filters.steady_camera_filter.core.steady_camera_coarse_filter import \
-    SteadyCameraCoarseFilter
+from filters.steady_camera_filter.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
-
-segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
+from utils.cv.video_segments_writer import VideoSegmentsWriter
 
 
 class PrintColors:
     """
     Description:
-        This class helps with colored text printing.
-        Example of usage: print(f'{PrintColors.BOLD}some text{PrintColors.ENDC}')
+        This class helps with colored text printing. Example of usage: print(f'{PrintColors.BOLD}some text{PrintColors.END}')
     """
     HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
@@ -44,6 +32,7 @@ def read_yaml(filepath: str) -> dict:
     """
     Description:
         Read yaml file
+
     :param filepath: filepath to .yaml file
     :return: dictionary with yaml data
     """
@@ -86,6 +75,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
 
     :param video_filepath: filepath of the video
     :param parameters: parameters for steady camera filter
+
     :raises ValueError: when trying to use text masking with neural network models other than CRAFT, EasyOCR or Tesseract.
     """
     if parameters['verbose_filename']:
@@ -123,6 +113,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     :param output_folder: output folder for trimmed videos
     :param video_segments information about video segments to trim
     :param parameters: parameters to write videos
+
     :raises FileNotFoundError: when video_filepath does not exist
     """
     if not os.path.exists(video_filepath):
@@ -200,10 +191,7 @@ def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: 
             shutil.move(source_filepath, target_filepath)
 
 
-def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,
-                                                steady_suffix: str,
-                                                non_steady_suffix: str,
-                                                ) -> None:
+def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,steady_suffix: str, non_steady_suffix: str) -> None:
     """
     Description:
         Move processed steady and non-steady videos and (probably) their segments to different folders. If filename has steady_entry,
@@ -212,7 +200,7 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,
 
     :param videos_source_folder: folder with source video files;
     :param steady_suffix: filename entry which  indicates that video is (considered as) steady. Also, subfolder to move steady file to;
-    :param non_steady_suffix: filename entry which that indicates video is (considered as) non-steady. Also, subfolder to move non-steady file to;
+    :param non_steady_suffix: filename entry which that indicates video is (considered as) non-steady. Also, subfolder to move non-steady file to.
     """
     source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
                         if os.path.isfile(os.path.join(videos_source_folder, f))]

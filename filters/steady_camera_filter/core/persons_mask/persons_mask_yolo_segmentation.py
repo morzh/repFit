@@ -9,6 +9,7 @@ from filters.steady_camera_filter.core.persons_mask.persons_mask_base import Per
 
 class PersonsMaskYoloSegmentation(PersonsMaskBase):
     alias = 'yolo_segmentation'
+
     def __init__(self, **kwargs):
         """
 
@@ -29,7 +30,7 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
             case 'large':
                 model_file = 'yolov8l-seg.pt'
             case _:
-                raise ValueError("Models other than 'n', 's', 'm' or 'l' are not supported.")
+                raise ValueError("YOLO v8 segmentation models with suffix other than 'n', 's', 'm' or 'l' are not supported.")
 
         self.model = YOLO(os.path.join(weights_path, model_file))
         self.confidence: float = kwargs.get('confidence_threshold', 0.4)

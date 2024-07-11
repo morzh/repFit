@@ -12,7 +12,8 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
 
     def __init__(self, **kwargs):
         """
-        Persons mask class built upon ultralytics YOLO object detector.
+        Description:
+            Persons mask class built upon ultralytics YOLO object detector.
         """
         weights_path = kwargs.get('weights_path', '')
         if not os.path.exists(weights_path):
@@ -30,7 +31,7 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
             case 'large':
                 model_file = 'yolov8l.pt'
             case _:
-                raise ValueError("Models other than 'n', 's', 'm' or 'l' are not supported.")
+                raise ValueError("YOLO v8 detection models with suffix other than 'n', 's', 'm' or 'l' are not supported.")
 
         self.model = YOLO(os.path.join(weights_path, model_file))
         self.confidence: float = kwargs.get('confidence_threshold', 0.4)
