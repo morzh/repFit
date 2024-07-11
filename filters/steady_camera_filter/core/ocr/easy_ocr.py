@@ -9,6 +9,7 @@ class EasyOcr(OcrBase):
     """
     Jaided EasyOCR for text recognition in images.
     """
+    alias = 'easy_ocr'
     def __init__(self, **kwargs):
         """
         @confidence_threshold: minimum confidence for detected text
@@ -32,3 +33,8 @@ class EasyOcr(OcrBase):
                     current_text_mask = cv2.fillPoly(current_text_mask, [ocr_box], color=(1, 1, 1))
         current_text_mask = cv2.resize(current_text_mask, output_resolution)
         return current_text_mask
+
+
+def create_easy_ocr_instance(**kwargs):
+    parameters = kwargs.get(EasyOcr.alias)
+    return EasyOcr(**parameters)

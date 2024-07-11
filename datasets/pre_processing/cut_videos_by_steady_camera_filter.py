@@ -49,13 +49,11 @@ if __name__ == '__main__':
     videos_root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'
 
     processing_parameters = dict()
-    processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022_abriged')
-    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera__')
+    processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
+    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation-m')
     processing_parameters['move_to_folders_strategy'] = 'steady_non_steady'   # 'by_source_filename'
-    processing_parameters['videos_steady_subfolder'] = 'steady'
-    processing_parameters['videos_non_steady_subfolder'] = 'non_steady'
     processing_parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']
-    processing_parameters['use_multiprocessing'] = True
+    processing_parameters['use_multiprocessing'] = False
     processing_parameters['number_processes'] = 2
 
     logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="11 days", compression='zip')

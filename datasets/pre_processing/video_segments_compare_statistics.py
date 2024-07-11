@@ -34,7 +34,6 @@ def load_videos_segments_data(folder_path: str | Path) -> dict:
 
 def overlap_segments_data(segments_1: dict, segments_2: dict) -> tuple[dict, dict]:
     common_keys = set(segments_1).intersection(segments_2)  # O(N * log N) operation
-
     segments_new_1 = {}
     segments_new_2 = {}
     for key in common_keys:
@@ -44,14 +43,15 @@ def overlap_segments_data(segments_1: dict, segments_2: dict) -> tuple[dict, dic
     return segments_new_1, segments_new_2
 
 
-def segments_compare_visualization(folder_path_1: str | Path, folder_path_2: str | Path):
-    # check_sorting_steady_non_steady(folder_1, folder_2, kwargs)
+def get_segments(folder_path_1: str | Path, folder_path_2: str | Path) -> tuple[dict, dict]:
     segments_1 = load_videos_segments_data(folder_path_1)
     segments_2 = load_videos_segments_data(folder_path_2)
-
     segments_1, segments_2 = overlap_segments_data(segments_1, segments_2)
     assert len(segments_1) == len(segments_2)
+    return segments_1, segments_2
 
+
+def segments_compare_visualization(path_1: str | Path, path_2: str | Path) -> None:
     segments_color_1 = 'g'
     segments_color_2 = 'b'
 
@@ -65,9 +65,12 @@ def segments_compare_visualization(folder_path_1: str | Path, folder_path_2: str
     plt.show()
 
 
-def segments_compare_statistics(folder_1: str | Path, folder_2: str | Path):
-    folder_1 = Path(folder_1)
-    folder_2 = Path(folder_2)
+def segments_compare_statistics(path_1: str | Path, path_2: str | Path):
+    segments_1, segments_2 = get_segments(path_1, path_2)
+    segments_distances = np.abs(segments_1 - segments_2)
+    segments_distances_mean = np.mean(segments_distances)
+    segments_distances_std = np.std(segments_distances)
+    print('statistics')
 
 
 root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/'
@@ -76,4 +79,4 @@ videos_segments_folder_1 = os.path.join(root_folder, 'squats_2022_coarse_steady_
 videos_segments_folder_2 = os.path.join(root_folder, 'squats_2022_coarse_steady_camera_yolo_detector-m', filter_subfolder)
 
 segments_compare_visualization(videos_segments_folder_1, videos_segments_folder_1)
-# segments_compare_statistics(videos_segments_folder_1, videos_segments_folder_2)
+segments_compare_statistics(videos_segments_folder_1, videos_segments_folder_2)

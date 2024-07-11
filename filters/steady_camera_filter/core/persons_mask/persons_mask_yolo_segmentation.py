@@ -1,12 +1,14 @@
-import os
+import cv2
 import numpy as np
+import os
 import torch
 from ultralytics import YOLO
-import cv2
+
 from filters.steady_camera_filter.core.persons_mask.persons_mask_base import PersonsMaskBase
 
 
 class PersonsMaskYoloSegmentation(PersonsMaskBase):
+    alias = 'yolo_segmentation'
     def __init__(self, **kwargs):
         """
 
@@ -51,3 +53,8 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
             unified_mask = np.clip(unified_mask, 0.0, 1.0)
 
         return unified_mask
+
+
+def create_yolo_segmentation_instance(**kwargs):
+    parameters = kwargs.get(PersonsMaskYoloSegmentation.alias)
+    return PersonsMaskYoloSegmentation(**parameters)

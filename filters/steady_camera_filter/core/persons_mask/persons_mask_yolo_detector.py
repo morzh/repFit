@@ -8,6 +8,8 @@ from filters.steady_camera_filter.core.persons_mask.persons_mask_base import Per
 
 
 class PersonsMaskYoloDetector(PersonsMaskBase):
+    alias = 'yolo_detector'
+
     def __init__(self, **kwargs):
         """
         Persons mask class built upon ultralytics YOLO object detector.
@@ -55,3 +57,8 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
                               -1)
 
         return unified_mask
+
+
+def create_yolo_detector_instance(**kwargs):
+    parameters = kwargs.get(PersonsMaskYoloDetector.alias)
+    return PersonsMaskYoloDetector(**parameters)

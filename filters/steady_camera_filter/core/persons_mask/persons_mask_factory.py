@@ -1,7 +1,7 @@
 from loguru import logger
 
 
-class OcrFactory:
+class PersonsMaskFactory:
     def __init__(self):
         self._builders = {}
 
@@ -11,6 +11,6 @@ class OcrFactory:
     def create(self, key, **kwargs):
         builder = self._builders.get(key)
         if not builder:
-            logger.error(f'Model type {key} is not supported for OCR.')
-            raise ValueError(f'Model type {key} is not supported for OCR.')
+            logger.error(f'Model type {key} is not supported for persons mask.')
+            raise ValueError(f'Model type {key} is not supported for persons mask.')
         return builder(**kwargs)

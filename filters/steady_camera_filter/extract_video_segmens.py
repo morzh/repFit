@@ -1,22 +1,21 @@
+import cv2
+from loguru import logger
+import numpy as np
 import os.path
 import shutil
 import time
-
-from loguru import logger
-
-import cv2
-import numpy as np
 import yaml
 
 from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 from utils.cv.video_segments_writer import VideoSegmentsWriter
-from filters.steady_camera_filter.core.ocr.craft import Craft
-from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
-from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
+import filters.steady_camera_filter.core.ocr.factory as ocr_factory
+import filters.steady_camera_filter.core.persons_mask.factory as persons_mask_factory
+
 from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_segmentation import PersonsMaskYoloSegmentation
 from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_detector import PersonsMaskYoloDetector
+
 from filters.steady_camera_filter.core.steady_camera_coarse_filter import \
     SteadyCameraCoarseFilter
 from filters.steady_camera_filter.core.video_segments import VideoSegments
@@ -93,46 +92,23 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
         video_filename = os.path.basename(video_filepath)
         logger.info(f'{video_filename} :: calculating segments.')
 
-    steady_camera_coarse_parameters = parameters['steady_camera_coarse_filter']
-    number_frames_to_average = steady_camera_coarse_parameters['number_frames_to_average']
+    filter_parameters = parameters['steady_camera_coarse_filter']
+    number_frames_to_average = filter_parameters['number_frames_to_average']
     if number_frames_to_average < 5:
         logger.warning(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
-    match steady_camera_coarse_parameters['text_mask_model']:
-        case 'craft':
-            craft_parameters = steady_camera_coarse_parameters['text_mask_models']['craft']
-            ocr_detector = Craft(**craft_parameters)
-        case 'easy_ocr':
-            easyocr_parameters = steady_camera_coarse_parameters['text_mask_models']['easy_ocr']
-            ocr_detector = EasyOcr(**easyocr_parameters)
-        case 'tesseract':
-            tesseract_parameters = steady_camera_coarse_parameters['text_mask_models']['tesseract']
-            ocr_detector = TesseractOcr(**tesseract_parameters)
-        case _:
-            logger.error('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
-            raise ValueError('Models for masking text other than Craft, EasyOCR or Tesseract are not provided.')
-
-    match steady_camera_coarse_parameters['persons_mask_model']:
-        case 'yolo_segmentation':
-            yolo_segmentation_parameters = steady_camera_coarse_parameters['persons_mask_models']['yolo_segmentation']
-            persons_detector = PersonsMaskYoloSegmentation(**yolo_segmentation_parameters)
-        case 'yolo_detector':
-            yolo_detector_parameters = steady_camera_coarse_parameters['persons_mask_models']['yolo_detector']
-            persons_detector = PersonsMaskYoloDetector(**yolo_detector_parameters)
-        case _:
-            logger.error('Models for masking persons other than YOLO Segmentation are not provided.')
-            raise ValueError('Models for masking persons other than YOLO Segmentation are not provided.')
-
-    camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_detector, persons_detector, **steady_camera_coarse_parameters)
-    camera_filter.process(steady_camera_coarse_parameters['poc_show_averaged_frames_pair'])
+    ocr_model = ocr_factory.factory.create(filter_parameters['text_mask_model'], **filter_parameters['text_mask_models'])
+    persons_mask_model = persons_mask_factory.factory.create(filter_parameters['persons_mask_model'], **filter_parameters['persons_mask_models'])
+    camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, persons_mask_model, **filter_parameters)
+    camera_filter.process(filter_parameters['poc_show_averaged_frames_pair'])
     steady_segments = camera_filter.steady_camera_video_segments()
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
     if parameters['combine_adjacent_segments']:
         steady_segments.combine_adjacent_segments()
 
-    if steady_camera_coarse_parameters['poc_registration_verbose']:
+    if filter_parameters['poc_registration_verbose']:
         camera_filter.log_registration_results()
-    if steady_camera_coarse_parameters['verbose_steady_segments']:
+    if filter_parameters['verbose_steady_segments']:
         logger.info(steady_segments)
 
     return steady_segments

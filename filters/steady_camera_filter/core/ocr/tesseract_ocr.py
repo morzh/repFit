@@ -9,6 +9,7 @@ class TesseractOcr(OcrBase):
     """
     Google Tesseract text recognition engine for text masking
     """
+    alias = 'tesseract'
     def __init__(self, **kwargs):
         self.confidence = 100 * kwargs.get('confidence', 0.1)
 
@@ -23,3 +24,8 @@ class TesseractOcr(OcrBase):
                 mask = cv2.rectangle(mask, (x, y), (x + w, y + h), 1, -1)
         mask = cv2.resize(mask, output_resolution)
         return mask
+
+
+def create_tesseract_instance(**kwargs):
+    parameters = kwargs.get(TesseractOcr.alias)
+    return TesseractOcr(**parameters)

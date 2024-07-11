@@ -14,13 +14,15 @@ class Craft(OcrBase):
     arXiv PDF:
         https://arxiv.org/pdf/1904.01941
     """
+    alias = 'craft'
+
     def __init__(self, **kwargs):
         """
         @use_cuda: use CUDA for text regions calculations
         @use_refiner: perform refinement step for text regions
         @use_fp16: if True, use float16 precision, float32 otherwise
         """
-        craft_weights_folder = kwargs['weights_path']
+        craft_weights_folder = kwargs.get('weights_path', '.')
         use_refiner = kwargs.get('use_refiner', False)
         use_float16 = kwargs.get('use_float16', False)
         use_cuda = kwargs.get('use_cuda', True)
@@ -51,3 +53,8 @@ class Craft(OcrBase):
             poly_ = poly_.reshape(-1, 2)
             mask = cv2.fillPoly(mask, [poly_.reshape((-1, 1, 2))], color=(1, 1, 1))
         return mask
+
+
+def create_craft_instance(**kwargs):
+    parameters = kwargs.get(Craft.alias)
+    return Craft(**parameters)

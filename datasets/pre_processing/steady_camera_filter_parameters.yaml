@@ -15,7 +15,7 @@ video_segments_extraction:
     maximum_shift_length: 2.0
     verbose_steady_segments: false
     text_mask_model: craft
-    persons_mask_model: yolo_detector
+    persons_mask_model: yolo_segmentation
 
 
     persons_mask_models:
