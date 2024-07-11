@@ -54,7 +54,7 @@ class Craft(OcrBase):
             mask = cv2.fillPoly(mask, [poly_.reshape((-1, 1, 2))], color=(1, 1, 1))
         return mask
 
-
-def create_craft_instance(**kwargs):
-    parameters = kwargs.get(Craft.alias)
-    return Craft(**parameters)
+    @staticmethod
+    def create_instance(**kwargs):
+        parameters = kwargs.get(Craft.alias)
+        return Craft(**parameters)

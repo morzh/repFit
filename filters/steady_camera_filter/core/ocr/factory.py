@@ -1,10 +1,10 @@
 from filters.steady_camera_filter.core.ocr.ocr_factory import OcrFactory
-from filters.steady_camera_filter.core.ocr.craft import Craft, create_craft_instance
-from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr, create_easy_ocr_instance
-from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr, create_tesseract_instance
+from filters.steady_camera_filter.core.ocr.craft import Craft
+from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
+from filters.steady_camera_filter.core.ocr.tesseract_ocr import TesseractOcr
 
 factory = OcrFactory()
 
-factory.register_builder(Craft.alias, create_craft_instance)
-factory.register_builder(EasyOcr.alias, create_easy_ocr_instance)
-factory.register_builder(TesseractOcr.alias, create_tesseract_instance)
+factory.register_builder(Craft.alias, Craft.create_instance)
+factory.register_builder(EasyOcr.alias, EasyOcr.create_instance)
+factory.register_builder(TesseractOcr.alias, TesseractOcr.create_instance)

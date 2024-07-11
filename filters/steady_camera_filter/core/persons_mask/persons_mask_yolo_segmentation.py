@@ -55,7 +55,7 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
 
         return unified_mask
 
-
-def create_yolo_segmentation_instance(**kwargs):
-    parameters = kwargs.get(PersonsMaskYoloSegmentation.alias)
-    return PersonsMaskYoloSegmentation(**parameters)
+    @staticmethod
+    def create_instance(**kwargs):
+        parameters = kwargs.get(PersonsMaskYoloSegmentation.alias)
+        return PersonsMaskYoloSegmentation(**parameters)

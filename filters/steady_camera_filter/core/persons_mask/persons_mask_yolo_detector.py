@@ -59,7 +59,7 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
 
         return unified_mask
 
-
-def create_yolo_detector_instance(**kwargs):
-    parameters = kwargs.get(PersonsMaskYoloDetector.alias)
-    return PersonsMaskYoloDetector(**parameters)
+    @staticmethod
+    def create_instance(**kwargs):
+        parameters = kwargs.get(PersonsMaskYoloDetector.alias)
+        return PersonsMaskYoloDetector(**parameters)

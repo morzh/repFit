@@ -89,15 +89,15 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
 
     ocr_model = ocr_factory.factory.create(filter_parameters['text_mask_model'], **filter_parameters['text_mask_models'])
     persons_mask_model = persons_mask_factory.factory.create(filter_parameters['persons_mask_model'], **filter_parameters['persons_mask_models'])
-    camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, persons_mask_model, **filter_parameters)
-    camera_filter.process(filter_parameters['poc_show_averaged_frames_pair'])
-    steady_segments = camera_filter.steady_camera_video_segments()
+    steady_camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, persons_mask_model, **filter_parameters)
+    steady_camera_filter.process(filter_parameters['poc_show_averaged_frames_pair'])
+    steady_segments = steady_camera_filter.steady_camera_video_segments()
     steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
+
     if parameters['combine_adjacent_segments']:
         steady_segments.combine_adjacent_segments()
-
     if filter_parameters['poc_registration_verbose']:
-        camera_filter.log_registration_results()
+        steady_camera_filter.log_registration_results()
     if filter_parameters['verbose_steady_segments']:
         logger.info(steady_segments)
 

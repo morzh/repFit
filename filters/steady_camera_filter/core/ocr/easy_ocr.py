@@ -34,7 +34,7 @@ class EasyOcr(OcrBase):
         current_text_mask = cv2.resize(current_text_mask, output_resolution)
         return current_text_mask
 
-
-def create_easy_ocr_instance(**kwargs):
-    parameters = kwargs.get(EasyOcr.alias)
-    return EasyOcr(**parameters)
+    @staticmethod
+    def create_instance(**kwargs):
+        parameters = kwargs.get(EasyOcr.alias)
+        return EasyOcr(**parameters)
