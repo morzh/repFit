@@ -17,7 +17,7 @@ num_epochs = 200
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def traint(model_name: str = 'classifier_v1.0'):
+def train(model_name: str = 'classifier_v1.0'):
     train_loader = SkeletonDataset(epoch_size=10, batch_size=100)
     model = ModelClassifier()
 
@@ -105,4 +105,4 @@ def report(train_loader, y_pred):
 
 
 if __name__ == '__main__':
-    traint()
+    train()

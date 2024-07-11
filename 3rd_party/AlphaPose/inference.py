@@ -77,10 +77,11 @@ args.tracking = args.pose_track or args.pose_flow or args.detector == 'tracker'
 
 n_process = 5
 
-sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
+sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit/filters")
 
-from filters.video_filter.paths import (
-    CRED_FILTERED_VIDEO_DPATH,
+
+from video_filter.paths import (
+    FILTERED_VIDEO_DPATH,
     JOINTS2d_TRACK_DPATH,
     JOINTS2d_EXTRA_INFO_DPATH,
     VIDEO_WITH_2D_JOINTS
@@ -96,7 +97,7 @@ def proc(video_name):
         return
     print(f"Start processing of file {video_name}")
     # Load detection loader
-    input_source = os.path.join(CRED_FILTERED_VIDEO_DPATH, video_name)
+    input_source = os.path.join(FILTERED_VIDEO_DPATH, video_name)
     det_loader = DetectionLoader(input_source, get_detector(args), cfg, args, batchSize=args.detbatch, mode='video', queueSize=args.qsize)
 
     # Init data writer
@@ -186,13 +187,11 @@ def proc(video_name):
     print('===========================> Finish Model Running.')
     if (args.save_img or args.save_video) and not args.vis_fast:
         print('===========================> Rendering remaining images in the queue...')
-        print(
-            '===========================> If this step takes too long, you can enable the --vis_fast flag to use fast rendering (real-time).')
 
 
 if __name__ == "__main__":
-    videos = os.listdir(CRED_FILTERED_VIDEO_DPATH)
-    proc(videos[0])
+    videos = os.listdir(FILTERED_VIDEO_DPATH)
+    # proc(videos[0])
     # for video in videos:
     #     proc(video)
     with Pool(n_process) as p:

@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from multiprocessing import Pool
+from paths import DATASETS_DPATH
 
 
 class SkeletonDataset(Dataset):
@@ -14,6 +15,7 @@ class SkeletonDataset(Dataset):
             epoch_size: int = 100,
             batch_size: int = 1000
     ):
+        dataset_dpath = DATASETS_DPATH / "PCA_5.07.24" / "filtered_final_video"
 
         self.epoch_size = epoch_size
         self.batch_size = batch_size

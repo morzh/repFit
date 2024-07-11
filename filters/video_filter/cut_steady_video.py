@@ -3,13 +3,13 @@ from pathlib import Path
 
 from paths import STEADY_VIDEO_DPATH, RESULTS_ROOT
 from utils.file_reader import read_pickle
-from cv_tools.tools import trim
-
-camera_steady = read_pickle(RESULTS_ROOT/"camera_steady_segments.pickle")
-video_seg = {yid: seg for fname, _, yid, seg in zip(*list(camera_steady.values()))}
+from cv_utils.tools import trim
 
 
 def trim_video_by_steady(video_fpath: Path):
+    camera_steady = read_pickle(RESULTS_ROOT / "camera_steady_segments.pickle")
+    video_seg = {yid: seg for fname, _, yid, seg in zip(*list(camera_steady.values()))}
+
     video_fname = video_fpath.stem
     video_youtube_id = video_fname[-11:]
     if video_youtube_id not in video_seg:

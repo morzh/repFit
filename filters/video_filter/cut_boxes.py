@@ -8,11 +8,11 @@ from utils.file_reader import read_pickle
 from cv_utils.video_reader import VideoReader
 from constants import min_fragment_n_frames
 
-camera_steady = read_pickle(RESULTS_ROOT/"camera_steady_segments.pickle")
-video_seg = {yid: seg for fname, _, yid, seg in zip(*list(camera_steady.values()))}
-
 
 def cut_video_by_yolo_boxes(video_fpath: Path):
+    camera_steady = read_pickle(RESULTS_ROOT / "camera_steady_segments.pickle")
+    video_seg = {yid: seg for fname, _, yid, seg in zip(*list(camera_steady.values()))}
+
     video_fname = video_fpath.stem
     video_youtube_id = video_fname[-11:]
     if video_youtube_id not in video_seg:
@@ -30,7 +30,7 @@ def cut_video_by_yolo_boxes(video_fpath: Path):
 
         bbox_array = found_bbox_array(track, track_idx)
 
-        fragment_with_bboxes = get_fragments(bbox_array, video_youtube_id, min_fragment_n_frames)
+        fragment_with_bboxes = get_fragments(bbox_array, video_youtube_id, min_fragment_n_frames, video_seg)
         if not fragment_with_bboxes:
             print(f"skip track {str(cut_video_fpath)} by steady filter")
             continue
@@ -91,7 +91,7 @@ def cut_videos_by_filters(videos: List[Path], filter_result: dict):
             print(f"Save cut video {str(cut_video_fpath)}")
 
 
-def get_fragments(bbox_array: dict, video_id: str, min_length: int) -> list:
+def get_fragments(bbox_array: dict, video_id: str, min_length: int, video_seg) -> list:
     bbox_indexes = list(bbox_array.keys())
     bbox_start_idx = bbox_indexes[0]
     bbox_stop_idx = bbox_indexes[-1]
