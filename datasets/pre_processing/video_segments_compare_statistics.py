@@ -52,17 +52,21 @@ def get_segments(folder_path_1: str | Path, folder_path_2: str | Path) -> tuple[
 
 
 def segments_compare_visualization(path_1: str | Path, path_2: str | Path) -> None:
-    segments_color_1 = 'g'
-    segments_color_2 = 'b'
+    segments_1, segments_2 = get_segments(path_1, path_2)
+    assert len(segments_1) == len(segments_2)
 
-    plt.figure(figsize=(20, 25))
-    for segment_index, segment in enumerate(segments_1):
-        plt.plot(segment, [segment_index, segment_index], c=segments_color_1, thickness=7)
-        plt.scatter(segment, [segment_index, segment_index], color=segments_color_1, thickness=7)
-    for segment_index, segment in enumerate(segments_2):
-        plt.plot(segment, [segment_index, segment_index], c=segments_color_2, thickness=3)
-        plt.scatter(segment, [segment_index, segment_index], color=segments_color_2, thickness=7)
-    plt.show()
+    segments_color_1 = 'r'
+    segments_color_2 = 'g'
+
+    for (video_filename, video_segments_1), video_segments_2 in zip(segments_1.items(), segments_2.values()):
+
+        plt.figure(figsize=(20, 25))
+        plt.title(os.path.splitext(video_filename)[0])
+        for segment_index, segment in enumerate(video_segments_1):
+            plt.plot(segment, (0, 0), c=segments_color_1, linewidth=7)
+        for segment_index, segment in enumerate(video_segments_2):
+            plt.plot(segment, (0, 0), c=segments_color_2, linewidth=3)
+        plt.show()
 
 
 def segments_compare_statistics(path_1: str | Path, path_2: str | Path):
@@ -73,10 +77,11 @@ def segments_compare_statistics(path_1: str | Path, path_2: str | Path):
     print('statistics')
 
 
-root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/'
-filter_subfolder = 'steady'
-videos_segments_folder_1 = os.path.join(root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation-m', filter_subfolder)
-videos_segments_folder_2 = os.path.join(root_folder, 'squats_2022_coarse_steady_camera_yolo_detector-m', filter_subfolder)
+if __name__ == '__main__':
+    root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/'
+    filter_subfolder = 'steady'
+    videos_segments_folder_1 = os.path.join(root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation-m', filter_subfolder)
+    videos_segments_folder_2 = os.path.join(root_folder, 'squats_2022_coarse_steady_camera_yolo_detector-m', filter_subfolder)
 
-segments_compare_visualization(videos_segments_folder_1, videos_segments_folder_1)
-segments_compare_statistics(videos_segments_folder_1, videos_segments_folder_2)
+    segments_compare_visualization(videos_segments_folder_1, videos_segments_folder_1)
+    segments_compare_statistics(videos_segments_folder_1, videos_segments_folder_2)
