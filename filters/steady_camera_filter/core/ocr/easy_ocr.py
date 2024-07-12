@@ -17,8 +17,8 @@ class EasyOcr(OcrBase):
         Description:
             EasyOCR class constructor
 
-        :key confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment.
-        :key minimal_resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
+        :keyword confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment.
+        :keyword minimal_resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
 
         :return: __init__() should return None
         """

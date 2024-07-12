@@ -19,9 +19,9 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
         Description:
              Class constructor.
 
-        :key weights_path: Path to store model's weights.
-        :key model_type: model complexity (nano, small, medium or large)
-        :key confidence_threshold: minimum confidence for detected person, value should be in [0, 1] segment.
+        :keyword weights_path: Path to store model's weights.
+        :keyword model_type: model complexity (nano, small, medium or large)
+        :keyword confidence_threshold: minimum confidence for detected person, value should be in [0, 1] segment.
 
         :raises ValueError: if model type is not nano, small, medium or large
 

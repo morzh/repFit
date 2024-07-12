@@ -17,7 +17,7 @@ class TesseractOcr(OcrBase):
         Description:
             Google Tesseract OCR class constructor.
 
-        :key confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment
+        :keyword confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment
 
         :return: __init__() should return None
         """

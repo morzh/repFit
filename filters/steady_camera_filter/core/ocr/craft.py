@@ -21,9 +21,9 @@ class Craft(OcrBase):
         Description:
             CRAFT class constructor
 
-        :key use_cuda: use CUDA for text regions calculations
-        :key use_refiner: perform refinement step for text regions
-        :key use_fp16: if True, use float16 precision, otherwise use float32
+        :keyword use_cuda: use CUDA for text regions calculations
+        :keyword use_refiner: perform refinement step for text regions
+        :keyword use_fp16: if True, use float16 precision, otherwise use float32
 
         :return: __init__() should return None
         """
