@@ -14,7 +14,14 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
         """
         Description:
             Persons mask class built upon ultralytics YOLO object detector.
+
+        :key weights_path: Path to store model's weights.
+        :key model_type: model complexity (nano, small, medium or large)
+        :key confidence_threshold: minimum confidence for detected person, value should be in [0, 1] segment.
+
+        :return: __init__() should return None
         """
+        super().__init__(**kwargs)
         weights_path = kwargs.get('weights_path', '')
         if not os.path.exists(weights_path):
             weights_path = ''
@@ -34,13 +41,13 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
                 raise ValueError("YOLO v8 detection models with suffix other than 'n', 's', 'm' or 'l' are not supported.")
 
         self.model = YOLO(os.path.join(weights_path, model_file))
-        self.confidence: float = kwargs.get('confidence_threshold', 0.4)
+        self.confidence_threshold: float = kwargs.get('confidence_threshold', 0.4)
         self._person_class_index: int = 0
 
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
         prediction_result = self.model.predict(image, verbose=False, retina_masks=True)
 
-        current_person_masks_indices = torch.argwhere(prediction_result[0].boxes.conf > self.confidence)
+        current_person_masks_indices = torch.argwhere(prediction_result[0].boxes.conf > self.confidence_threshold)
         current_person_classes_indices = torch.argwhere(prediction_result[0].boxes.cls == self._person_class_index)
 
         current_person_masks_indices = current_person_masks_indices.cpu().data.numpy().flatten()
@@ -58,8 +65,3 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
                               -1)
 
         return unified_mask
-
-    @staticmethod
-    def create_instance(**kwargs):
-        parameters = kwargs.get(PersonsMaskYoloDetector.alias)
-        return PersonsMaskYoloDetector(**parameters)

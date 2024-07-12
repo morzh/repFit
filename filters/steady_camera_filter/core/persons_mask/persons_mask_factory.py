@@ -1,34 +1,8 @@
-import typing
+from filters.steady_camera_filter.core.factory import Factory
+from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_detector import PersonsMaskYoloDetector
+from filters.steady_camera_filter.core.persons_mask.persons_mask_yolo_segmentation import PersonsMaskYoloSegmentation
 
-from loguru import logger
+factory = Factory()
 
-
-class PersonsMaskFactory:
-    def __init__(self):
-        """
-        Description:
-            Initializes empty builders dictionary
-        """
-        self._builders = {}
-
-    def register_builder(self, key: str, builder: typing.Callable) -> None:
-        """
-        Description:
-            Register persons mask builder. Builder creates class initialized with parameters.
-
-        :param key: persons mask class key
-        :param builder: persons mask class builder
-        """
-        self._builders[key] = builder
-
-    def create(self, key: str, **kwargs) -> typing.Callable:
-        """
-        Description:
-            This method return initialized by **kwargs class, defined bt key.
-        :param key: class string alias
-        """
-        builder = self._builders.get(key)
-        if not builder:
-            logger.error(f'Model type {key} is not supported for persons mask.')
-            raise ValueError(f'Model type {key} is not supported for persons mask.')
-        return builder(**kwargs)
+factory.register_builder(PersonsMaskYoloDetector.alias, PersonsMaskYoloDetector.create_instance)
+factory.register_builder(PersonsMaskYoloSegmentation.alias, PersonsMaskYoloSegmentation.create_instance)

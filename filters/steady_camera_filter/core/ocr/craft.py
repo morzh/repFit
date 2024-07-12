@@ -18,10 +18,15 @@ class Craft(OcrBase):
 
     def __init__(self, **kwargs):
         """
-        @use_cuda: use CUDA for text regions calculations
-        @use_refiner: perform refinement step for text regions
-        @use_fp16: if True, use float16 precision, float32 otherwise
+        Description:
+            CRAFT class constructor
+
+        :key use_cuda: use CUDA for text regions calculations
+        :key use_refiner: perform refinement step for text regions
+        :key use_fp16: if True, use float16 precision, otherwise use float32
+        :return: __init__() should return None
         """
+        super().__init__(**kwargs)
         craft_weights_folder = kwargs.get('weights_path', '.')
         use_refiner = kwargs.get('use_refiner', False)
         use_float16 = kwargs.get('use_float16', False)
@@ -42,10 +47,11 @@ class Craft(OcrBase):
     @staticmethod
     def draw_polygons(image_shape: tuple[int, int], polygons: list) -> np.ndarray:
         """
-        CRAFT outputs set of polygons to mask text in an image. This polygons then should be converted to an image mask.
-        @image_shape: input image resolution
-        @polygons: set of polygons (output from CRAFT)
-        @return: image mask with values in [0, 1].
+        Description:
+            CRAFT outputs set of polygons to mask text in an image. This polygons then should be converted to an image mask.
+        :param image_shape: input image resolution
+        :param polygons: set of polygons (output from CRAFT)
+        :return: image mask with values in [0, 1].
         """
         mask = np.zeros(image_shape)
         for i, poly in enumerate(polygons):
@@ -53,8 +59,3 @@ class Craft(OcrBase):
             poly_ = poly_.reshape(-1, 2)
             mask = cv2.fillPoly(mask, [poly_.reshape((-1, 1, 2))], color=(1, 1, 1))
         return mask
-
-    @staticmethod
-    def create_instance(**kwargs):
-        parameters = kwargs.get(Craft.alias)
-        return Craft(**parameters)
