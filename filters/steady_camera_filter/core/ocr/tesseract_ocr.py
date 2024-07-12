@@ -21,6 +21,7 @@ class TesseractOcr(OcrBase):
 
         :return: __init__() should return None
         """
+
         super().__init__(**kwargs)
         self.confidence_threshold = 100 * kwargs.get('confidence_threshold', 0.1)
 

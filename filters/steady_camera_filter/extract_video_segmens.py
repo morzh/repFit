@@ -164,14 +164,24 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
                 f'video duration is {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
 
 
-def sort_videos_by_criteria(move_to_folders_strategy: str, videos_source_folder: str, videos_target_folder: str):
+def sort_videos_by_criteria(move_to_folders_strategy: str, raw_videos_folder: str, filtered_videos_folder: str) -> None:
+    """
+    Description:
+        Move videos to different folders using some strategy.
+
+    :param move_to_folders_strategy: sorting strategy
+    :param raw_videos_folder:  folder with raw (unprocessed) videos
+    :param filtered_videos_folder: folder with processed (filtered) videos
+
+    :raises ValueError: in case of unknown strategy
+    """
     match move_to_folders_strategy:
         case 'steady_non_steady':
-            move_steady_non_steady_videos_to_subfolders(videos_target_folder,
-                                                        'steady',
-                                                        'nonsteady')
+            move_steady_non_steady_videos_to_subfolders(filtered_videos_folder, 'steady', 'nonsteady')
         case 'by_source_filename':
-            move_videos_by_filename(videos_source_folder, videos_target_folder)
+            move_videos_by_filename(raw_videos_folder, filtered_videos_folder)
+        case _:
+            raise ValueError("Only 'steady_non_steady' and 'by_source_filename' strategies are supported.")
 
 
 def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: str) -> None:

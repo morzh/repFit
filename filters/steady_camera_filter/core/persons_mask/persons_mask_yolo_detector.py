@@ -23,6 +23,8 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
         :key model_type: model complexity (nano, small, medium or large)
         :key confidence_threshold: minimum confidence for detected person, value should be in [0, 1] segment.
 
+        :raises ValueError: if model type is not nano, small, medium or large
+
         :return: __init__() should return None
         """
         super().__init__(**kwargs)

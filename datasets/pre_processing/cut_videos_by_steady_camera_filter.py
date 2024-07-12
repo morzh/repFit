@@ -41,10 +41,10 @@ if __name__ == '__main__':
 
     processing_parameters = dict()
     processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
-    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation-m')
+    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation-s')
     processing_parameters['move_to_folders_strategy'] = 'steady_non_steady'   # 'by_source_filename'
     processing_parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']
-    processing_parameters['use_multiprocessing'] = False
+    processing_parameters['use_multiprocessing'] = True
     processing_parameters['number_processes'] = 2
 
     logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="11 days", compression='zip')
