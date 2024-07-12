@@ -7,7 +7,8 @@ from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
 class EasyOcr(OcrBase):
     """
-    Jaided EasyOCR for text recognition in images.
+    Description:
+        Jaided EasyOCR for text recognition in images.
     """
     alias = 'easy_ocr'
 

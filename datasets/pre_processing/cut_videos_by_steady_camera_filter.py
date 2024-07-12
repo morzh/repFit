@@ -4,9 +4,7 @@ from os import listdir
 from loguru import logger
 
 from utils.multiprocess import run_pool_steady_camera_filter
-from filters.steady_camera_filter.extract_video_segmens import read_yaml
-from filters.steady_camera_filter.extract_video_segmens import extract_and_write_steady_camera_segments
-from filters.steady_camera_filter.extract_video_segmens import move_steady_non_steady_videos_to_subfolders, move_videos_by_filename
+from filters.steady_camera_filter.extract_video_segmens import read_yaml, extract_and_write_steady_camera_segments, sort_videos_by_criteria
 
 
 @logger.catch
@@ -15,7 +13,7 @@ def cut_videos(**kwargs):
     videos_target_folder = kwargs['videos_target_folder']
     videos_extensions = kwargs['videos_extensions']
     use_multiprocessing = kwargs.get('use_multiprocessing', False)
-    number_processes = kwargs.get('number_processes', 4)
+    number_processes = kwargs.get('number_processes', 2)
     move_to_folders_strategy = kwargs.get('move_to_folders_strategy', 'none')
 
     video_source_filepaths = [os.path.join(videos_source_folder, f) for f in listdir(videos_source_folder)
@@ -35,14 +33,7 @@ def cut_videos(**kwargs):
             extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, steady_camera_filter_parameters)
     time_end = time.time()
     logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
-
-    match move_to_folders_strategy:
-        case 'steady_non_steady':
-            move_steady_non_steady_videos_to_subfolders(videos_target_folder,
-                                                        'steady',
-                                                        'nonsteady')
-        case 'by_source_filename':
-            move_videos_by_filename(videos_source_folder, videos_target_folder)
+    sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)
 
 
 if __name__ == '__main__':

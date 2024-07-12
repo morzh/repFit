@@ -8,12 +8,16 @@ from filters.steady_camera_filter.core.persons_mask.persons_mask_base import Per
 
 
 class PersonsMaskYoloSegmentation(PersonsMaskBase):
+    """
+    Description:
+        Persons mask class built upon ultralytics YOLO object segmentation.
+    """
     alias = 'yolo_segmentation'
 
     def __init__(self, **kwargs):
         """
         Description:
-            Persons mask class built upon ultralytics YOLO segmentation model.
+             Class constructor.
 
         :key weights_path: Path to store model's weights.
         :key model_type: model complexity (nano, small, medium or large)
@@ -21,6 +25,7 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
 
         :return: __init__() should return None
         """
+        super().__init__(**kwargs)
         weights_path = kwargs.get('weights_path', '')
         if not os.path.exists(weights_path):
             weights_path = ''

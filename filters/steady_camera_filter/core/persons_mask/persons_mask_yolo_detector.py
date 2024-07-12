@@ -8,12 +8,16 @@ from filters.steady_camera_filter.core.persons_mask.persons_mask_base import Per
 
 
 class PersonsMaskYoloDetector(PersonsMaskBase):
+    """
+    Description:
+        Persons mask class built upon ultralytics YOLO object detector.
+    """
     alias = 'yolo_detector'
 
     def __init__(self, **kwargs):
         """
         Description:
-            Persons mask class built upon ultralytics YOLO object detector.
+            Class constructor.
 
         :key weights_path: Path to store model's weights.
         :key model_type: model complexity (nano, small, medium or large)

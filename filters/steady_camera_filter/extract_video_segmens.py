@@ -164,6 +164,16 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
                 f'video duration is {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
 
 
+def sort_videos_by_criteria(move_to_folders_strategy: str, videos_source_folder: str, videos_target_folder: str):
+    match move_to_folders_strategy:
+        case 'steady_non_steady':
+            move_steady_non_steady_videos_to_subfolders(videos_target_folder,
+                                                        'steady',
+                                                        'nonsteady')
+        case 'by_source_filename':
+            move_videos_by_filename(videos_source_folder, videos_target_folder)
+
+
 def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: str) -> None:
     """
     Description:
@@ -191,7 +201,7 @@ def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: 
             shutil.move(source_filepath, target_filepath)
 
 
-def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str,steady_suffix: str, non_steady_suffix: str) -> None:
+def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str, steady_suffix: str, non_steady_suffix: str) -> None:
     """
     Description:
         Move processed steady and non-steady videos and (probably) their segments to different folders. If filename has steady_entry,

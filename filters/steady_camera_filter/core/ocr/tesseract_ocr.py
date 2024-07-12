@@ -7,7 +7,8 @@ from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
 class TesseractOcr(OcrBase):
     """
-    Google Tesseract text recognition engine for text masking
+    Description:
+        Google Tesseract text recognition engine for text masking
     """
     alias = 'tesseract'
 
@@ -17,6 +18,8 @@ class TesseractOcr(OcrBase):
             Google Tesseract OCR class constructor.
 
         :key confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment
+
+        :return: __init__() should return None
         """
         super().__init__(**kwargs)
         self.confidence_threshold = 100 * kwargs.get('confidence_threshold', 0.1)
