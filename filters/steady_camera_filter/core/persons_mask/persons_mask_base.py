@@ -5,7 +5,7 @@ import cv2.typing
 class PersonsMaskBase:
     """
     Description:
-        Base class for persons mask. Class member 'alias' is used in factory class as a key in dictionary.
+        Base class for persons detection and masking. Class member 'alias' is used in factory class as a key in dictionary.
     """
     alias: str
 
@@ -23,7 +23,7 @@ class PersonsMaskBase:
         """
         Description:
             Get all persons mask for a given input image. Where mask value is 1, there should be a some person.
-doc
+
         :param image: input image
         :param output_resolution: resolution for output mask
 

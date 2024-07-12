@@ -24,6 +24,7 @@ class Craft(OcrBase):
         :key use_cuda: use CUDA for text regions calculations
         :key use_refiner: perform refinement step for text regions
         :key use_fp16: if True, use float16 precision, otherwise use float32
+
         :return: __init__() should return None
         """
         super().__init__(**kwargs)
@@ -49,8 +50,10 @@ class Craft(OcrBase):
         """
         Description:
             CRAFT outputs set of polygons to mask text in an image. This polygons then should be converted to an image mask.
+
         :param image_shape: input image resolution
         :param polygons: set of polygons (output from CRAFT)
+
         :return: image mask with values in [0, 1].
         """
         mask = np.zeros(image_shape)
