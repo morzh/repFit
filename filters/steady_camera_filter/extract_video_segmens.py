@@ -34,6 +34,7 @@ def read_yaml(filepath: str) -> dict:
         Read yaml file
 
     :param filepath: filepath to .yaml file
+
     :return: dictionary with yaml data
     """
     parameters = None
@@ -56,6 +57,9 @@ def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 36
     Description:
         Check if video size is greater than a given threshold.
 
+    :param video_filepath: filepath of the video
+    :param minimum_dimension_size: minimum(video width, video height) threshold
+
     :return: True if (width, height) >  minimum_dimension_size, False otherwise
     """
     video_capture = cv2.VideoCapture(video_filepath)
@@ -68,33 +72,41 @@ def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 36
     return False
 
 
-def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, parameters: dict) -> VideoSegments:
+def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **kwargs) -> VideoSegments:
     """
     Description:
         Extract segments from video in frames, where camera is steady (meets steadiness criteria of coarse steady camera filter).
 
     :param video_filepath: filepath of the video
-    :param parameters: parameters for steady camera filter
 
-    :raises ValueError: when trying to use text masking with neural network models other than CRAFT, EasyOCR or Tesseract.
+    :keyword verbose_filename: log video_filepath's filename.
+    :keyword steady_camera_coarse_filter: coarse steady camera filter key word arguments.
+    :keyword minimum_steady_camera_time_segment: minimum duration of steady camera segment.
+    :keyword combine_adjacent_segments: combine two or more adjacent video segments, e.g. adjacent segments are [0, 199] and [200, 599]
+    :keyword poc_registration_verbose: log phase only correlation registration results.
+    :keyword verbose_steady_segments: log steady segments values.
+
+    :return: video segments for given video
     """
-    if parameters['verbose_filename']:
+    if kwargs['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
         logger.info(f'{video_filename} :: calculating segments.')
 
-    filter_parameters = parameters['steady_camera_coarse_filter']
+    filter_parameters = kwargs['steady_camera_coarse_filter']
     number_frames_to_average = filter_parameters['number_frames_to_average']
     if number_frames_to_average < 5:
         logger.warning(f'Value {number_frames_to_average} of number_frames_to_average is low, results could be non applicable')
 
     ocr_model = ocr_factory.factory.create(filter_parameters['text_mask_model'], **filter_parameters['text_mask_models'])
     persons_mask_model = persons_mask_factory.factory.create(filter_parameters['persons_mask_model'], **filter_parameters['persons_mask_models'])
+
     steady_camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, persons_mask_model, **filter_parameters)
     steady_camera_filter.process(filter_parameters['poc_show_averaged_frames_pair'])
-    steady_segments = steady_camera_filter.steady_camera_video_segments()
-    steady_segments.filter_by_time_duration(parameters['minimum_steady_camera_time_segment'])
 
-    if parameters['combine_adjacent_segments']:
+    steady_segments = steady_camera_filter.steady_camera_video_segments()
+    steady_segments.filter_by_time_duration(kwargs['minimum_steady_camera_time_segment'])
+
+    if kwargs['combine_adjacent_segments']:
         steady_segments.combine_adjacent_segments()
     if filter_parameters['poc_registration_verbose']:
         steady_camera_filter.log_registration_results()
@@ -104,7 +116,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, para
     return steady_segments
 
 
-def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, parameters: dict) -> None:
+def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, **kwargs) -> None:
     """
     Description:
         Cuts input video according video_segments information.
@@ -112,14 +124,20 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     :param video_filepath: input video filepath
     :param output_folder: output folder for trimmed videos
     :param video_segments information about video segments to trim
-    :param parameters: parameters to write videos
+
+    :keyword verbose_filename: log video_filepath's filename
+    :keyword save_steady_camera_segments_values: save .npy file with steady segments values (for further statistics).
+    :keyword write_segments_complement: write segments complements, in other words, non-steady video segments.
+    :keyword minimum_non_steady_camera_time_segment: minimum duration of non-steady segment.
+    :keyword save_non_steady_camera_segments_values: save .npy file with non-steady segments values (for further statistics).
 
     :raises FileNotFoundError: when video_filepath does not exist
+    :return: None
     """
     if not os.path.exists(video_filepath):
         raise FileNotFoundError(f'File {video_filepath} does not exist')
 
-    if parameters['verbose_filename']:
+    if kwargs['verbose_filename']:
         video_filename = os.path.basename(video_filepath)
         logger.info(f'{video_filename} :: writing video segment(s).')
 
@@ -128,37 +146,38 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
                                                 fps=video_segments.video_fps)
 
     video_segments_writer.write(video_segments, filter_name='steady')
-    if parameters['save_steady_camera_segments_values'] and video_segments.segments.size > 0:
+    if kwargs['save_steady_camera_segments_values'] and video_segments.segments.size > 0:
         video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
-    if parameters['write_segments_complement']:
-        time_threshold = parameters['minimum_non_steady_camera_time_segment']
+    if kwargs['write_segments_complement']:
+        time_threshold = kwargs['minimum_non_steady_camera_time_segment']
         video_segments_complement = video_segments.complement()
         video_segments_complement.filter_by_time_duration(time_threshold)
         video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
 
-        if parameters['save_non_steady_camera_segments_values'] and video_segments_complement.segments.size > 0:
+        if kwargs['save_non_steady_camera_segments_values'] and video_segments_complement.segments.size > 0:
             video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
 
 
-def extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, parameters) -> None:
+def extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **kwargs) -> None:
     """
     Description:
         Convenient function for multiprocessing. It violates single responsibility principle, but who cares.
 
     :param video_source_filepath: source video filepath
     :param videos_target_folder: output folder for segmented videos
-    :param parameters: extraction parameters
+
+    :return: None
     """
     video_processing_start_time = time.time()
-    minimum_resolution = parameters['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
+    minimum_resolution = kwargs['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
     video_filename = os.path.basename(video_source_filepath)
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         logger.info(f"{video_filename} :: one of the resolution dimension has size less than {minimum_resolution} pixels")
         return
 
-    video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, parameters['video_segments_extraction'])
-    write_video_segments(video_source_filepath, videos_target_folder, video_segments, parameters['video_segments_writer'])
+    video_segments = extract_coarse_steady_camera_filter_video_segments(video_source_filepath, **kwargs['video_segments_extraction'])
+    write_video_segments(video_source_filepath, videos_target_folder, video_segments, **kwargs['video_segments_writer'])
     video_processing_end_time = time.time()
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
                 f'video duration is {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
@@ -174,6 +193,8 @@ def sort_videos_by_criteria(move_to_folders_strategy: str, raw_videos_folder: st
     :param filtered_videos_folder: folder with processed (filtered) videos
 
     :raises ValueError: in case of unknown strategy
+
+    :return: None
     """
     match move_to_folders_strategy:
         case 'steady_non_steady':
@@ -191,6 +212,8 @@ def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: 
 
     :param videos_source_folder: folder with source video files;
     :param processed_videos_folder: folder with processed steady and non-steady video files;
+
+    :return: None
     """
     source_filenames = [os.path.basename(f) for f in os.listdir(videos_source_folder) if os.path.isfile(os.path.join(videos_source_folder, f))]
     source_files_basename = [os.path.splitext(f)[0] for f in source_filenames]
@@ -221,6 +244,8 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str, stead
     :param videos_source_folder: folder with source video files;
     :param steady_suffix: filename entry which  indicates that video is (considered as) steady. Also, subfolder to move steady file to;
     :param non_steady_suffix: filename entry which that indicates video is (considered as) non-steady. Also, subfolder to move non-steady file to.
+
+    :return: None
     """
     source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
                         if os.path.isfile(os.path.join(videos_source_folder, f))]
