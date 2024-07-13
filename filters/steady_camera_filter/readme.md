@@ -4,5 +4,5 @@
 ## **Fourier Analysis**
 ### Shift theorem
 ```math
-SE = \frac{\sigma}{\sqrt{n}}
+SE = \sum_{n=0}^{\infty} \langle f, e_n \rangle
 ```
