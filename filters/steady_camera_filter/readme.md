@@ -1,7 +1,7 @@
 
-Just test so far
+# Theory behind steady camera filter
 
-# **Fourrier Analisys Theory** 
+## **Furrier Analysis Theory**
 ### Shift theorem
 ```math
 SE = \frac{\sigma}{\sqrt{n}}
