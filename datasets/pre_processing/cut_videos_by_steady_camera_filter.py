@@ -20,17 +20,17 @@ def cut_videos(**kwargs):
                               if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
     os.makedirs(videos_target_folder, exist_ok=True)
 
-    steady_camera_filter_parameters = read_yaml('steady_camera_filter_parameters.yaml')
+    steady_camera_filter_kwargs = read_yaml('steady_camera_filter_parameters.yaml')
     time_start = time.time()
     if use_multiprocessing:
         run_pool_steady_camera_filter(extract_and_write_steady_camera_segments,
                                       video_source_filepaths,
                                       videos_target_folder,
-                                      steady_camera_filter_parameters,
+                                      steady_camera_filter_kwargs,
                                       number_processes=number_processes)
     else:
         for video_source_filepath in video_source_filepaths:
-            extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, steady_camera_filter_parameters)
+            extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **steady_camera_filter_kwargs)
     time_end = time.time()
     logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
     sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)
@@ -41,10 +41,10 @@ if __name__ == '__main__':
 
     processing_parameters = dict()
     processing_parameters['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
-    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation-s')
+    processing_parameters['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation---')
     processing_parameters['move_to_folders_strategy'] = 'steady_non_steady'   # 'by_source_filename'
     processing_parameters['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']
-    processing_parameters['use_multiprocessing'] = True
+    processing_parameters['use_multiprocessing'] = False
     processing_parameters['number_processes'] = 2
 
     logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="11 days", compression='zip')

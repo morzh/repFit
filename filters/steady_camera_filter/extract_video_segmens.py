@@ -132,6 +132,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
     :keyword save_non_steady_camera_segments_values: save .npy file with non-steady segments values (for further statistics).
 
     :raises FileNotFoundError: when video_filepath does not exist
+
     :return: None
     """
     if not os.path.exists(video_filepath):
