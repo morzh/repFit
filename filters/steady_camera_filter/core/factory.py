@@ -23,15 +23,18 @@ class Factory:
 
         :param key: class alias key
         :param builder: subject class builder
+
+        :return: None
         """
         self._builders[key] = builder
 
     def create(self, key: str, **kwargs) -> typing.Callable:
-        r"""
+        """
         Description:
             Create initialized subject with the given key word parameters
 
         :param key: subject class key in builders dictionary or class string alias
+
         :return: initialized subject class
         """
         builder = self._builders.get(key)
