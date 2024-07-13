@@ -1,7 +1,8 @@
 
 Just test so far
 
-# **Phase Correlation** 
+# **Fourrier Analisys Theory** 
+### Shift theorem
 ```math
 SE = \frac{\sigma}{\sqrt{n}}
 ```

@@ -5,7 +5,7 @@ from loguru import logger
 class Factory:
     """
     Description:
-        Class serves as a factory in factory pattern.
+        This class serves as a factory in a factory pattern.
     """
     def __init__(self):
         """
