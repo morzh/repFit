@@ -2,15 +2,17 @@
 %! Date = 7/13/24
 
 % Preamble
-\documentclass[11pt]{article}
+\documentclass[9pt]{article}
 
 % Packages
+\usepackage[a4paper, total={6.75in, 11in}, left=15mm, top=15mm]{geometry}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proof}{Proof}
 \renewenvironment{proof}{{\bf \emph{Proof.} }}{\hfill $\Box$ \\}
 
+\numberwithin{equation}{section}
 % Document
 \begin{document}
 
@@ -19,22 +21,54 @@
 \maketitle
 
 \section{Fourier series}\label{sec:theory-behind-fourier-series}
-%    \makesubtitle
-\[
-    f(t) = a_0 + \sum_{n=1}^{\infty} a_n \sin (n \omega_0 t + \phi_n),
-\]
-where $\omega_0$ is the base frequency, e.g. $\omega_0 = \frac{2\pi}{T}$, $T$  is a period.
+\subsection{Basic Form}\label{subsec:basic-form}
+Formally consider function, represented by series:
+\begin{equation}\label{eq:equation}
+    f(t) \sim a_0 + \sum_{n=1}^{\infty} a_n \sin (n \omega_0 t + \phi_n),
+\end{equation}
+where $a_0$ -- constant, $a_n$ and $\phi_n$, $n \geq 1$ are amplitudes and phase shifts respectively,
+$\omega_0$ is the base frequency, e.g. $\omega_0 = \frac{2\pi}{T}$, $T$  is a period.
 If we make substitution
 \[
     x = \omega_0 t  = \frac{2\pi t}{T},
 \]
 then
+\begin{equation}\label{eq:equation2}
+    f(x) \sim a_0 + \sum_{n=1}^{\infty} a_n \sin (n x + \phi_n).
+\end{equation}
+Using trigonometric formula
 \[
-    f(x) = a_0 + \sum_{n=1}^{\infty} a_n \sin (n x + \phi_n),
+    \sin (\alpha +  \beta)  = \sin \alpha \cos \beta + \cos \alpha \sin \beta
 \]
-where $a_n$ are amplitudes and $\phi_n$ are phases, $n \geq 1$.
+we get representation
+\begin{equation}\label{eq:equation3}
+    f(x) \sim c_{0, 0} + \sum_{n=1}^{\infty} \left( c_{n, 1} \cos nx + c_{n, 2} \sin nx \right).
+\end{equation}
+Note that now amplitude $a_n = \|(c_{n, 1}, c_{n, 2})\|_2$ and phase $\phi_n = \mathrm{atan2} (c_{n, 2}, c_{n, 1})$,
+$a_0 = c_{0, 0}$.
 
-\section{Fourier Transform with some intuition}\label{sec:fourier-transform}
+\subsection{Complex Form}\label{subsec:complex-form}
+
+If we substitute $\cos nx$ and $\sin nx$ with complex exponent
+\begin{align*}
+    \cos nx = & \frac{e^{nxi} + e^{-nxi}}{2}   \\
+    \sin nx = & \frac{e^{nxi} - e^{-nxi}}{2i} = \frac{e^{-nxi} - e^{nxi}}{2} \\
+\end{align*}
+then we will get the following form of~\ref{eq:equation3}:
+\begin{equation}\label{eq:equation4}
+    f(x) \sim \frac{c_{0,0}}{2} + \sum_{n=1}^{\infty} \frac{c_{n, 1} - c_{n, 2}i}{2} e^{nxi} +
+    \frac{c_{n, 1} + c_{n, 2}i}{2} e^{-nxi} = \allowbreak  \sum_{k=-\infty}^{+\infty} c_k e^{kxi},
+\end{equation}
+where
+\begin{align}
+    c_0 & = \frac{c_{0, 0}}{2} \\
+    c_n &= \frac{c_{n,1} - c_{n,2}i}{2} \\
+    c_{-n} &= \frac{c_{n,1} + c_{n,2}i}{2},
+\end{align}
+$c_{-n} = c_n^{\ast}$.
+\subsection{Fourier Series Convergence Theorems}\label{subsec:fourier-series-convergence}
+
+\section{Fourier Transform}\label{sec:fourier-transform}
 
 \[
     \mathcal F \{ f(x) \}  = \hat f (\omega) = \langle f(x), e^{i \omega x} \rangle =
@@ -51,8 +85,8 @@ where $a_n$ are amplitudes and $\phi_n$ are phases, $n \geq 1$.
 \begin{proof}
     \begin{multline}
         \mathcal F \{ f(x - a) \}  =  \int_{\mathbb R} f(x - a) e^{-i \omega x} dx =
-        \int_{\mathbb R} f(x) e^{-i \omega (x + a)} dx = \\
-        = e^{-i a \omega} \int_{\mathbb R} f(x) e^{-i \omega x} dx = e^{-i a \omega} \mathcal F \{ f(x) \}
+        \int_{\mathbb R} f(x) e^{-i \omega (x + a)} dx = \allowbreak
+        e^{-i a \omega} \int_{\mathbb R} f(x) e^{-i \omega x} dx = e^{-i a \omega} \mathcal F \{ f(x) \}
     \end{multline}
 \end{proof}
 

@@ -21,13 +21,13 @@ video_segments_extraction:
     persons_mask_models:
       yolo_segmentation:
         weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_segmentation
-        confidence_threshold: 0.25
-        model_type: medium
+        confidence_threshold: 0.35
+        model_type: large
 
       yolo_detector:
         weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_detector
-        confidence_threshold: 0.25
-        model_type: medium
+        confidence_threshold: 0.35
+        model_type: large
 
     text_mask_models:
       easy_ocr:

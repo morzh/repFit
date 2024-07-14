@@ -36,15 +36,17 @@ class PersonsMaskYoloDetector(PersonsMaskBase):
 
         match model_type:
             case 'nano':
-                model_file = 'yolov8n.pt'
+                model_file = 'yolov9n.pt'
             case 'small':
-                model_file = 'yolov8s.pt'
+                model_file = 'yolov9s.pt'
             case 'medium':
-                model_file = 'yolov8m.pt'
+                model_file = 'yolov9m.pt'
             case 'large':
-                model_file = 'yolov8l.pt'
+                model_file = 'yolov9c.pt'
+            case 'extra_large':
+                model_file = 'yolov9e.pt'
             case _:
-                raise ValueError("YOLO v8 detection models with suffix other than 'n', 's', 'm' or 'l' are not supported.")
+                raise ValueError("YOLO v9 detection models with suffix other than 'n', 's', 'm', 'c' or 'e' are not supported.")
 
         self.model = YOLO(os.path.join(weights_path, model_file))
         self.confidence_threshold: float = kwargs.get('confidence_threshold', 0.4)

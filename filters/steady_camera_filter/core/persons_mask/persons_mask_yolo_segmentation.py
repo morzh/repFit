@@ -36,15 +36,17 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
 
         match model_type:
             case 'nano':
-                model_file = 'yolov8n-seg.pt'
+                model_file = 'yolov9n-seg.pt'
             case 'small':
-                model_file = 'yolov8s-seg.pt'
+                model_file = 'yolov9s-seg.pt'
             case 'medium':
-                model_file = 'yolov8m-seg.pt'
+                model_file = 'yolov9m-seg.pt'
             case 'large':
-                model_file = 'yolov8l-seg.pt'
+                model_file = 'yolov9c-seg.pt'
+            case 'extra_large':
+                model_file = 'yolov9e-seg.pt'
             case _:
-                raise ValueError("YOLO v8 segmentation models with suffix other than 'n', 's', 'm' or 'l' are not supported.")
+                raise ValueError("YOLO v9 detection models with suffix other than 'n', 's', 'm', 'c' or 'e' are not supported.")
 
         self.model = YOLO(os.path.join(weights_path, model_file))
         self.confidence_threshold: float = kwargs.get('confidence_threshold', 0.4)
