@@ -1,11 +1,11 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import cv2.typing
 
 
-class OcrBase:
+class PersonsMaskBase:
     """
     Description:
-        Base class for OCR text region mask detection. Class member 'alias' is used in a factory class as a key in dictionary.
+        Base class for persons detection and masking. Class member 'alias' is used in factory class as a key in dictionary.
     """
     alias: str
 
@@ -22,7 +22,7 @@ class OcrBase:
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
         """
         Description:
-            Get text regions mask for a given input image. Where mask value is 1, there should be a text region.
+            Get all persons mask for a given input image. Where mask value is 1, there should be a some person.
 
         :param image: input image
         :param output_resolution: resolution for output mask
@@ -35,7 +35,7 @@ class OcrBase:
     def create_instance(cls, **kwargs):
         """
         Description:
-            Create instance of a class with the given kwargs.
+            Create instance of a class with the given key word arguments.
 
         :return: class instance
         """

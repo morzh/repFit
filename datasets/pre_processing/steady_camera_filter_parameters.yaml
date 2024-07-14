@@ -1,21 +1,33 @@
 video_segments_extraction:
   verbose_filename: true
   minimum_steady_camera_time_segment: 5  # time in seconds
-
-
+  combine_adjacent_segments: true
 
   resolution_filter:
     minimum_dimension_resolution: 256
 
   steady_camera_coarse_filter:
-    number_frames_to_average: 15
+    number_frames_to_average: 20
     poc_maximum_dimension: 512
     poc_registration_verbose: false
-    poc_minimum_confidence: 0.1
+    poc_minimum_confidence: 0.2
     poc_show_averaged_frames_pair: false
-    maximum_shift_length: 1.5
-    verbose_segments: false
+    maximum_shift_length: 2.0
+    verbose_steady_segments: false
     text_mask_model: craft
+    persons_mask_model: yolo_segmentation
+
+
+    persons_mask_models:
+      yolo_segmentation:
+        weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_segmentation
+        confidence_threshold: 0.35
+        model_type: large
+
+      yolo_detector:
+        weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/yolo_detector
+        confidence_threshold: 0.35
+        model_type: large
 
     text_mask_models:
       easy_ocr:
@@ -25,6 +37,7 @@ video_segments_extraction:
         quantize: false
 
       craft:
+        weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/craft
         use_cuda: true
         use_refiner: false
         use_float_16: false
@@ -35,6 +48,9 @@ video_segments_extraction:
         confidence_threshold: 0.1
 
 
-video_segments_output:
+video_segments_writer:
+  verbose_filename: true
+  save_steady_camera_segments_values: true
+  save_non_steady_camera_segments_values: true
   write_segments_complement: true
   minimum_non_steady_camera_time_segment: 2 # time in seconds

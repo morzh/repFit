@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 
-from cv_utils.video_reader import VideoReader
+from utils.cv.video_reader import VideoReader
 
 
 class VideoFramesBatch:

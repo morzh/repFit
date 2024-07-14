@@ -4,8 +4,9 @@ import yt_dlp
 from deep_translator import GoogleTranslator
 import deep_translator.exceptions
 from loguru import logger
+import requests, http.client
 
-from utils.youtube_database.fetch_information import (
+from utils.youtube.fetch_information import (
     fetch_youtube_channel_information,
     fetch_youtube_video_information,
     delete_keys_from_dictionary
@@ -108,13 +109,13 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
     video_url = f'https://www.youtube.com/watch?v={video_id}'
     try:
         video_information = fetch_youtube_video_information(video_url, verbose=False)
-    except (yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError) as error:
+    except (yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError, yt_dlp.networking.exceptions.TransportError) as error:
         logger.error(error.msg)
         return
 
-    video_title = video_information['title']
-    video_duration = video_information['duration']
-    video_chapters = video_information['chapters']
+    video_title = video_information.get('title', '')
+    video_duration = video_information.get('duration', -1)
+    video_chapters = video_information.get('chapters', [])
 
     video_information_delete_keys_list = ['id', 'title', 'duration', 'chapters']
     delete_keys_from_dictionary(video_information, video_information_delete_keys_list)
@@ -124,7 +125,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
     except deep_translator.exceptions.RequestError as error:
         logger.info(f'Translating {video_id} video title to English error::{error.message}')
 
-    if len(video_information['description']):
+    if len(video_information.get('description', '')):
         try:
             video_information['description'] = GoogleTranslator(source='auto', target='en').translate(video_information['description'])
         except deep_translator.exceptions.RequestError as error:
@@ -132,7 +133,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
         except deep_translator.exceptions.NotValidLength:
             logger.info(f'{video_id} video description is too long.')
 
-    if len(video_information['categories']):
+    if len(video_information.get('categories', [])):
         try:
             video_information['categories'] = GoogleTranslator(source='auto', target='en').translate_batch(video_information['categories'])
         except deep_translator.exceptions.RequestError as error:
@@ -174,6 +175,10 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
             chapter['title'] = GoogleTranslator(source='auto', target='en').translate(chapter['title'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating chapter title to English request error::{error.message}')
+        except http.client.RemoteDisconnected:
+            logger.info(f'Translating chapter title to English remote disconnected.')
+        except requests.exceptions.ConnectionError:
+            logger.info(f'Translating chapter title to English connection aborted.')
 
         try:
             cursor = connection.cursor()

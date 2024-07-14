@@ -1,16 +1,16 @@
 import os.path
 from collections import deque
-from typing import Annotated, Literal
 
 import cv2
 import numpy as np
 from beautifultable import BeautifulTable
+from loguru import logger
+from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from cv_utils.video_frames_batch import VideoFramesBatch
-from filters.steady_camera_filter.core.image_registration.image_registration_poc import \
-    ImageSequenceRegistrationPoc
-from filters.steady_camera_filter.core.ocr.easy_ocr import EasyOcr
+from utils.cv.video_frames_batch import VideoFramesBatch
+from filters.steady_camera_filter.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
+from filters.steady_camera_filter.core.persons_mask.persons_mask_base import PersonsMaskBase
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 from filters.steady_camera_filter.core.video_segments import VideoSegments
 
@@ -30,14 +30,10 @@ class SteadyCameraCoarseFilter:
         There also could be some issues  with sidebars videos (videos originally vertical with added sidebars to produce horizontal ones).
         Text regions smooth masking is mandatory to produce correct results.
     """
-    def __init__(self,
-                 video_filepath: str,
-                 ocr: OcrBase,
-                 **kwargs
-                 ):
+    def __init__(self, video_filepath: str, ocr_detector: OcrBase = None, persons_detector: PersonsMaskBase = None, **kwargs):
         """
         :param video_filepath: video file pathname;
-        :param ocr: ocr model to use for text masking;
+        :param ocr_detector: ocr model to use for text masking;
         :param kwargs: see below.
         :keyword number_frames_to_average: -- number of frames to average before registration
         :keyword maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
@@ -45,20 +41,21 @@ class SteadyCameraCoarseFilter:
         :keyword registration_minimum_confidence: registration confidence threshold. If registration confidence less than
         registration_minimum_confidence, then camera is not considered as steady.
         """
-        self.video_frames_batch = VideoFramesBatch(video_filepath, kwargs['number_frames_to_average'])
-        self.ocr = ocr
+        self.video_frames_batch = VideoFramesBatch(video_filepath, kwargs.get('number_frames_to_average', 20))
+        self.ocr_detector = ocr_detector
+        self.persons_detector = persons_detector
         # Image registration section
-        self.maximum_shift_length = kwargs['maximum_shift_length']
+        self.maximum_shift_length = kwargs.get('maximum_shift_length', 2.0)
         # self.steady_camera_frames_ranges: list = []
         self.registration_shifts: np.ndarray = np.empty((0, 2))
         self.registration_confidence: np.ndarray = np.empty((0,))
         self.averaged_frames_pair_deque = deque(maxlen=2)
         # Phase only correlation section
         self.poc_resolution: tuple[int, int]
-        self.poc_maximum_image_dimension = kwargs['poc_maximum_dimension']
+        self.poc_maximum_image_dimension = kwargs.get('poc_maximum_dimension', 1024)
         self._calculate_poc_resolution()
         self.poc_engine = ImageSequenceRegistrationPoc(self.poc_resolution)
-        self.poc_minimum_confidence = kwargs['poc_minimum_confidence']
+        self.poc_minimum_confidence = kwargs.get('poc_minimum_confidence', 0.2)
 
     def _calculate_poc_resolution(self) -> None:
         """
@@ -84,16 +81,23 @@ class SteadyCameraCoarseFilter:
         """
 
         for current_image_frames_batch in self.video_frames_batch:
-            current_averaged_frames = np.mean(current_image_frames_batch, axis=(0, 3)).astype(np.uint8)
-            # print(f'Mean of empty slice, Filename {self.video_frames_batch.video_filepath}, {current_averaged_frames.shape=}')
+            current_averaged_frames = np.mean(current_image_frames_batch, axis=0).astype(np.uint8)  # averaging images across batch dimension
+            # logger.info(f'Read batch of frames with shape {current_averaged_frames.shape}')
 
-            current_text_mask = self.ocr.pixel_mask(current_averaged_frames, self.poc_resolution)
-            current_averaged_frames = cv2.resize(current_averaged_frames, self.poc_resolution)
-            current_averaged_frames = self._apply_text_mask(current_averaged_frames, current_text_mask)
+            if self.ocr_detector is not None:
+                current_text_mask = self.ocr_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
+                current_averaged_frames = cv2.resize(current_averaged_frames, self.poc_resolution)
+                current_averaged_frames = self._apply_mask(current_averaged_frames, current_text_mask)
+                # logger.info(f'Applied text mask with shape {current_text_mask.shape} to averaged frame with shape {current_averaged_frames.shape}')
+            if self.persons_detector is not None:
+                current_persons_mask = self.persons_detector.pixel_mask(current_averaged_frames, self.poc_resolution)
+                # logger.info(f'Current persons mask shape is {current_persons_mask.shape}')
+                current_averaged_frames = self._apply_mask(current_averaged_frames, current_persons_mask)
+                # logger.info(f'Applied persons mask with shape {current_persons_mask.shape} to averaged frame with shape {current_averaged_frames.shape}')
+
+            current_averaged_frames = np.mean(current_averaged_frames, axis=2).astype(np.uint8)  # making grayscale image from color one
             self.poc_engine.update_deque(current_averaged_frames)
-
-            if verbose:
-                self.averaged_frames_pair_deque.append(current_averaged_frames)
+            self.averaged_frames_pair_deque.append(current_averaged_frames)
 
             if len(self.poc_engine.fft_deque) == 2:
                 current_registration_result = self.poc_engine.register()
@@ -101,6 +105,7 @@ class SteadyCameraCoarseFilter:
                 self.registration_confidence = np.append(self.registration_confidence, current_registration_result.confidence)
 
                 if verbose:
+                    # logger.info(f'Registration value: {current_registration_result.shift}, confidence: {current_registration_result.confidence:1.2f}.')
                     registration_result = f'Shift: {current_registration_result.shift}, peak value: {current_registration_result.confidence:1.2f}'
                     reference_target_image = np.hstack((self.averaged_frames_pair_deque[0].astype(np.uint8),
                                                         self.averaged_frames_pair_deque[1].astype(np.uint8)))
@@ -113,23 +118,6 @@ class SteadyCameraCoarseFilter:
                                                          font_scale, (255, 100, 100), 1, cv2.LINE_AA)
                     cv2.imshow('POC', reference_target_image)
                     cv2.waitKey(10)
-
-    def filter_segments_by_time(self, video_segments: VideoSegments, time_threshold: float) -> VideoSegments:
-        """
-        Description:
-            Filter video segments by duration. If segment duration is less than time_threshold, it will be deleted.
-        :param video_segments: input video segments
-        :param time_threshold: time threshold in seconds
-        :return: filtered by time video segments
-        """
-        fps = self.video_frames_batch.video_reader.fps
-        for segment_index, segment in enumerate(video_segments.segments):
-            segment_length = segment[1] - segment[0]
-            if (segment_length / fps) < time_threshold:
-                video_segments.segments[segment_index] = np.array([-1, -1])
-        mask = video_segments.segments[:, 0] >= 0
-        video_segments.segments = video_segments.segments[mask]
-        return video_segments
 
     def steady_camera_video_segments(self) -> VideoSegments:
         """
@@ -174,11 +162,11 @@ class SteadyCameraCoarseFilter:
             if segments[index, 1] > segments[index + 1, 0]:
                 segments[index + 1, 0] = segments[index, 0]
                 segments[index] = -1
-        nans_mask = segments[:, 0] >= 0
-        segments = segments[nans_mask]
+        mask = segments[:, 0] >= 0
+        segments = segments[mask]
         return segments
 
-    def print_registration_results(self) -> None:
+    def log_registration_results(self) -> None:
         """
         Description:
             Print registration results for all images in averaged images batch
@@ -188,10 +176,13 @@ class SteadyCameraCoarseFilter:
         for index in range(self.registration_confidence.shape[0]):
             table.rows.append([self.registration_shifts[index], self.registration_confidence[index]])
         table.set_style(BeautifulTable.STYLE_BOX_ROUNDED)
-        print(table)
+        logger.info(table)
+
+    def save_registration_results(self, filepath: str) -> None:
+        pass
 
     @staticmethod
-    def _apply_text_mask(image: image_grayscale, mask: image_grayscale, sigma=7) -> image_grayscale:
+    def _apply_mask(image: image_color | image_grayscale, mask: image_grayscale, sigma=7, mask_extend_threshold=0.1) -> image_color | image_grayscale:
         """
         Description:
             Apply mask to the image. Given a mask it will be:
@@ -204,7 +195,16 @@ class SteadyCameraCoarseFilter:
         :return: masked image
         """
         blurred_mask = cv2.GaussianBlur(mask, (sigma * 3, sigma * 3), sigma)
-        blurred_mask = blurred_mask > 0.1
+        blurred_mask = blurred_mask > mask_extend_threshold
         blurred_mask = blurred_mask.astype(np.float32)
         blurred_mask = cv2.GaussianBlur(blurred_mask, (sigma * 3, sigma * 3), sigma)
-        return image * (1 - blurred_mask) + image.mean() * blurred_mask
+
+        image_channels = image.shape[2]
+        if image_channels == 1:
+            image_masked = image * (1 - blurred_mask) + image.mean() * blurred_mask
+        elif image_channels == 3:
+            blurred_mask = np.expand_dims(blurred_mask, axis=2)
+            blurred_mask = np.repeat(blurred_mask, image_channels, axis=2)
+            image_masked = image * (1 - blurred_mask) + image.mean(axis=(0, 1)) * blurred_mask
+
+        return image_masked

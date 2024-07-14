@@ -7,20 +7,27 @@ from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
 
 class EasyOcr(OcrBase):
     """
-    Jaided EasyOCR for text recognition in images.
+    Description:
+        Jaided EasyOCR for text recognition in images.
     """
+    alias = 'easy_ocr'
+
     def __init__(self, **kwargs):
         """
-        @confidence_threshold: minimum confidence for detected text
-        @minimal resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
+        Description:
+            EasyOCR class constructor
+
+        :keyword confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment.
+        :keyword minimal_resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
+
+        :return: __init__() should return None
         """
+        super().__init__(**kwargs)
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
         self.model_ocr = easyocr.Reader(self.ocr_lang_list)
 
-        confidence_threshold = kwargs.get('confidence_threshold', 0.1)
-        minimal_resolution = kwargs.get('minimal_resolution', 512)
-        self.ocr_confidence = confidence_threshold
-        self.minimum_resolution = minimal_resolution
+        self.confidence_threshold = kwargs.get('confidence_threshold', 0.1)
+        self.minimum_resolution = kwargs.get('minimal_resolution', 512)
 
     def pixel_mask(self, image: cv2.typing.MatLike, output_resolution: tuple[int, int]) -> cv2.typing.MatLike:
         if max(image.shape) < self.minimum_resolution:
@@ -29,7 +36,7 @@ class EasyOcr(OcrBase):
         current_text_mask = np.zeros(image.shape[:2])
         if len(current_ocr_result):
             for ocr_box in current_ocr_result:
-                if ocr_box[2] > self.ocr_confidence:
+                if ocr_box[2] > self.confidence_threshold:
                     ocr_box = np.array(ocr_box[0]).reshape(-1, 2).astype(np.int32)
                     current_text_mask = cv2.fillPoly(current_text_mask, [ocr_box], color=(1, 1, 1))
         current_text_mask = cv2.resize(current_text_mask, output_resolution)

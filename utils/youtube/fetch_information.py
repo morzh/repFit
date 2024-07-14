@@ -111,7 +111,10 @@ def fetch_youtube_video_information(video_url: str, verbose: bool = False) -> di
     :param verbose: print fetched information
     :return: video information
     """
-    with yt_dlp.YoutubeDL({}) as ydl:
+    ydl_options = {
+        'socket_timeout': 40
+    }
+    with yt_dlp.YoutubeDL(ydl_options) as ydl:
         video_info = ydl.extract_info(video_url, download=False)
         delete_keys_from_dictionary(video_info, redundant_video_keys_list)
         if verbose:
@@ -131,6 +134,7 @@ def fetch_youtube_channel_information(youtube_channel_url: str, verbose: bool = 
     ydl_opts = {
         'playlist_items': '1',
         'extract_flat': 'in_playlist',
+        'socket_timeout': 40
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         channel_info = ydl.extract_info(youtube_channel_url, download=False)

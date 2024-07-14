@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 
-def run():
+def youtube_excel_statistics():
     root_filepath = '/home/anton/work/fitMate/datasets/youtube_channels_links'
     excel_filenames = [f for f in os.listdir(root_filepath) if os.path.isfile(os.path.join(root_filepath, f)) and f.endswith('.xlsx')]
 
@@ -30,4 +30,4 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    youtube_excel_statistics()
