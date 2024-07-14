@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pytesseract
 
-from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
+from filters.steady_camera.core.ocr.ocr_base import OcrBase
 
 
 class TesseractOcr(OcrBase):

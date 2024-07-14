@@ -3,7 +3,7 @@ import numpy as np
 import torch.cuda
 from CRAFT import CRAFTModel
 
-from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
+from filters.steady_camera.core.ocr.ocr_base import OcrBase
 
 
 class Craft(OcrBase):

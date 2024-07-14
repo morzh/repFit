@@ -4,7 +4,7 @@ from os import listdir
 from loguru import logger
 
 from utils.multiprocess import run_pool_steady_camera_filter
-from filters.steady_camera_filter.extract_video_segmens import read_yaml, extract_and_write_steady_camera_segments, sort_videos_by_criteria
+from filters.steady_camera.extract_video_segmens import read_yaml, extract_and_write_steady_camera_segments, sort_videos_by_criteria
 
 
 @logger.catch
@@ -26,8 +26,9 @@ def cut_videos(**kwargs):
         run_pool_steady_camera_filter(extract_and_write_steady_camera_segments,
                                       video_source_filepaths,
                                       videos_target_folder,
-                                      steady_camera_filter_kwargs,
-                                      number_processes=number_processes)
+                                      number_processes=number_processes,
+                                      **steady_camera_filter_kwargs
+                                      )
     else:
         for video_source_filepath in video_source_filepaths:
             extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **steady_camera_filter_kwargs)
@@ -38,7 +39,6 @@ def cut_videos(**kwargs):
 
 if __name__ == '__main__':
     videos_root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'
-
     processing_kwargs = {
         'videos_source_folder': os.path.join(videos_root_folder, 'squats_2022'),
         'videos_target_folder': os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation_yolov9-c'),
@@ -47,6 +47,5 @@ if __name__ == '__main__':
         'use_multiprocessing': True,
         'number_processes': 2
     }
-
-    logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="11 days", compression='zip')
+    logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="5 days", compression='zip')
     cut_videos(**processing_kwargs)

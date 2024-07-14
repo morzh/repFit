@@ -2,7 +2,7 @@ import cv2
 import easyocr
 import numpy as np
 
-from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
+from filters.steady_camera.core.ocr.ocr_base import OcrBase
 
 
 class EasyOcr(OcrBase):

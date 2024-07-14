@@ -5,10 +5,10 @@ import shutil
 import time
 import yaml
 
-import filters.steady_camera_filter.core.ocr.ocr_factory as ocr_factory
-import filters.steady_camera_filter.core.persons_mask.persons_mask_factory as persons_mask_factory
-from filters.steady_camera_filter.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
-from filters.steady_camera_filter.core.video_segments import VideoSegments
+import filters.steady_camera.core.ocr.ocr_factory as ocr_factory
+import filters.steady_camera.core.persons_mask.persons_mask_factory as persons_mask_factory
+from filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
+from filters.steady_camera.core.video_segments import VideoSegments
 from utils.cv.video_segments_writer import VideoSegmentsWriter
 
 

@@ -9,10 +9,10 @@ from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 from utils.cv.video_frames_batch import VideoFramesBatch
-from filters.steady_camera_filter.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
-from filters.steady_camera_filter.core.persons_mask.persons_mask_base import PersonsMaskBase
-from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
-from filters.steady_camera_filter.core.video_segments import VideoSegments
+from filters.steady_camera.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
+from filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMaskBase
+from filters.steady_camera.core.ocr.ocr_base import OcrBase
+from filters.steady_camera.core.video_segments import VideoSegments
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]
 image_color = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]

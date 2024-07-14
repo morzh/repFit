@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 from utils.cv.video_reader import VideoReader
-from filters.steady_camera_filter.core.video_segments import VideoSegments
+from filters.steady_camera.core.video_segments import VideoSegments
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 

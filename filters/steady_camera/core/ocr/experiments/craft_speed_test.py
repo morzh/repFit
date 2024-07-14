@@ -8,7 +8,7 @@ https://github.com/boomb0om/CRAFT-text-detection
 """
 
 craft_weights_folder = '/home/anton/work/fitMate/repFit/3rd_party/weights/craft'
-test_image = '/home/anton/work/fitMate/repFit/filters/steady_camera_filter/experiments/cafe_sign.jpg'
+test_image = '/home/anton/work/fitMate/repFit/filters/steady_camera/experiments/cafe_sign.jpg'
 
 model = CRAFTModel(craft_weights_folder, 'cuda', use_refiner=False, fp16=False)
 img = Image.open(test_image)

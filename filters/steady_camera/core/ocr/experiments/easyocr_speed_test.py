@@ -2,7 +2,7 @@ import easyocr
 import cv2
 import time
 
-test_image = '/home/anton/work/fitMate/repFit/filters/steady_camera_filter/experiments/cafe_sign.jpg'
+test_image = '/home/anton/work/fitMate/repFit/filters/steady_camera/experiments/cafe_sign.jpg'
 
 languages_1 = ['ch_tra', 'en']
 ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]
