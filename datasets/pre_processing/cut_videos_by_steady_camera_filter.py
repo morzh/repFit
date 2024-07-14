@@ -44,7 +44,7 @@ if __name__ == '__main__':
         'videos_target_folder': os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation_yolov9-c'),
         'move_to_folders_strategy': 'steady_non_steady',   # 'by_source_filename'
         'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm'],
-        'use_multiprocessing': False,
+        'use_multiprocessing': True,
         'number_processes': 2
     }
 
