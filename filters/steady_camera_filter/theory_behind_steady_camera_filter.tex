@@ -1,0 +1,63 @@
+%! Author = anton
+%! Date = 7/13/24
+
+% Preamble
+\documentclass[11pt]{article}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proof}{Proof}
+\renewenvironment{proof}{{\bf \emph{Proof.} }}{\hfill $\Box$ \\}
+
+% Document
+\begin{document}
+
+\title{\sc Theory behind steady camera filter}
+\author{Anton Morzhakov}
+\maketitle
+
+\section{Fourier series}\label{sec:theory-behind-fourier-series}
+%    \makesubtitle
+\[
+    f(t) = a_0 + \sum_{n=1}^{\infty} a_n \sin (n \omega_0 t + \phi_n),
+\]
+where $\omega_0$ is the base frequency, e.g. $\omega_0 = \frac{2\pi}{T}$, $T$  is a period.
+If we make substitution
+\[
+    x = \omega_0 t  = \frac{2\pi t}{T},
+\]
+then
+\[
+    f(x) = a_0 + \sum_{n=1}^{\infty} a_n \sin (n x + \phi_n),
+\]
+where $a_n$ are amplitudes and $\phi_n$ are phases, $n \geq 1$.
+
+\section{Fourier Transform with some intuition}\label{sec:fourier-transform}
+
+\[
+    \mathcal F \{ f(x) \}  = \hat f (\omega) = \langle f(x), e^{i \omega x} \rangle =
+    \int_{\mathbb R} f(x) e^{-i \omega x} dx
+\]
+
+\begin{theorem}[Shift Theorem] \label{shift_theorem}
+    Let \(f\) be a function, $a$ is a constant, then
+    \[
+        \mathcal F \{ f(x - a) \} =  e^{-i a \omega} \mathcal F \{ f(x) \}.
+    \]
+\end{theorem}
+
+\begin{proof}
+    \begin{multline}
+        \mathcal F \{ f(x - a) \}  =  \int_{\mathbb R} f(x - a) e^{-i \omega x} dx =
+        \int_{\mathbb R} f(x) e^{-i \omega (x + a)} dx = \\
+        = e^{-i a \omega} \int_{\mathbb R} f(x) e^{-i \omega x} dx = e^{-i a \omega} \mathcal F \{ f(x) \}
+    \end{multline}
+\end{proof}
+
+\section{Phase Correlation}\label{sec:theory-behind-phase-correlation}
+
+\section{Why do we need text and persons masking?}\label{sec:why-we-need-text-and-persond-masking?}
+
+\end{document}
