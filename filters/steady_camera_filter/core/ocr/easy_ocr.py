@@ -19,8 +19,6 @@ class EasyOcr(OcrBase):
 
         :keyword confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment.
         :keyword minimal_resolution: if one of image's dimension less than minimal_resolution, it will be increased by a 1.5 factor.
-
-        :return: __init__() should return None
         """
         super().__init__(**kwargs)
         self.ocr_lang_list = ["ru", "rs_cyrillic", "be", "bg", "uk", "mn", "en"]

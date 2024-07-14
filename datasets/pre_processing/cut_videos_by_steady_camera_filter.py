@@ -39,13 +39,14 @@ def cut_videos(**kwargs):
 if __name__ == '__main__':
     videos_root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'
 
-    processing_kwargs = dict()
-    processing_kwargs['videos_source_folder'] = os.path.join(videos_root_folder, 'squats_2022')
-    processing_kwargs['videos_target_folder'] = os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation---')
-    processing_kwargs['move_to_folders_strategy'] = 'steady_non_steady'   # 'by_source_filename'
-    processing_kwargs['videos_extensions'] = ['.mp4', '.MP4', '.mkv', '.webm']
-    processing_kwargs['use_multiprocessing'] = False
-    processing_kwargs['number_processes'] = 2
+    processing_kwargs = {
+        'videos_source_folder': os.path.join(videos_root_folder, 'squats_2022'),
+        'videos_target_folder': os.path.join(videos_root_folder, 'squats_2022_coarse_steady_camera_yolo_segmentation_yolov9-c'),
+        'move_to_folders_strategy': 'steady_non_steady',   # 'by_source_filename'
+        'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm'],
+        'use_multiprocessing': False,
+        'number_processes': 2
+    }
 
     logger.add('cut_videos_by_steady_camera_filter.log', format="{time} {message}", level="DEBUG", retention="11 days", compression='zip')
     cut_videos(**processing_kwargs)

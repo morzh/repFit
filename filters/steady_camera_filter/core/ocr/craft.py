@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import torch.cuda
 from CRAFT import CRAFTModel
 
 from filters.steady_camera_filter.core.ocr.ocr_base import OcrBase
@@ -24,15 +25,12 @@ class Craft(OcrBase):
         :keyword use_cuda: use CUDA for text regions calculations
         :keyword use_refiner: perform refinement step for text regions
         :keyword use_fp16: if True, use float16 precision, otherwise use float32
-
-        :return: __init__() should return None
         """
         super().__init__(**kwargs)
         craft_weights_folder = kwargs.get('weights_path', '.')
         use_refiner = kwargs.get('use_refiner', False)
         use_float16 = kwargs.get('use_float16', False)
-        use_cuda = kwargs.get('use_cuda', True)
-        device = 'cuda' if use_cuda else 'cpu'
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.craft = CRAFTModel(craft_weights_folder, device, use_refiner=use_refiner, fp16=use_float16)
 

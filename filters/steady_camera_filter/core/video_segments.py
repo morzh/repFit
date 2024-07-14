@@ -1,5 +1,7 @@
 import copy
+import os.path
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Self
 import numpy as np
 
@@ -70,13 +72,16 @@ class VideoSegments:
                 self.segments[-1, -1] == self.frames_number - 1)
 
     def write(self, filepath: str):
-        np.save(filepath, self.segments)
+        directory_name = os.path.dirname(filepath)
+        if os.path.exists(directory_name):
+            np.save(filepath, self.segments)
+        else:
+            raise OSError('Filepath directory does not exist.')
 
     def combine_adjacent_segments(self) -> None:
         """
         Description:
             Combine adjacent segments. E.g. segments [0, 199] and [200, 599] will be combined to [0, 599] segment.
-            TO_DO: Make this algorithm more efficient in terms of memory and speed
         """
         for index in range(1, len(self.segments)):
             if self.segments[index - 1, 1] + 1 == self.segments[index, 0]:

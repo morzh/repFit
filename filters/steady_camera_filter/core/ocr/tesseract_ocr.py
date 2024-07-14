@@ -18,8 +18,6 @@ class TesseractOcr(OcrBase):
             Google Tesseract OCR class constructor.
 
         :keyword confidence_threshold: minimum confidence for detected text, value should be in [0, 1] segment
-
-        :return: __init__() should return None
         """
 
         super().__init__(**kwargs)

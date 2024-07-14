@@ -13,8 +13,6 @@ class PersonsMaskBase:
         """
         Description:
             Create instance of a class with the given key word arguments.
-
-        :return: __init__() should return None
         """
         ...
 

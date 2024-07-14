@@ -11,8 +11,6 @@ class Factory:
         """
         Description:
             Initialize empty _builders dictionary.
-
-        :return: __init__() should return None
         """
         self._builders = {}
 

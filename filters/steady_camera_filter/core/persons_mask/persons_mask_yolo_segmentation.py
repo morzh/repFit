@@ -24,8 +24,6 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
         :keyword confidence_threshold: minimum confidence for detected person, value should be in [0, 1] segment.
 
         :raises ValueError: if model type is not nano, small, medium or large
-
-        :return: __init__() should return None
         """
         super().__init__(**kwargs)
         weights_path = kwargs.get('weights_path', '')
@@ -46,7 +44,7 @@ class PersonsMaskYoloSegmentation(PersonsMaskBase):
             case 'extra_large':
                 model_file = 'yolov9e-seg.pt'
             case _:
-                raise ValueError("YOLO v9 detection models with suffix other than 'n', 's', 'm', 'c' or 'e' are not supported.")
+                raise ValueError(f"YOLO v9 detection model {model_type} is not supported.")
 
         self.model = YOLO(os.path.join(weights_path, model_file))
         self.confidence_threshold: float = kwargs.get('confidence_threshold', 0.4)

@@ -31,20 +31,17 @@ video_segments_extraction:
 
     text_mask_models:
       easy_ocr:
-        use_cuda: true
         confidence_threshold: 0.1
         minimal_resolution: 512
         quantize: false
 
       craft:
         weights_path: /home/anton/work/fitMate/repFit/3rd_party/weights/craft
-        use_cuda: true
         use_refiner: false
         use_float_16: false
 
       tesseract:
         # produces incorrect results.
-        use_cuda: true
         confidence_threshold: 0.1
 
 
