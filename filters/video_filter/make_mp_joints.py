@@ -51,6 +51,6 @@ def make_mp_joints(video_fpath: Path):
 def to_np(landmarks):
     if landmarks.pose_landmarks is None:
         return
-    return np.array([(l.x, l.y, l.z, l.visibility) for l in landmarks.pose_landmarks.landmark])
+    return np.array([(l._x, l._y, l.z, l.visibility) for l in landmarks.pose_landmarks.landmark])
 
 

@@ -29,3 +29,12 @@ class VideoFramesBatch:
                 yield batch
         if index:
             yield batch[:index]
+
+
+    @property
+    def fps(self):
+        return self.video_reader.fps
+
+    @property
+    def resolution(self):
+        return self.video_reader.resolution
