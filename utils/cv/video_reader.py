@@ -59,6 +59,9 @@ class VideoReader:
             self._current_frame_index += 1
             yield return_frame
 
+    def __del__(self):
+        self.video_capture.release()
+
     @property
     def current_frame_index(self):
         return self._current_frame_index

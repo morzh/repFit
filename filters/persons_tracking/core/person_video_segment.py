@@ -4,15 +4,29 @@ from filters.persons_tracking.core.bounding_box import BoundingBox
 
 @dataclass
 class PersonVideoSegment:
-    id: int
-    bounding_box: BoundingBox
-    segment: list[int, int]
+    """
+    Class containing information about video segment at which person's tracking is stable (using some tracking network).
+    """
+    def __init__(self, person_id):
+        """
+        Description:
+            Class constructor.
+        :param person_id: person's id
+        """
+        self.id: int = person_id
+        self.bounding_box: BoundingBox = BoundingBox()
+        self.segment: tuple[int, int] = (-1, -1)
 
-    def update(self, bounding_box: BoundingBox, frame: int):
+    def update(self, bounding_box: BoundingBox, frame_number: int) -> None:
+        """
+        Description:
+            Update information about video segment at which person is considered to be presented.
+        :param bounding_box: tracked bounding box of a person at frame_number
+        :param frame_number: frame number
+        :return: None
+        """
         self.bounding_box.circumscribe(bounding_box)
-        if not len(self.segment):
-            self.segment.append(frame)
-        elif len(self.segment) == 1:
-            self.segment.append(frame)
+        if self.segment[0] == -1:
+            self.segment = (frame_number, -1)
         else:
-            self.segment[1] = frame
+            self.segment = (self.segment[0], frame_number)

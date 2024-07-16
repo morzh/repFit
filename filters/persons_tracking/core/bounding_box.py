@@ -7,8 +7,8 @@ import numpy as np
 
 @dataclass
 class BoundingBox:
-    _x: int
-    _y: int
+    _x: int = -1
+    _y: int = -1
     _width: int = 0
     _height: int = 0
 
@@ -64,10 +64,8 @@ class BoundingBox:
 
     def circumscribe(self, bounding_box):
         if self._width == 0 and self._height == 0:
-            self._x = bounding_box.x
-            self._y = bounding_box.y
-            self._width = bounding_box.width
-            self._height = bounding_box.height
+            self.__dict__ = bounding_box.__dict__
+            return
 
         self._x = min(bounding_box.top_left[0], self._x)
         self._y = min(bounding_box.top_left[1], self._y)
