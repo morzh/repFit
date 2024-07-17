@@ -11,16 +11,19 @@ class PersonVideoSegment:
         """
         Description:
             Class constructor.
-        :param person_id: person's id
+        :param person_id: person's id (from tracking network)
         """
         self.id: int = person_id
         self.bounding_box: BoundingBox = BoundingBox()
         self.segment: tuple[int, int] = (-1, -1)
+        # self.minimum_confidence = 1.0
+        # self.maximum_confidence = 0.0
 
     def update(self, bounding_box: BoundingBox, frame_number: int) -> None:
         """
         Description:
             Update information about video segment at which person is considered to be presented.
+
         :param bounding_box: tracked bounding box of a person at frame_number
         :param frame_number: frame number
         :return: None

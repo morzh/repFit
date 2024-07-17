@@ -1,8 +1,6 @@
+import numpy as np
 from dataclasses import dataclass
 from loguru import logger
-from typing import Type
-
-import numpy as np
 
 
 @dataclass

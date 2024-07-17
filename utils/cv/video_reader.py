@@ -15,15 +15,15 @@ class VideoReader:
 
     """
     def __init__(self, fpath: str | Path, use_tqdm=True):
-        self.fpath = fpath
+        self.filepath = fpath
         if os.path.exists(str(fpath)):
             self.video_capture = cv2.VideoCapture(str(fpath))
         else:
-            FileNotFoundError(f'Video file {self.fpath} does not exist')
+            FileNotFoundError(f'Video file {self.filepath} does not exist')
 
         self.n_frames: int = 0
         self._fps: float = 0
-        self._current_frame_index: int = 0
+        self._current_frame_index: int = -1
         self.success = False
         self.frame = None
         self.use_tqdm = use_tqdm

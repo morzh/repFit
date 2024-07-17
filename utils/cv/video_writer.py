@@ -10,11 +10,12 @@ from numpy.typing import NDArray
 
 from utils.cv.video_reader import VideoReader
 from filters.steady_camera.core.video_segments import VideoSegments
+from filters.persons_tracking.core.persons_video_segments import PersonVideoSegment
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
-class VideoSegmentsWriter:
+class VideoWriter:
     """
     Class for writing video segments to a different video files to a given output folder.
     """
@@ -29,7 +30,7 @@ class VideoSegmentsWriter:
         self.output_folder = output_folder
         self.fps = fps
 
-    def write(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
+    def write_segments(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
         """
         Description:
             Write video segments as separate video files.
@@ -77,6 +78,9 @@ class VideoSegmentsWriter:
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
                 # logger.info(f'{current_segment=}')
+
+    def write_person_segment(self, video_person_segments: PersonVideoSegment, filter_name: str = 'person'):
+        pass
 
     def extract_filename_base_extension(self) -> tuple[str, str]:
         """

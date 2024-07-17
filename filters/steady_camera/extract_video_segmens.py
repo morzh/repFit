@@ -9,7 +9,7 @@ import filters.steady_camera.core.ocr.ocr_factory as ocr_factory
 import filters.steady_camera.core.persons_mask.persons_mask_factory as persons_mask_factory
 from filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from filters.steady_camera.core.video_segments import VideoSegments
-from utils.cv.video_segments_writer import VideoSegmentsWriter
+from utils.cv.video_writer import VideoWriter
 
 
 class PrintColors:
@@ -142,11 +142,11 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
         video_filename = os.path.basename(video_filepath)
         logger.info(f'{video_filename} :: writing video segment(s).')
 
-    video_segments_writer = VideoSegmentsWriter(input_filepath=video_filepath,
-                                                output_folder=output_folder,
-                                                fps=video_segments.video_fps)
+    video_segments_writer = VideoWriter(input_filepath=video_filepath,
+                                        output_folder=output_folder,
+                                        fps=video_segments.video_fps)
 
-    video_segments_writer.write(video_segments, filter_name='steady')
+    video_segments_writer.write_segments(video_segments, filter_name='steady')
     if kwargs['save_steady_camera_segments_values'] and video_segments.segments.size > 0:
         video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
@@ -154,7 +154,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
         time_threshold = kwargs['minimum_non_steady_camera_time_segment']
         video_segments_complement = video_segments.complement()
         video_segments_complement.filter_by_time_duration(time_threshold)
-        video_segments_writer.write(video_segments_complement, filter_name='nonsteady')
+        video_segments_writer.write_segments(video_segments_complement, filter_name='nonsteady')
 
         if kwargs['save_non_steady_camera_segments_values'] and video_segments_complement.segments.size > 0:
             video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
