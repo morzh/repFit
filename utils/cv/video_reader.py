@@ -5,37 +5,45 @@ import cv2
 
 
 class VideoReader:
-    """ Read frames from video with frame_generator
-
-        example:
+    """
+    Read frames from video with frame_generator.
+    Example:
         video_reader = VideoReader(video_fpath)
         frame_generator = video_reader.frame_generator()
         for frame in frame_generator:
             pass
-
     """
-    def __init__(self, fpath: str | Path, use_tqdm=True):
-        self.filepath = fpath
-        if os.path.exists(str(fpath)):
-            self.video_capture = cv2.VideoCapture(str(fpath))
-        else:
-            FileNotFoundError(f'Video file {self.filepath} does not exist')
+    def __init__(self, filepath: str | Path, skip_frames_number: int = 0, use_tqdm: bool = True):
+        """
+        Description:
+            VideoReader class constructor.
 
-        self.n_frames: int = 0
-        self._fps: float = 0
-        self._current_frame_index: int = -1
-        self.success = False
+        :param filepath: video file path
+        :param skip_frames_number:
+        :param use_tqdm: use tqdm progress bar for frames generator.
+        """
+        if os.path.exists(str(filepath)):
+            self.video_capture = cv2.VideoCapture(str(filepath))
+        else:
+            FileNotFoundError(f'Video file {filepath} does not exist')
+
+        self.frames_number: int = 0
+        self.success: bool = False
         self.frame = None
         self.use_tqdm = use_tqdm
+
+        self._fps: float = 0.0
+        self._current_frame_index: int = -1
+        self._integer_division_value = max(skip_frames_number + 1, 1)
         self._init_info()
 
     def _init_info(self):
         if self.video_capture.isOpened():
-            self.n_frames = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
             self.success, self.frame = self.video_capture.read()
             if self.success and self.use_tqdm:
-                self._progress = tqdm(range(self.n_frames))
+                self._progress = tqdm(range(self.frames_number))
                 self._progress.update()
 
     def frame_generator(self):
@@ -57,7 +65,8 @@ class VideoReader:
             return_frame = self.frame
             self.frame = _frame
             self._current_frame_index += 1
-            yield return_frame
+            if not self._current_frame_index % self._integer_division_value:
+                yield return_frame
 
     def __del__(self):
         self.video_capture.release()
@@ -85,6 +94,9 @@ class VideoReader:
     @property
     def width(self) -> int:
         """
+        Description:
+            Get video width.
+
         @return: video width
         """
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -92,6 +104,9 @@ class VideoReader:
     @property
     def height(self) -> int:
         """
+        Description:
+            Get video height.
+
         @return: video height
         """
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -99,10 +114,19 @@ class VideoReader:
     @property
     def resolution(self) -> tuple[int, int]:
         """
-        Resolution in (width, height) format
+        Description:
+            Get resolution in (width, height) format.
+
+        :return: video resolution
         """
         return self.width, self.height
 
     @property
-    def video_length(self) -> float:
-        return self.n_frames / self._fps
+    def video_duration(self) -> float:
+        """
+        Description:
+            Get video duration in seconds.
+
+        :return: video duration
+        """
+        return self.frames_number / self._fps

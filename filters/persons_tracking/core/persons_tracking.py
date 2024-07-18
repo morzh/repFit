@@ -39,12 +39,12 @@ class PersonsTracker:
         video_writer = cv2.VideoWriter(target_video_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.video_reader.fps, self.video_reader.resolution)
 
         for frame in self.video_reader:
-            predictions = self.model.track(frame, classes=0, persist=True, save=True, show=False, verbose=False)
+            predictions = self.model.track(frame, classes=0, persist=True, save=True, show=True, verbose=False)
             detected_data = predictions[0].boxes.data
             persons_video_segments.update(detected_data, self.video_reader.current_frame_index)
             current_labeled_image_filepath = os.path.join(predictions[0].save_dir, predictions[0].path)
             current_labeled_image = cv2.imread(current_labeled_image_filepath)
-            video_writer.write(current_labeled_image)
+            # video_writer.write(current_labeled_image)
 
         video_writer.release()
         return persons_video_segments

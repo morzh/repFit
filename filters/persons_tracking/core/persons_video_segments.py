@@ -21,8 +21,9 @@ class PersonsVideoSegments:
                                        int(data[index, 3]))
             self.persons[current_person_id].update(bounding_box, frame_number)
 
-    def filter_by_area(self):
+    def filter_by_area(self, factor=3):
         ...
 
     def filter_by_duration(self, duration=5):
-        ...
+        for person in self.persons.values():
+            person.filter_duration(self.fps, duration)
