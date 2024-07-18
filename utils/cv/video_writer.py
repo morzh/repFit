@@ -21,6 +21,9 @@ class VideoWriter:
     """
     def __init__(self, input_filepath: str | Path, output_folder: str | Path, fps: float, scale_factor: float = 0.5):
         """
+        Description:
+            VideoWriter class constructor
+
         :param input_filepath: input filepath
         :param output_folder: folder for output videos
         :param fps: FPS for output videos
@@ -34,6 +37,7 @@ class VideoWriter:
         """
         Description:
             Write video segments as separate video files.
+
         :param video_segments: video segments
         :param filter_name: name of the filter (prefix to frames range)
         """
@@ -42,7 +46,7 @@ class VideoWriter:
             return
 
         if video_segments.whole_video_segments_check():
-            video_filename_base, _ = self.extract_filename_base_extension()
+            video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
             video_filename = f'{video_filename_base}__{filter_name}__.mp4'
             output_filepath = os.path.join(self.output_folder, video_filename)
             shutil.copy(self.input_filepath, output_filepath)
@@ -68,38 +72,39 @@ class VideoWriter:
 
             if index_frame == current_segment_end:
                 current_video_writer.release()
-                # logger.info(f"Released video with segment {video_segments.segments[index_segment]}, {index_segment=}")
-                # logger.info(f'Video segments \n: {video_segments.segments}')
                 index_segment += 1
                 if index_segment == video_segments.segments.shape[0]:
-                    # logger.info(f'Video writer exit condition {index_segment=} == {video_segments.segments.shape[0]=}')
                     return
                 current_segment = video_segments.segments[index_segment]
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
-                # logger.info(f'{current_segment=}')
 
-    def write_person_segment(self, video_person_segments: PersonVideoSegments, filter_name: str = 'person'):
-        pass
+    def write_person_segments(self, video_person_segments: PersonVideoSegments, filter_name: str = 'person'):
+        if len(video_person_segments.segments) == 0:
+            fps = self.fps
+            return
 
-    def extract_filename_base_extension(self) -> tuple[str, str]:
+    @staticmethod
+    def extract_extension_from_filepath(input_filepath) -> tuple[str, str]:
         """
         Description:
             Extract file name without extension and file extension from file pathname.
+
         :return: file name and file extension
         """
-        video_filename = os.path.basename(self.input_filepath)
+        video_filename = os.path.basename(input_filepath)
         return os.path.splitext(video_filename)
 
     def current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
         """
         Description:
             Get video file name for a given segment
+
         :param segment: video segment (just start and end frame)
         :param frames_range_prefix: frames range prefix
         :return: filename
         """
-        video_filename_base, _ = self.extract_filename_base_extension()
+        video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
         start_frame = str(segment[0]).zfill(5)
         end_frame = str(segment[1]).zfill(5)
         video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
@@ -108,11 +113,14 @@ class VideoWriter:
 
     def write_segments_values(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
         """
-        Write segments values. This feature is for debug purposes
+        Description:
+            Write segments values. This feature is for debug purposes
+
         :param video_segments: video segments
-        :param filter_name: filter name (e.g. steady or nonsteady)
+        :param filter_name: filter name (e.g. steady or non-steady)
+        :return: None
         """
-        video_filename_base, _ = self.extract_filename_base_extension()
+        video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
         segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
         segments_values_filepath = os.path.join(self.output_folder, segments_values_filename)
 

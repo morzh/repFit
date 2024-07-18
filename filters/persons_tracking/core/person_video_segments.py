@@ -44,8 +44,12 @@ class PersonVideoSegments:
             if (segment[1] - segment[0]) / fps < threshold:
                 del segment
 
-    def bridge_gaps(self, threshold=5):
-        ...
+    def bridge_gaps(self, threshold=5) -> None:
+        for index_segment, segment in enumerate(self.segments):
+            current_segments_gap = self.segments[index_segment + 1][0] - self.segments[index_segment][1]
+            if current_segments_gap < threshold:
+                pass
 
-    def mean_person_area(self):
-        return np.mean(self.bounding_boxes_dimensions, axis=0)
+    def mean_person_area(self) -> float:
+        mean_bounding_boxes_dimensions = np.mean(self.bounding_boxes_dimensions, axis=0)
+        return mean_bounding_boxes_dimensions[0] * mean_bounding_boxes_dimensions[1]

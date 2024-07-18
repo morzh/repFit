@@ -22,7 +22,9 @@ class PersonsVideoSegments:
             self.persons[current_person_id].update(bounding_box, frame_number)
 
     def filter_by_area(self, factor=3):
-        ...
+        persons_average_areas = []
+        for person in self.persons.values():
+            persons_average_areas.append(person.mean_person_area())
 
     def filter_by_duration(self, duration=5):
         for person in self.persons.values():

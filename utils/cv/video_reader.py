@@ -2,6 +2,7 @@ import os.path
 from tqdm import tqdm
 from pathlib import Path
 import cv2
+from typing import Generator
 
 
 class VideoReader:
@@ -39,7 +40,7 @@ class VideoReader:
         self._integer_division_value = max(skip_frames_number + 1, 1)
         self._init_info()
 
-    def _init_info(self):
+    def _init_info(self) -> None:
         if self.video_capture.isOpened():
             self.approximate_frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
@@ -48,10 +49,10 @@ class VideoReader:
                 self._progress = tqdm(range(self.approximate_frames_number))
                 self._progress.update()
 
-    def frame_generator(self):
+    def frame_generator(self) -> Generator[cv2.typing.MatLike]:
         """
         Description:
-            Frames generator with tqdm
+            Frames generator with tqdm.
 
         :return: generator object
         """
@@ -64,7 +65,7 @@ class VideoReader:
                 self._progress.update()
             yield return_frame
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[cv2.typing.MatLike]:
         """
          Description:
             Frames generator skipping frames and without tqdm progress.
@@ -87,7 +88,7 @@ class VideoReader:
         return self._current_frame_index
 
     @staticmethod
-    def imshow(frame, window_name: str = 'window'):
+    def imshow(frame, window_name: str = 'window') -> None:
         cv2.imshow(window_name, frame)
         key = cv2.waitKey(1)
         if key == 27:  # if ESC is pressed, exit loop
