@@ -12,15 +12,6 @@ class PersonsTracker:
     def __init__(self, model_name: str = 'yolov10x.pt'):
         self.model_name = model_name
         self.model = None
-        self.detector_params = dict(
-            classes=0,
-            persist=True,
-            conf=0.7,
-            iou=0.7,
-            show=False,
-            tracker='tracker_conf.yaml',
-            verbose=False
-        )
         self.video_reader = None
 
     def persons_segments(self, source_video_filepath: str, target_video_folder: str) -> PersonsVideoSegments:

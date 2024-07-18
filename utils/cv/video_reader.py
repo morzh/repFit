@@ -6,8 +6,10 @@ import cv2
 
 class VideoReader:
     """
-    Read frames from video with frame_generator.
-    Example:
+    Description:
+        Read frames from video with frame_generator() or __call__().
+
+    Usage example:
         video_reader = VideoReader(video_fpath)
         frame_generator = video_reader.frame_generator()
         for frame in frame_generator:
@@ -27,7 +29,7 @@ class VideoReader:
         else:
             FileNotFoundError(f'Video file {filepath} does not exist')
 
-        self.frames_number: int = 0
+        self.approximate_frames_number: int = 0
         self.success: bool = False
         self.frame = None
         self.use_tqdm = use_tqdm
@@ -39,15 +41,18 @@ class VideoReader:
 
     def _init_info(self):
         if self.video_capture.isOpened():
-            self.frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.approximate_frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
             self.success, self.frame = self.video_capture.read()
             if self.success and self.use_tqdm:
-                self._progress = tqdm(range(self.frames_number))
+                self._progress = tqdm(range(self.approximate_frames_number))
                 self._progress.update()
 
     def frame_generator(self):
         """
+        Description:
+            Frames generator with tqdm
+
         :return: generator object
         """
         while self.success:
@@ -60,6 +65,12 @@ class VideoReader:
             yield return_frame
 
     def __iter__(self):
+        """
+         Description:
+            Frames generator skipping frames and without tqdm progress.
+
+        :return: generator object
+        """
         while self.success:
             self.success, _frame = self.video_capture.read()
             return_frame = self.frame
@@ -88,7 +99,13 @@ class VideoReader:
         return self._progress.n
 
     @property
-    def fps(self):
+    def fps(self) -> float:
+        """
+        Description:
+            Get frames per second value
+
+        :return: frames per second
+        """
         return self._fps
 
     @property
@@ -97,7 +114,7 @@ class VideoReader:
         Description:
             Get video width.
 
-        @return: video width
+        :return: video width
         """
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
 
@@ -107,7 +124,7 @@ class VideoReader:
         Description:
             Get video height.
 
-        @return: video height
+        :return: video height
         """
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -129,4 +146,4 @@ class VideoReader:
 
         :return: video duration
         """
-        return self.frames_number / self._fps
+        return self.approximate_frames_number / self._fps

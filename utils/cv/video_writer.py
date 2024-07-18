@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 
 from utils.cv.video_reader import VideoReader
 from filters.steady_camera.core.video_segments import VideoSegments
-from filters.persons_tracking.core.persons_video_segments import PersonVideoSegment
+from filters.persons_tracking.core.persons_video_segments import PersonVideoSegments
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
@@ -79,7 +79,7 @@ class VideoWriter:
                 current_segment_end = current_segment[1]
                 # logger.info(f'{current_segment=}')
 
-    def write_person_segment(self, video_person_segments: PersonVideoSegment, filter_name: str = 'person'):
+    def write_person_segment(self, video_person_segments: PersonVideoSegments, filter_name: str = 'person'):
         pass
 
     def extract_filename_base_extension(self) -> tuple[str, str]:

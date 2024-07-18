@@ -5,7 +5,7 @@ from filters.persons_tracking.core.bounding_box import BoundingBox
 
 
 @dataclass
-class PersonVideoSegment:
+class PersonVideoSegments:
     """
     Class containing information about video segment at which person's tracking is stable (using some tracking network).
     """
@@ -39,7 +39,7 @@ class PersonVideoSegment:
         else:
             self.segments.append((frame_number, frame_number))
 
-    def filter_duration(self, fps, threshold=5):
+    def filter_duration(self, fps: int, threshold: int = 5) -> None:
         for segment in self.segments:
             if (segment[1] - segment[0]) / fps < threshold:
                 del segment
