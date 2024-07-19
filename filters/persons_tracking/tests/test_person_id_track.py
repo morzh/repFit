@@ -1,10 +1,12 @@
 import unittest
 
-import filters.persons_tracking.core.person_id_track
+from filters.persons_tracking.core.person_id_track import PersonIdTrack
 
 
-class TestPersonIdTrack:
-    pass
+class TestPersonIdTrack(unittest.TestCase):
+
+    def setUp(self):
+        self.id_track = PersonIdTrack(0)
 
 
 if __name__ == '__main__':
