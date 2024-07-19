@@ -1,6 +1,6 @@
 import os.path
 from pathlib import Path
-from filters.persons_tracking.core.persons_tracking import PersonsTracker
+from filters.persons_tracking.core.persons_tracker import PersonsTracker
 
 
 root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'

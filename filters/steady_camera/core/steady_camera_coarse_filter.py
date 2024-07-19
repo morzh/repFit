@@ -142,10 +142,10 @@ class SteadyCameraCoarseFilter:
 
         video_filename = os.path.basename(self.video_frames_batch.video_filepath)
         video_segments = VideoSegments(video_filename=video_filename,
-                                       video_width=self.video_frames_batch.video_reader._width,
-                                       video_height=self.video_frames_batch.video_reader._height,
+                                       video_width=self.video_frames_batch.width,
+                                       video_height=self.video_frames_batch.height,
                                        frames_number=self.video_frames_batch.video_reader.current_frame_index,
-                                       video_fps=self.video_frames_batch.video_reader.fps,
+                                       video_fps=self.video_frames_batch.fps,
                                        segments=segments)
         return video_segments
 

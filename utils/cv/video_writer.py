@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 
 from utils.cv.video_reader import VideoReader
 from filters.steady_camera.core.video_segments import VideoSegments
-from filters.persons_tracking.core.persons_video_segments import PersonVideoSegments
+from filters.persons_tracking.core.persons_tracks import PersonIdTrack
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
@@ -22,7 +22,7 @@ class VideoWriter:
     def __init__(self, input_filepath: str | Path, output_folder: str | Path, fps: float, scale_factor: float = 0.5):
         """
         Description:
-            VideoWriter class constructor
+            VideoWriter class constructor.
 
         :param input_filepath: input filepath
         :param output_folder: folder for output videos
@@ -79,7 +79,7 @@ class VideoWriter:
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 
-    def write_person_segments(self, video_person_segments: PersonVideoSegments, filter_name: str = 'person'):
+    def write_person_segments(self, video_person_segments: PersonIdTrack, filter_name: str = 'person'):
         if len(video_person_segments.segments) == 0:
             fps = self.fps
             return
