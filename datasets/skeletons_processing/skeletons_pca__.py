@@ -1,6 +1,6 @@
 import os.path
 import numpy as np
-from datasets.skeletons_processing.core.h36m_animated_skeleton_tools import H36mAnimatedSkeletonTools
+from datasets.skeletons_processing.core.human36m_tools import Human36mTools
 
 
 root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_skeletons/results_base_video_mp3'
@@ -28,7 +28,7 @@ for video_filename, skeleton_animation in joints_3d_data.items():
     current_root_animation = skeleton_animation[:, 0]
     current_root_animation_vertical_component = current_root_animation[:, 1].reshape(-1, 1)
 
-    current_aligned_skeleton_animation = H36mAnimatedSkeletonTools.align_to_global_frame(skeleton_animation)
+    current_aligned_skeleton_animation = Human36mTools.align_to_global_frame(skeleton_animation)
     current_aligned_skeleton_animation = np.delete(current_aligned_skeleton_animation, 0, axis=1)
 
     current_stacked_skeleton_animation = current_aligned_skeleton_animation.reshape(current_number_animation_frames, -1)
