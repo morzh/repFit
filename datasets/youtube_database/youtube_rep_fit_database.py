@@ -13,12 +13,13 @@ from utils.youtube.add_data_to_database_tables import (
 
 
 @logger.catch
-def main(excel_files_path: str, database_folder: str, database_file: str) -> None:
+def update_database(excel_files_path: str, database_folder: str, database_file: str) -> None:
     """
     Description:
         Adding information to SQLite3 database from Excel files. Script was designed in such a way to continue
         processing data regardless of any kinds of errors. All errors are logged.
         Naming convention: YouTube channel's name is the Excel filename (without '.xlsx' extension) with '@' prefix added.
+
     :param excel_files_path: Excel files folder path
     :param database_folder: database file folder
     :param database_file: output database filename
@@ -71,4 +72,4 @@ if __name__ == '__main__':
     logger.add('fetch_youtube_database.log', format="{time} {level} {message}", level="DEBUG", retention="11 days", compression="zip")
     logger.info(f'{sqlite3.sqlite_version=}')
 
-    main(dataset_filepath, output_folder, data_filename)
+    update_database(dataset_filepath, output_folder, data_filename)

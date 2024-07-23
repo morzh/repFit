@@ -4,7 +4,7 @@ from pathlib import Path
 from utils.cv.video_reader import VideoReader
 
 
-class VideoFramesBatch:
+class VideoReaderFramesBatch:
     """
     Use this class when you need stack of video frames at every loop iteration.
     """

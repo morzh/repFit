@@ -8,7 +8,7 @@ from loguru import logger
 from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from utils.cv.video_frames_batch import VideoFramesBatch
+from utils.cv.video_reader_frames_batch import VideoReaderFramesBatch
 from filters.steady_camera.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
 from filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMaskBase
 from filters.steady_camera.core.ocr.ocr_base import OcrBase
@@ -41,7 +41,7 @@ class SteadyCameraCoarseFilter:
         :keyword registration_minimum_confidence: registration confidence threshold. If registration confidence less than
         registration_minimum_confidence, then camera is not considered as steady.
         """
-        self.video_frames_batch = VideoFramesBatch(video_filepath, kwargs.get('number_frames_to_average', 20))
+        self.video_frames_batch = VideoReaderFramesBatch(video_filepath, kwargs.get('number_frames_to_average', 20))
         self.ocr_detector = ocr_detector
         self.persons_detector = persons_detector
         # Image registration section
