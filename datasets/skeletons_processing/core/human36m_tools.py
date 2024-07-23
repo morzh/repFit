@@ -12,14 +12,12 @@ vector3 = Annotated[npt.NDArray[Float32], Literal[3] | Literal[3, 1]]
 class Human36mTools:
     r"""
     Description:
-        Toolbox for H3.6M animated skeletons processing. Some terminology:
+        Toolbox for H3.6M animated skeletons (joints batch) processing. Some terminology:
 
-        #. We consider H3.6M skeleton is an [17, 3] array, In other words, H3.6M skeleton is a set of 3D joints;
+        #. We consider Human3.6M skeleton as an [17, 3] array, In other words, Human3.6M skeleton is a set of 3D joints;
         #. H3.6M animated skeleton (joints batch) is [N, 17, 3] array, N - number of frames;
         #. Skeleton's normal vector is the 3rd vector of the root joint coordinate frame (see calculate_skeletons_root_frame());
         #. Root joint is a joint with index zero (joints[0])
-        #. Mean value is calculated across set of objects (e.g. spines, legs, etc.)
-        #. Average value is calculated for a single skeleton (e.g. average legs length).
     """
 
     @staticmethod
@@ -51,7 +49,7 @@ class Human36mTools:
         return np.dstack((axes_x, axes_y, axes_z))
 
     @staticmethod
-    def so3_alignment_batch(reference_batch: np.ndarray, target: np.ndarray) -> np.ndarray:
+    def so3_alignment(reference_batch: np.ndarray, target: np.ndarray) -> np.ndarray:
         r"""
         Description:
             Find rotation matrix (shortest rotation) which aligns vector_1 and vector_2 in 3D space. \n
@@ -63,7 +61,7 @@ class Human36mTools:
         :return: :math:`\mathbb{SO}(3)` rotation matrices batch
         """
         number_frames = reference_batch.shape[0]
-        reference_batch_normalized = reference_batch / np.linalg.norm(reference_batch, axis=1).reshape(-1, 1)
+        reference_batch_normalized = (reference_batch / np.linalg.norm(reference_batch, axis=1)).reshape(-1, 1)
         target_normalized = (target / np.linalg.norm(target)).reshape(1, 3)
 
         cross_references_target = np.cross(reference_batch_normalized, target_normalized)
@@ -158,12 +156,12 @@ class Human36mTools:
                 animated_skeletons_set[index_skeleton] = Human36mTools.align_to_global_frame(animated_skeletons_set[index_skeleton])
 
         for index_iteration in range(number_iterations):
-            animated_skeletons_set = Human36mTools.procrustes_spin(animated_skeletons_set)
+            animated_skeletons_set = Human36mTools.procrustes_iteration(animated_skeletons_set)
 
         return animated_skeletons_set
 
     @staticmethod
-    def procrustes_spin(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
+    def procrustes_iteration(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
         """
         Description:
 
@@ -189,14 +187,14 @@ class Human36mTools:
     def pac_stack_skeletons(skeleton_animation: joints_batch) -> np.ndarray:
         number_animation_frames = skeleton_animation.shape[0]
 
-        root = skeleton_animation[:, 0]
-        root = root[:, :2].reshape(-1, 2)
+        root_joint_components = skeleton_animation[:, 0]
+        root_joint_components = root_joint_components[:, :2].reshape(-1, 2)
 
         aligned_skeleton_animation = Human36mTools.align_to_global_frame(skeleton_animation)
         aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
 
         stacked_skeleton_animation = aligned_skeleton_animation.reshape(number_animation_frames, -1)
-        stacked_skeleton_animation = np.hstack((stacked_skeleton_animation, root))
+        stacked_skeleton_animation = np.hstack((stacked_skeleton_animation, root_joint_components))
 
         return stacked_skeleton_animation
 

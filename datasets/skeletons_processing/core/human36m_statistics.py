@@ -7,6 +7,17 @@ joints_batch = Annotated[npt.NDArray[Float32], Literal["N", 17, 3]]
 
 
 class Human36mStatistics:
+    r"""
+    Description:
+        HumanH3.6M statistics for animated skeletons processing. Some terminology:
+
+        #. We consider H3.6M skeleton is an [17, 3] array, In other words, H3.6M skeleton is a set of 3D joints;
+        #. H3.6M animated skeleton (joints batch) is [N, 17, 3] array, N - number of frames;
+        #. Skeleton's normal vector is the 3rd vector of the root joint coordinate frame (see calculate_skeletons_root_frame());
+        #. Root joint is a joint with index zero (joints[0])
+        #. Mean value is calculated across set of objects (e.g. spines, legs, etc.)
+    """
+
     @staticmethod
     def mean_spines_length(animated_skeleton: joints_batch) -> float:
         r"""
@@ -30,15 +41,15 @@ class Human36mStatistics:
 
         :return: mean legs length across joints batch
         """
-        right_low_leg_average_length = np.linalg.norm(animated_skeleton[:, 2] - animated_skeleton[:, 1], axis=1)
-        right_upper_leg_average_length = np.linalg.norm(animated_skeleton[:, 3] - animated_skeleton[:, 2], axis=1)
-        average_right_leg_length = np.mean(right_low_leg_average_length + right_upper_leg_average_length)
+        right_low_legs_mean_length = np.linalg.norm(animated_skeleton[:, 2] - animated_skeleton[:, 1], axis=1)
+        right_upper_legs_mena_length = np.linalg.norm(animated_skeleton[:, 3] - animated_skeleton[:, 2], axis=1)
+        right_legs_mean_length = np.mean(right_low_legs_mean_length + right_upper_legs_mena_length)
 
-        left_low_leg_average_length = np.linalg.norm(animated_skeleton[:, 5] - animated_skeleton[:, 4], axis=1)
-        left_upper_leg_average_length = np.linalg.norm(animated_skeleton[:, 6] - animated_skeleton[:, 5], axis=1)
-        average_left_leg_length = np.mean(left_low_leg_average_length + left_upper_leg_average_length)
+        left_low_legs_mean_length = np.linalg.norm(animated_skeleton[:, 5] - animated_skeleton[:, 4], axis=1)
+        left_upper_legs_mean_length = np.linalg.norm(animated_skeleton[:, 6] - animated_skeleton[:, 5], axis=1)
+        left_legs_mean_length = np.mean(left_low_legs_mean_length + left_upper_legs_mean_length)
 
-        return 0.5 * (average_right_leg_length + average_left_leg_length)
+        return 0.5 * (right_legs_mean_length + left_legs_mean_length)
 
     @staticmethod
     def mean_neck_heads_length(animated_skeleton: joints_batch) -> float:
