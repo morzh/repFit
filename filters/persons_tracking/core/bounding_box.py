@@ -1,6 +1,11 @@
+from typing import Type
+
 import numpy as np
 from dataclasses import dataclass
 from loguru import logger
+from typing import TypeVar
+
+BoundingBoxType = TypeVar("BoundingBoxType", bound="BoundingBox")
 
 
 @dataclass
@@ -60,7 +65,7 @@ class BoundingBox:
     def height(self, height):
         self._height = abs(int(height))
 
-    def circumscribe(self, bounding_box):
+    def circumscribe(self, bounding_box: BoundingBoxType):
         if self._width == 0 and self._height == 0:
             self.__dict__ = bounding_box.__dict__
             return
@@ -72,3 +77,15 @@ class BoundingBox:
         y2 = max(bounding_box.right_bottom[1], self.right_bottom[1])
 
         self.right_bottom = (x2, y2)
+
+    def intersect(self, bounding_box: BoundingBoxType):
+        pass
+
+    def subtract(self, bounding_box) -> list[BoundingBoxType]:
+        pass
+
+    def expand(self) -> BoundingBoxType:
+        pass
+
+    def shrink(self) -> BoundingBoxType:
+        pass
