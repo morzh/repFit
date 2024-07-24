@@ -3,7 +3,7 @@ from itertools import repeat
 import torch
 
 
-def run_pool(func, args: list, n_process: int = 10):
+def run_pool(func, args: list, n_process: int = 6):
     n_process = min(len(args), n_process)
     if n_process < 1:
         raise ValueError(f"n_process must be more 0. {n_process=}")

@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-from paths import JOINTS_MP_DPATH
+from paths import RESULTS_DPATH
 from cv_utils.video_reader import VideoReader
 from utils.file_reader import write_json
 from constants import model_complexity
@@ -13,6 +13,7 @@ mp_drawing = mp.solutions.drawing_utils
 
 show = False
 
+JOINTS_MP_DPATH = RESULTS_DPATH / "mediapipe_joints"
 
 def make_mp_joints(video_fpath: Path):
     # Load a model

@@ -4,18 +4,23 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from multiprocessing import Pool
-from paths import DATASETS_DPATH
+from paths import DATASETS_DPATH, RESULTS_DPATH
 
 
 class SkeletonDataset(Dataset):
     """Skeleton joints and PCA"""
 
     def __init__(
-            self,
-            epoch_size: int = 100,
-            batch_size: int = 1000
+        self,
+        epoch_size: int = 100,
+        batch_size: int = 1000
     ):
-        dataset_dpath = DATASETS_DPATH / "PCA_5.07.24" / "filtered_final_video"
+        self.pca_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d_pca"
+        self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints3d"
+
+        self.min_data_length = 100
+
+        self.original_data = self.load_data()
 
         self.epoch_size = epoch_size
         self.batch_size = batch_size
@@ -33,7 +38,37 @@ class SkeletonDataset(Dataset):
     def __len__(self):
         return self.epoch_size
 
+    def load_data(self) -> list:
+        """
+        Load data arrays (PCA + joints). Final result array contains:
+            - first row: PCA vector
+            - other rows: joints points vectors if format - x1, y1, z1, x2, y2, z2....
+
+        :return:
+            list of 2d np.ndarray(float32) with different length
+        """
+        original_data = []
+        for pca_fpath in self.pca_dpath.glob("*.npy"):
+            pca_row = np.load(str(pca_fpath))
+            skeleton_array = np.load(self.skeleton_dpath / pca_fpath.name)
+
+            length = min(pca_row.shape[0], skeleton_array.shape[0])
+            if length < self.min_data_length:
+                continue
+
+            pca_row = pca_row[:length, ...]
+            skeleton_array = skeleton_array[:length, ...]
+
+            skeleton_array = np.reshape(skeleton_array, (length, np.dot(*skeleton_array.shape[1:])))
+            data_sample = np.hstack((pca_row, skeleton_array))
+            data_sample = data_sample.transpose()
+            original_data.append(data_sample)
+        return original_data
+
+
     def generate_batch(self, batch_size: int):
+
+
         sin_range = (np.random.rand(batch_size) * (self.sin_range[1] - abs(self.sin_range[0]))) + self.sin_range[0]
         const_idxs = sin_range < 0
         sin_range[const_idxs] = 0

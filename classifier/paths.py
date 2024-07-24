@@ -1,6 +1,6 @@
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 DATASETS_DPATH = PROJECT_ROOT / "datasets"
 RESULTS_ROOT = PROJECT_ROOT / "results"

@@ -13,10 +13,10 @@ from track_filter import (
 
 
 def run_full_pipeline():
-    base_videos = list(VIDEO_DPATH.glob('*'))
-    run_pool(trim_video_by_steady, base_videos)
+    # base_videos = list(VIDEO_DPATH.glob('*'))
+    # run_pool(trim_video_by_steady, base_videos)
 
-    steady_videos = list(STEADY_VIDEO_DPATH.glob('*'))
+    steady_videos = list(STEADY_VIDEO_DPATH.glob('*.mp4'))
     run_pool(extract_stable_tracks, steady_videos)
 
     joints_credibility = filter_by_joints_credibility()

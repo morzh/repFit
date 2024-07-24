@@ -20,25 +20,25 @@ def filter_by_joints_credibility(threshold: float = credibility_threshold) -> di
                 joints_probs[frames_with_joints[i]] = frame_data['keypoints'][..., -1]
             average_cred = joints_probs.sum() / joints_probs.size
             if average_cred > threshold:
-                result[bboxes_fpath.stem].append(_id)
+                # result[bboxes_fpath.stem].append(_id)
                 # debug mode.
-                # result[bboxes_fpath.stem].append((_id, average_cred))
+                result[bboxes_fpath.stem].append((_id, average_cred))
     return result
 
 
 def filter_by_joints_count() -> dict:
     """"""
     result = {}
-    # intersection_percents = {}
+    intersection_percents = {}
     for bboxes_fpath in STABLE_FILTER_DPATH.glob("*.pickle"):
-        # intersection_percents[bboxes_fpath.stem] = []
+        intersection_percents[bboxes_fpath.stem] = []
         tracks = read_pickle(bboxes_fpath)
         result[bboxes_fpath.stem] = []
 
         if len(tracks) == 1:
             # if video contains only one stable track, just mark it good and continue
             result[bboxes_fpath.stem].append(list(tracks)[0])
-            # intersection_percents[bboxes_fpath.stem].append(0)
+            intersection_percents[bboxes_fpath.stem].append(0)
             continue
 
         track_frames = {_id: list(track.keys()) for _id, track in tracks.items()}
@@ -50,12 +50,12 @@ def filter_by_joints_count() -> dict:
             intersection = set(track_frames[first_idx]).intersection(track_frames[second_idx])
             for idx in [first_idx, second_idx]:
                 intersection_percent = len(intersection) / len(track_frames[idx])
-                # intersection_percents[bboxes_fpath.stem].append((idx, intersection_percent))
+                intersection_percents[bboxes_fpath.stem].append((idx, intersection_percent))
                 if intersection_percent > multi_person_threshold:
                     drop_tracks.add(idx)
         result[bboxes_fpath.stem].extend(list(set(track_ids).difference(drop_tracks)))
-    # return result, intersection_percents
-    return result
+    return result, intersection_percents
+    # return result
 
 
 def found_video_with_only_one_track_id():
