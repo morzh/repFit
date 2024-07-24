@@ -65,18 +65,21 @@ class BoundingBox:
     def height(self, height):
         self._height = abs(int(height))
 
-    def circumscribe(self, bounding_box: BoundingBoxType):
+    def circumscribe(self, bounding_box: BoundingBoxType) -> BoundingBoxType:
         if self._width == 0 and self._height == 0:
-            self.__dict__ = bounding_box.__dict__
-            return
+            return bounding_box
 
-        self._x = min(bounding_box.top_left[0], self._x)
-        self._y = min(bounding_box.top_left[1], self._y)
+        new_x = min(bounding_box.top_left[0], self._x)
+        new_y = min(bounding_box.top_left[1], self._y)
 
-        x2 = max(bounding_box.right_bottom[0], self.right_bottom[0])
-        y2 = max(bounding_box.right_bottom[1], self.right_bottom[1])
+        new_x2 = max(bounding_box.right_bottom[0], self.right_bottom[0])
+        new_y2 = max(bounding_box.right_bottom[1], self.right_bottom[1])
 
-        self.right_bottom = (x2, y2)
+        bounding_box_circumscribed = BoundingBox()
+        bounding_box_circumscribed.top_left = (new_x, new_y)
+        bounding_box_circumscribed.right_bottom = (new_x2, new_y2)
+
+        return bounding_box_circumscribed
 
     def intersect(self, bounding_box: BoundingBoxType):
         pass

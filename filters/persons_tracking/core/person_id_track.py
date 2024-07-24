@@ -11,8 +11,8 @@ class PersonIdTrack:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
     :ivar bounding_box: Bounding box containing tracked person with certain id across all frames
-    :ivar bounding_boxes_dimensions: widths and heights of tracked bounding boxes at each frame person was detected.
-    :ivar segments: frame segments at which person with certain id was tracked
+    :ivar bounding_boxes_areas: areas of tracked person's bounding boxes at each frame person was detected.
+    :ivar segments: frame segments at which person with certain ID was tracked
     """
 
     def __init__(self, person_id):
@@ -24,7 +24,7 @@ class PersonIdTrack:
         """
         self.id: int = person_id
         self.bounding_box: BoundingBox = BoundingBox()
-        self.bounding_boxes_dimensions: np.ndarray = np.empty((0, 2))
+        self.bounding_boxes_areas: np.ndarray = np.empty(0)
         self.segments: np.ndarray = np.empty((0, 2), dtype=np.int32)
 
     def update(self, bounding_box: BoundingBox, frame_number: int) -> None:
@@ -36,8 +36,8 @@ class PersonIdTrack:
         :param frame_number: frame number
         :return: None
         """
-        self.bounding_box.circumscribe(bounding_box)
-        self.bounding_boxes_dimensions = np.vstack((self.bounding_boxes_dimensions, bounding_box[2:4]))
+        self.bounding_box.circumscribeInPlace(bounding_box)
+        self.bounding_boxes_areas = np.append(self.bounding_boxes_areas, bounding_box.area)
         if self.segments.shape[0] == 0:
             self.segments = np.vstack((self.segments, np.array([frame_number, frame_number])))
         elif self.segments[-1, 1] == (frame_number - 1):
@@ -86,6 +86,4 @@ class PersonIdTrack:
 
         :return: mean area of all person's bounding boxes.
         """
-        bounding_boxes_areas = self.bounding_boxes_dimensions[:, 0] * self.bounding_boxes_dimensions[:, 1]
-        mean_area = np.mean(bounding_boxes_areas)
-        return mean_area
+        return np.mean(self.bounding_boxes_areas)
