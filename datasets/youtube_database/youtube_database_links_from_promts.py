@@ -69,7 +69,7 @@ def main():
     with open('squats_non_compound.json') as f:
         squats_tokens = json.load(f)
 
-    pure_squats = ['wide Squat']
+    pure_squats = ['squat']
     squats_types = squats_tokens['squat_types']
     chapter_not_like_patterns = squats_tokens['exclude_tokens']
 
