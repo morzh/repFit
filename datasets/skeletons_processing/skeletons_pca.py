@@ -2,7 +2,7 @@ import os.path
 import numpy as np
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-from datasets.skeletons_processing.core.human36m_tools import Human36mTools
+from datasets.skeletons_processing.core.human36m_alignment_tools import Human36mAlignmentTools
 from datasets.skeletons_processing.core.set_animated_skeletons_procrustes import AnimatedSkeletonsProcrustes
 
 
@@ -12,7 +12,7 @@ def transform_to_stacked_root_vertical_component_only(skeleton_animation):
     root_animation = skeleton_animation[:, 0]
     root_animation_vertical_component = root_animation[:, 1].reshape(-1, 1)
 
-    aligned_skeleton_animation = Human36mTools.align_to_global_frame(skeleton_animation)
+    aligned_skeleton_animation = Human36mAlignmentTools.align_skeleton_with_global_frame(skeleton_animation)
     aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
 
     stacked_skeleton_animation = aligned_skeleton_animation.reshape(number_animation_frames, -1)
@@ -27,7 +27,7 @@ def transform_to_stacked_root_vertical_horizontal_components(skeleton_animation)
     root_animation = skeleton_animation[:, 0]
     root_animation_horizontal_vertical_component = root_animation[:, :2].reshape(-1, 2)
 
-    aligned_skeleton_animation = Human36mTools.align_to_global_frame(skeleton_animation)
+    aligned_skeleton_animation = Human36mAlignmentTools.align_skeleton_with_global_frame(skeleton_animation)
     aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
 
     stacked_skeleton_animation = aligned_skeleton_animation.reshape(number_animation_frames, -1)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         current_root_animation = current_skeleton_animation[:, 0]
         current_root_animation_vertical_horizontal_component = current_root_animation[:, :2].reshape(-1, 2)
 
-        current_aligned_skeleton_animation = Human36mTools.align_to_global_frame(current_skeleton_animation)
+        current_aligned_skeleton_animation = Human36mAlignmentTools.align_skeleton_with_global_frame(current_skeleton_animation)
         current_aligned_skeleton_animation = np.delete(current_aligned_skeleton_animation, 0, axis=1)
 
         current_stacked_skeleton_animation = current_aligned_skeleton_animation.reshape(current_number_animation_frames, -1)

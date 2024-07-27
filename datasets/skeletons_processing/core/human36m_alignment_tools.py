@@ -9,7 +9,7 @@ joints_batch = Annotated[npt.NDArray[Float32], Literal["N", 17, 3]]
 vector3 = Annotated[npt.NDArray[Float32], Literal[3] | Literal[3, 1]]
 
 
-class Human36mTools:
+class Human36mAlignmentTools:
     r"""
     Description:
         Toolbox for H3.6M animated skeletons (joints batch) processing. Some terminology:
@@ -21,10 +21,10 @@ class Human36mTools:
     """
 
     @staticmethod
-    def coordinate_frame(animated_skeleton: joints_batch):
+    def root_joints_coordinate_frames(animated_skeleton: joints_batch) -> np.ndarray:
         r"""
         Description:
-            Calculates coordinate frame of the root joint. Skeleton root frame calculates as follows:
+            Calculates coordinate frames of the root joints batch. Skeleton root coordinate frame calculates as follows:
 
             #. get vector along spine :math:`x = joint_7 - joint_0`;
             #. get vector form right hip joint to left hip joint  :math:`y = joint_4 - joint_1`;
@@ -32,8 +32,8 @@ class Human36mTools:
             #. get third vector as :math:`z = x \times y`;
             #. to produce orthonormal basis just do another cross product :math:`y = z \times x`.
 
-        :param animated_skeleton:  input animated skeleton
-        :return: orthogonal coordinate frame of a skeleton
+        :param animated_skeleton: input animated skeleton
+        :return: orthogonal coordinate frames of a joints batch
         """
 
         if animated_skeleton.shape[1:] != (17, 3):
@@ -49,7 +49,7 @@ class Human36mTools:
         return np.dstack((axes_x, axes_y, axes_z))
 
     @staticmethod
-    def so3_alignment(reference_batch: np.ndarray, target: np.ndarray) -> np.ndarray:
+    def align_vectors_on_so3(reference_batch: np.ndarray, target: np.ndarray) -> np.ndarray:
         r"""
         Description:
             Find rotation matrix (shortest rotation) which aligns vector_1 and vector_2 in 3D space. \n
@@ -86,32 +86,38 @@ class Human36mTools:
         return so3_matrices
 
     @staticmethod
-    def align_to_global_frame(animated_skeleton: joints_batch) -> joints_batch:
+    def align_skeleton_with_global_frame(animated_skeleton: joints_batch, root_unchanged: bool = True) -> joints_batch:
         r"""
         Description:
             Transforms skeleton in such a way, that root joint coordinate frame and  "global" coordinate frames are coincide.
             This function
-                #. Subtracts root joint positions from all other joints positions
+                #. Subtracts root joint positions from all other joints positions, root joint itself will be at origin;
                 #. Rotates all joints by a certain angle. Angle itself is computed as the shortest angle between 
-                    vector (0, 0, 1) of the 'global' coordinate frame and third vector of a root joint coordinate frame.
+                    vector (0, 0, 1) of the global coordinate frame and third vector of a root joint coordinate frame.
+
+        Remarks:
+            Since we are aligning third vector of root joint coordinate frame to the third vector of the global frame,
+            all we need is to calculate inverse of matrix, obtained from stacked root joint coordinate frame normalized vectors.
 
         :param animated_skeleton: input animated skeleton;
+        :param root_unchanged: TODO: add parameter description
         :return: aligned joints batch
         """
-        skeletons_shifted = animated_skeleton - animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
-        h36m_skeleton_frames = Human36mTools.coordinate_frame(skeletons_shifted)
-        alignment_rotation = np.linalg.inv(h36m_skeleton_frames)
+        animated_root = animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
+        skeletons_shifted_to_origin = animated_skeleton - animated_root
+        shifted_skeletons_coordinate_frames = Human36mAlignmentTools.root_joints_coordinate_frames(skeletons_shifted_to_origin)
+        alignment_to_global_frame_rotations = np.linalg.inv(shifted_skeletons_coordinate_frames)
 
-        # additional_rotation = Rotation.from_euler('z', -0.5 * np.pi, degrees=False)
-        # additional_rotation = np.expand_dims(additional_rotation.as_matrix(), axis=0)
-        # skeletons_aligned = np.matmul(additional_rotation @ alignment_rotation, np.transpose(skeletons_shifted, axes=(0, 2, 1)))
+        aligned_skeletons = np.matmul(alignment_to_global_frame_rotations, np.transpose(skeletons_shifted_to_origin, axes=(0, 2, 1)))
+        aligned_skeletons = np.transpose(aligned_skeletons, axes=(0, 2, 1))
 
-        skeletons_aligned = np.matmul(alignment_rotation, np.transpose(skeletons_shifted, axes=(0, 2, 1)))
-        skeletons_aligned = np.transpose(skeletons_aligned, axes=(0, 2, 1))
-        return skeletons_aligned
+        if root_unchanged:
+            aligned_skeletons[:, 0] = animated_root
+
+        return aligned_skeletons
 
     @staticmethod
-    def shift_to_origin(animated_skeleton: joints_batch) -> joints_batch:
+    def shift_skeleton_to_origin(animated_skeleton: joints_batch) -> joints_batch:
         """
         Description:
             Shifts animated skeleton in a way, when root joint is always at origin position.
@@ -123,7 +129,7 @@ class Human36mTools:
         return animated_skeleton - animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
 
     @staticmethod
-    def features(animated_skeleton: joints_batch, alignment_vector: vector3) -> (vector3, float):
+    def skeleton_features(animated_skeleton: joints_batch, alignment_vector: vector3) -> (vector3, float):
         r"""
         Description:
             This function returns two vectors (features):
@@ -135,77 +141,80 @@ class Human36mTools:
         :return: (Feature 1, Feature 2)
         """
         feature_1 = animated_skeleton[:, 0]
-        h36m_skeleton_normal_vector = Human36mTools.coordinate_frame(animated_skeleton)[:, 2]
+        h36m_skeleton_normal_vector = Human36mAlignmentTools.root_joints_coordinate_frames(animated_skeleton)[:, 2]
         feature_2 = np.dot(h36m_skeleton_normal_vector, alignment_vector)
 
         return feature_1, feature_2
 
     @staticmethod
-    def align(animated_skeletons_set: list[joints_batch], number_iterations=3, transform_to_origin=True) -> list[joints_batch]:
+    def align_skeletons_heights(animated_skeletons_set: list[joints_batch], in_average: bool = True) -> list[joints_batch]:
         """
         Description:
 
+
         :param animated_skeletons_set:
-        :param number_iterations:
-        :param transform_to_origin:
-        :return: joints batch
+        :param in_average:
+        :return: list of joints batches
         """
-        if transform_to_origin:
-            number_skeletons = len(animated_skeletons_set)
-            for index_skeleton in range(number_skeletons):
-                animated_skeletons_set[index_skeleton] = Human36mTools.align_to_global_frame(animated_skeletons_set[index_skeleton])
-
-        for index_iteration in range(number_iterations):
-            animated_skeletons_set = Human36mTools.procrustes_iteration(animated_skeletons_set)
-
-        return animated_skeletons_set
+        if in_average:
+            return Human36mAlignmentTools.align_skeletons_heights_in_average(animated_skeletons_set)
+        else:
+            return Human36mAlignmentTools.align_skeletons_heights_per_animation_frame(animated_skeletons_set)
 
     @staticmethod
-    def procrustes_iteration(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
+    def align_skeletons_heights_in_average(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
         """
         Description:
 
+
         :param animated_skeletons_set:
-        :return:
+        :return: list of joints batches
         """
         number_skeletons = len(animated_skeletons_set)
-        skeletons_average_lengths = np.empty(number_skeletons)
-        skeletons_factors = np.empty(number_skeletons)
+        average_heights = np.empty(number_skeletons)
+        scale_factors = np.empty(number_skeletons)
 
         for index_skeleton in range(number_skeletons):
-            skeletons_average_lengths[index_skeleton] = Human36mStatistics.mean_skeletons_length(animated_skeletons_set[index_skeleton])
+            average_heights[index_skeleton] = Human36mStatistics.mean_skeletons_height(animated_skeletons_set[index_skeleton])
 
-        mean_skeletons_length = np.mean(skeletons_average_lengths)
-        skeletons_factors = mean_skeletons_length / skeletons_average_lengths
+        mean_height = np.mean(average_heights)
+        scale_factors = mean_height / average_heights
 
         for index_skeleton in range(number_skeletons):
-            animated_skeletons_set[index_skeleton] *= skeletons_factors[index_skeleton]
+            animated_skeletons_set[index_skeleton] *= scale_factors[index_skeleton]
 
         return animated_skeletons_set
 
     @staticmethod
-    def pac_stack_skeletons(skeleton_animation: joints_batch) -> np.ndarray:
-        number_animation_frames = skeleton_animation.shape[0]
+    def align_skeletons_heights_per_animation_frame(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
+        number_skeletons = len(animated_skeletons_set)
+        heights_per_frame = [np.ndarray] * number_skeletons
 
-        root_joint_components = skeleton_animation[:, 0]
-        root_joint_components = root_joint_components[:, :2].reshape(-1, 2)
+        for index_skeleton in range(number_skeletons):
+            heights_per_frame[index_skeleton] = Human36mStatistics.skeletons_heights(animated_skeletons_set[index_skeleton])
 
-        aligned_skeleton_animation = Human36mTools.align_to_global_frame(skeleton_animation)
-        aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
+        mean_heights = [np.mean(height) for height in heights_per_frame]
+        mean_height = sum(mean_heights) / number_skeletons
 
-        stacked_skeleton_animation = aligned_skeleton_animation.reshape(number_animation_frames, -1)
-        stacked_skeleton_animation = np.hstack((stacked_skeleton_animation, root_joint_components))
+        for index_skeleton in range(number_skeletons):
+            animated_skeletons_set[index_skeleton] *= scale_factors_per_frame[index_skeleton]
 
-        return stacked_skeleton_animation
+        return animated_skeletons_set
 
     @staticmethod
-    def skeletons_pca(skeleton_animation: np.ndarray, pca_number_components=1):
-        current_number_animation_frames = skeleton_animation.shape[0]
+    def stack_joints_coordinates(skeletons_animations: list[joints_batch], use_root_depth: bool = False) -> list[np.ndarray]:
+        """
+        Description:
+            Stack
 
-        current_root_animation = skeleton_animation[:, 0]
+        :param skeletons_animations:
+        :param use_root_depth:
+        """
+        current_number_animation_frames = len(skeletons_animations)
+
+        current_root_animation = skeletons_animations[:, 0]
         current_root_animation_vertical_horizontal_component = current_root_animation[:, :2].reshape(-1, 2)
 
-        aligned_skeleton_animation = Human36mTools.align_to_global_frame(skeleton_animation)
         aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
 
         stacked_skeleton_animation = aligned_skeleton_animation.reshape(current_number_animation_frames, -1)
