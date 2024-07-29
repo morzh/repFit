@@ -84,6 +84,8 @@ def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
             channel_information['tags'] = GoogleTranslator(source='auto', target='en').translate_batch(channel_information['tags'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating channel {channel_id} tags to English error::{error.message}')
+        except requests.exceptions.ConnectionError as error:
+            logger.info(f'Translating channel {channel_id} tags to English error::{error.errno}')
 
     current_information_json = json.dumps(channel_information)
     try:
@@ -124,6 +126,8 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
         video_title = GoogleTranslator(source='auto', target='en').translate(video_title)
     except deep_translator.exceptions.RequestError as error:
         logger.info(f'Translating {video_id} video title to English error::{error.message}')
+    except requests.exceptions.ConnectionError as error:
+        logger.info(f'Translating {video_id} video title to English error::{error.errno}')
 
     if len(video_information.get('description', '')):
         try:
@@ -132,6 +136,8 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             logger.info(f'Translating video {video_id} description to English request error::{error.message}')
         except deep_translator.exceptions.NotValidLength:
             logger.info(f'{video_id} video description is too long.')
+        except requests.exceptions.ConnectionError as error:
+            logger.info(f'{video_id} video connection error {error.errno}.')
 
     if len(video_information.get('categories', [])):
         try:
@@ -140,6 +146,8 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
             logger.info(f'Translating {video_id} video categories to English request error::{error.message}')
         except deep_translator.exceptions.TranslationNotFound as error:
             logger.info(f'Translating {video_id} video error: {error.message}')
+        except requests.exceptions.ConnectionError as error:
+            logger.info(f'Translating {video_id} video error: {error.errno}')
 
     information_json = json.dumps(video_information)
 

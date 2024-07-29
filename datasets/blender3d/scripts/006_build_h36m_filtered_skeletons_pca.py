@@ -13,6 +13,7 @@ from typing import Type
 # import matplotlib.pyplot as plt
 import numpy as np
 
+
 # from blender3d.utils import *
 
 class BColors:
@@ -31,6 +32,7 @@ def defaults_modifier(mod):
     mod.show_in_editmode = True
     mod.show_on_cage = True
 
+
 def get_h36m_joints_colors() -> list[tuple]:
     number_joints = 17
     joints_colors = [(1, 1, 1, 1)] * number_joints
@@ -39,29 +41,29 @@ def get_h36m_joints_colors() -> list[tuple]:
     orange = (0.7, 0.5, 0.1, 1.0)
     red = (1.0, 0.25, 0.25, 1.0)
 
-    joints_colors[0] = orange # root
+    joints_colors[0] = orange  # root
 
-    joints_colors[1] = light_blue # left leg
-    joints_colors[2] = light_blue # left leg
-    joints_colors[3] = light_blue # left leg
+    joints_colors[1] = light_blue  # left leg
+    joints_colors[2] = light_blue  # left leg
+    joints_colors[3] = light_blue  # left leg
 
-    joints_colors[4] = light_green # right leg
-    joints_colors[5] = light_green # right leg
-    joints_colors[6] = light_green # right leg
+    joints_colors[4] = light_green  # right leg
+    joints_colors[5] = light_green  # right leg
+    joints_colors[6] = light_green  # right leg
 
-    joints_colors[7] =  orange # spine
-    joints_colors[8] =  orange # spine
+    joints_colors[7] = orange  # spine
+    joints_colors[8] = orange  # spine
 
-    joints_colors[9] =  red # head
-    joints_colors[10] =  red # head
+    joints_colors[9] = red  # head
+    joints_colors[10] = red  # head
 
-    joints_colors[11] =  light_green # right arm
-    joints_colors[12] =  light_green # right arm
-    joints_colors[13] =  light_green # right arm
+    joints_colors[11] = light_green  # right arm
+    joints_colors[12] = light_green  # right arm
+    joints_colors[13] = light_green  # right arm
 
-    joints_colors[14] =  light_blue # left arm
-    joints_colors[15] =  light_blue # left arm
-    joints_colors[16] =  light_blue # left arm
+    joints_colors[14] = light_blue  # left arm
+    joints_colors[15] = light_blue  # left arm
+    joints_colors[16] = light_blue  # left arm
 
     return joints_colors
 
@@ -69,7 +71,7 @@ def get_h36m_joints_colors() -> list[tuple]:
 def get_h36m_joints_names():
     h36m_number_joints = 17
     joints_names = [str] * h36m_number_joints
-    
+
     joints_names[0] = '00 Bottom Torso'
 
     joints_names[1] = '01 Left Hip'
@@ -111,14 +113,14 @@ def get_h36m_skeleton_curves(joints_locations, joints_colors) -> dict[str, any]:
     torso_head_color = joints_colors[7]
     left_arm_color = joints_colors[14]
     right_arm_color = joints_colors[12]
-    
+
     left_leg_curve = create_curve_3d('LeftLegCurve', left_leg_initial_locations, left_leg_color)
     right_leg_curve = create_curve_3d('RightLegCurve', right_leg_initial_locations, right_leg_color)
     torso_head_curve = create_curve_3d('TorsoHeadCurve', torso_head_locations, torso_head_color)
     left_arm_curve = create_curve_3d('LeftArmCurve', left_arm_locations, left_arm_color)
     right_arm_curve = create_curve_3d('RightArmCurve', right_arm_locations, right_arm_color)
 
-    return {'LeftLegCurve': left_leg_curve, 'RightLegCurve': right_leg_curve, 
+    return {'LeftLegCurve': left_leg_curve, 'RightLegCurve': right_leg_curve,
             'TorsoHeadCurve': torso_head_curve,
             'LeftArmCurve': left_arm_curve, 'RightArmCurve': right_arm_curve}
 
@@ -126,44 +128,42 @@ def get_h36m_skeleton_curves(joints_locations, joints_colors) -> dict[str, any]:
 def parent_skeleton_curves(skeleton_curves, parent) -> None:
     for curve_object in skeleton_curves.values():
         curve_object.parent = parent
-        
+
 
 def hook_skeleton_h36m_curves(skeleton_curves: dict[str, any], joints_spheres: list) -> None:
     for curve_name, data_object in skeleton_curves.items():
         match curve_name:
             case 'LeftLegCurve':
-                left_leg_hooks = {0: joints_spheres[0], 
-                                  1: joints_spheres[1], 
-                                  2: joints_spheres[2], 
+                left_leg_hooks = {0: joints_spheres[0],
+                                  1: joints_spheres[1],
+                                  2: joints_spheres[2],
                                   3: joints_spheres[3]}
                 hook_skeleton_h36m_single_curve(data_object, left_leg_hooks)
             case 'RightLegCurve':
-                right_leg_hooks = {0: joints_spheres[0], 
-                                   1: joints_spheres[4], 
-                                   2: joints_spheres[5], 
+                right_leg_hooks = {0: joints_spheres[0],
+                                   1: joints_spheres[4],
+                                   2: joints_spheres[5],
                                    3: joints_spheres[6]}
                 hook_skeleton_h36m_single_curve(data_object, right_leg_hooks)
             case 'TorsoHeadCurve':
-                torso_head_hooks = {0: joints_spheres[0], 
-                                    1: joints_spheres[7], 
-                                    2: joints_spheres[8], 
-                                    3: joints_spheres[9], 
+                torso_head_hooks = {0: joints_spheres[0],
+                                    1: joints_spheres[7],
+                                    2: joints_spheres[8],
+                                    3: joints_spheres[9],
                                     4: joints_spheres[10]}
                 hook_skeleton_h36m_single_curve(data_object, torso_head_hooks)
             case 'LeftArmCurve':
-                left_arm_hooks = {0: joints_spheres[8], 
-                                  1: joints_spheres[14], 
-                                  2: joints_spheres[15], 
+                left_arm_hooks = {0: joints_spheres[8],
+                                  1: joints_spheres[14],
+                                  2: joints_spheres[15],
                                   3: joints_spheres[16]}
                 hook_skeleton_h36m_single_curve(data_object, left_arm_hooks)
             case 'RightArmCurve':
-                right_arm_hooks = {0: joints_spheres[8], 
-                                   1: joints_spheres[11], 
-                                   2: joints_spheres[12], 
+                right_arm_hooks = {0: joints_spheres[8],
+                                   1: joints_spheres[11],
+                                   2: joints_spheres[12],
                                    3: joints_spheres[13]}
                 hook_skeleton_h36m_single_curve(data_object, right_arm_hooks)
-
-
 
 
 def create_curve_3d(curve_name: str, initial_locations: np.ndarray, color=(1., 1., 1., 1.), depth=0.01) -> any:
@@ -176,11 +176,11 @@ def create_curve_3d(curve_name: str, initial_locations: np.ndarray, color=(1., 1
     for point_index, point in enumerate(spline.points):
         current_coordinates = (initial_locations[point_index, 0],
                                initial_locations[point_index, 1],
-                               initial_locations[point_index, 2], 
+                               initial_locations[point_index, 2],
                                1)
         point.co = current_coordinates
 
-    curve_object = bpy.data.objects.new(curve_name+'Object', curve_data)
+    curve_object = bpy.data.objects.new(curve_name + 'Object', curve_data)
     curve_object.color = color
     curve_object.data.bevel_depth = 0.01
     curve_object.data.bevel_resolution = 10
@@ -212,8 +212,8 @@ def hook_skeleton_h36m_single_curve(curve_object: any, hooks: dict[int, str]) ->
     bpy.ops.object.mode_set(mode='EDIT')
 
     for curve_point_index, hook_object in hooks.items():
-        bpy.ops.object.modifier_add(type='HOOK') 
-        current_hook_name = 'Hook' if curve_point_index == 0 else 'Hook.{:03d}'.format(curve_point_index) 
+        bpy.ops.object.modifier_add(type='HOOK')
+        current_hook_name = 'Hook' if curve_point_index == 0 else 'Hook.{:03d}'.format(curve_point_index)
         bpy.context.object.modifiers[current_hook_name].object = hook_object
 
         current_point = curve_object.data.splines[0].points[curve_point_index]
@@ -221,7 +221,7 @@ def hook_skeleton_h36m_single_curve(curve_object: any, hooks: dict[int, str]) ->
         bpy.ops.object.hook_assign(modifier=current_hook_name)
         current_point.select = False
 
-    bpy.ops.object.mode_set(mode = 'OBJECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
 
 
 def create_joints_skeleton_material() -> any:
@@ -233,8 +233,8 @@ def create_joints_skeleton_material() -> any:
     links = material.node_tree.links
 
     object_info = nodes.new(type='ShaderNodeObjectInfo')
-    diffuse = nodes.new(type = 'ShaderNodeBsdfDiffuse')
-    output = nodes.new(type = 'ShaderNodeOutputMaterial')
+    diffuse = nodes.new(type='ShaderNodeBsdfDiffuse')
+    output = nodes.new(type='ShaderNodeOutputMaterial')
 
     links.new(diffuse.outputs['BSDF'], output.inputs['Surface'])
     links.new(object_info.outputs['Color'], diffuse.inputs['Color'])
@@ -247,12 +247,12 @@ def get_video_plane(video_file_pathname: str) -> any:
     video_height = video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT)
     video_width = video_capture.get(cv2.CAP_PROP_FRAME_WIDTH)
     # print(video_height, video_width)
-    
+
     video_plane_scale = 2 * np.array([video_width, video_height]) / video_height
     # video_plane_scale = 2 * np.array([video_width, video_height]) / max(video_height, video_width)
-    bpy.ops.mesh.primitive_plane_add(size=1, 
-                                     location=(1. + 0.5 * video_plane_scale[0], 0., 0.), 
-                                     rotation=(0., 0. , 0.))
+    bpy.ops.mesh.primitive_plane_add(size=1,
+                                     location=(1. + 0.5 * video_plane_scale[0], 0., 0.),
+                                     rotation=(0., 0., 0.))
     video_plane_object = bpy.context.active_object
     video_plane_object.scale = (video_plane_scale[0], -video_plane_scale[1], 1.0)
     video_capture.release()
@@ -269,11 +269,11 @@ def create_constant_video_material(video_file_pathname: str) -> any:
     material.use_nodes = True
     clear_material(material)
 
-    nodes = material.node_tree.nodes    
+    nodes = material.node_tree.nodes
     links = material.node_tree.links
 
     texture = nodes.new(type='ShaderNodeTexImage')
-    output = nodes.new(type = 'ShaderNodeOutputMaterial')
+    output = nodes.new(type='ShaderNodeOutputMaterial')
     links.new(texture.outputs['Color'], output.inputs['Surface'])
 
     texture.image = bpy.data.images.load(video_file_pathname)
@@ -283,9 +283,8 @@ def create_constant_video_material(video_file_pathname: str) -> any:
     return material
 
 
-def create_skeleton_video_sample(videos_folder: str, joints_3d_animations_folder: str,  joints_3d_animations_pca_folder: str,
+def create_skeleton_video_sample(videos_folder: str, joints_3d_animations_folder: str, joints_3d_animations_pca_folder: str,
                                  video_filename: str, joints_skeleton_material: any) -> Type[bpy.context.active_object]:
-
     video_filename_base = os.path.splitext(video_filename)[0]
     joints_filename = video_filename_base + '.npy'
 
@@ -302,9 +301,9 @@ def create_skeleton_video_sample(videos_folder: str, joints_3d_animations_folder
     number_skeleton_joints = skeleton_animation.shape[1]  # 17
     initial_joints_location = skeleton_animation[0]
 
-    print(BColors.OKBLUE + BColors.BOLD, 'filename:', BColors.ENDC, 
-          BColors.OKGREEN, joints_filename, BColors.ENDC, 
-          BColors.OKBLUE + BColors.BOLD, '; number skeleton frames:', BColors.ENDC, 
+    print(BColors.OKBLUE + BColors.BOLD, 'filename:', BColors.ENDC,
+          BColors.OKGREEN, joints_filename, BColors.ENDC,
+          BColors.OKBLUE + BColors.BOLD, '; number skeleton frames:', BColors.ENDC,
           BColors.WARNING, skeleton_animation.shape[0], BColors.ENDC)
 
     joints_spheres = [None] * number_skeleton_joints
@@ -336,11 +335,11 @@ def create_skeleton_video_sample(videos_folder: str, joints_3d_animations_folder
         bpy.context.active_object.name = joints_names[joint_index]
         bpy.context.active_object.data.materials.append(joints_skeleton_material)
         joints_spheres[joint_index] = bpy.context.active_object
-        
+
         for frame_index in range(number_animation_frames):
             joints_spheres[joint_index].location = skeleton_animation[frame_index, joint_index, :]
             joints_spheres[joint_index].keyframe_insert(data_path="location", frame=frame_index)
-        
+
         joints_spheres[joint_index].parent = joints_animation_coordinate_frame
 
     for frame_index in range(number_animation_frames):
@@ -356,7 +355,7 @@ def create_skeleton_video_sample(videos_folder: str, joints_3d_animations_folder
 
 def main():
     root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_skeletons/results_base_video_mp3'
-    
+
     videos_folder = os.path.join(root_folder, 'filtered_final_video')
     joints_3d_folder = os.path.join(root_folder, 'joints3d')
     joints_pca_folder = os.path.join(root_folder, 'joints3d_pca')

@@ -4,38 +4,48 @@ from sklearn.decomposition import PCA
 import numpy.typing as npt
 from typing import Annotated, Literal, TypeVar
 
-from datasets.skeletons_processing.core.human36m_alignment_tools import Human36mAlignmentTools
-
 Float32 = TypeVar("Float32", bound=np.float32)
 joints_batch = Annotated[npt.NDArray[Float32], Literal["N", 17, 3]]
 vector3 = Annotated[npt.NDArray[Float32], Literal[3] | Literal[3, 1]]
 
 
 class Human36mPca:
-    def __init__(self):
+    """
+    Description:
+        Principal component analysis (PCA) for Human3.6M dataset.
+
+        Linear dimensionality reduction using Singular Value Decomposition of the
+        data to project it to a lower dimensional space. The input data is centered or just shifted
+        but not scaled for each feature before applying the SVD.
+
+    :ivar skeletons_pca: skeletons dimensionality reduction engine
+    :ivar use_neutral_pose: use given skeleton to center data (instead mean value in classical PCA)
+    :ivar number_components: number of PCA components
+    """
+    def __init__(self, neutral_poses: np.ndarray | None = None, number_components=1):
         self.skeletons_pca = None
+        self.use_neutral_pose: bool = neutral_poses
+        self.number_components: int = number_components
 
-    @staticmethod
-    def stack_skeletons(skeleton_animation: joints_batch) -> np.ndarray:
-        number_animation_frames = skeleton_animation.shape[0]
+    def fit(self, skeleton_animation: joints_batch) -> None:
+        """
+        Description:
+            Fit data (skeletons animations) to the model.
 
-        root_joint_components = skeleton_animation[:, 0]
-        root_joint_components = root_joint_components[:, :2].reshape(-1, 2)
+        :param skeleton_animation: joints batch
 
-        aligned_skeleton_animation = Human36mAlignmentTools.align_skeleton_with_global_frame(skeleton_animation)
-        aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
+        """
+        self.skeletons_pca = PCA(n_components=self.number_components)
+        self.skeletons_pca.fit(skeleton_animation)
 
-        stacked_skeleton_animation = aligned_skeleton_animation.reshape(number_animation_frames, -1)
-        stacked_skeleton_animation = np.hstack((stacked_skeleton_animation, root_joint_components))
+    def transform(self, skeleton_animation: joints_batch) -> np.ndarray:
+        """
+        Description:
+            Apply dimensionality reduction to the joints batch.
 
-        return stacked_skeleton_animation
+        :param skeleton_animation: joints batch
 
-    def fit(self, skeleton_animation: joints_batch, pca_number_components=1, neutral_poses: np.ndarray | None = None):
-        # skeletons_number = skeleton_animation
+        :return: joints batch PCA
 
-
-        self.skeletons_pca = PCA(n_components=pca_number_components)
-        self.skeletons_pca.fit(skeletons_3d_stacked.T)
-
-    def transform(self, skeleton_animation: joints_batch):
-        pass
+        """
+        return self.skeletons_pca.transform(skeleton_animation)

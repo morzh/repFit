@@ -86,12 +86,13 @@ class Human36mAlignmentTools:
         return so3_matrices
 
     @staticmethod
-    def align_skeleton_with_global_frame(animated_skeleton: joints_batch, root_unchanged: bool = True) -> joints_batch:
+    def align_skeleton_with_global_frame(animated_skeleton: joints_batch, keep_root_unchanged: bool = True) -> joints_batch:
         r"""
         Description:
             Transforms skeleton in such a way, that root joint coordinate frame and  "global" coordinate frames are coincide.
             This function
-                #. Subtracts root joint positions from all other joints positions, root joint itself will be at origin;
+                #. Subtracts root joint positions from all other joints positions, root joint itself will be at origin if keep_root_unchanged is False.
+                    If keep_root_unchanged is True, root joint coordinates will remain unchanged.
                 #. Rotates all joints by a certain angle. Angle itself is computed as the shortest angle between 
                     vector (0, 0, 1) of the global coordinate frame and third vector of a root joint coordinate frame.
 
@@ -100,7 +101,8 @@ class Human36mAlignmentTools:
             all we need is to calculate inverse of matrix, obtained from stacked root joint coordinate frame normalized vectors.
 
         :param animated_skeleton: input animated skeleton;
-        :param root_unchanged: TODO: add parameter description
+        :param keep_root_unchanged: root joint coordinates will remain unchanged if True, zeros otherwise.
+
         :return: aligned joints batch
         """
         animated_root = animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
@@ -111,7 +113,7 @@ class Human36mAlignmentTools:
         aligned_skeletons = np.matmul(alignment_to_global_frame_rotations, np.transpose(skeletons_shifted_to_origin, axes=(0, 2, 1)))
         aligned_skeletons = np.transpose(aligned_skeletons, axes=(0, 2, 1))
 
-        if root_unchanged:
+        if keep_root_unchanged:
             aligned_skeletons[:, 0] = animated_root
 
         return aligned_skeletons
@@ -124,6 +126,7 @@ class Human36mAlignmentTools:
             In other words subtracting root joint position from all other joints, including root joint itself.
 
         :param animated_skeleton:  input animated skeleton.
+
         :return: skeleton animation with root joint at origin.
         """
         return animated_skeleton - animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
@@ -138,6 +141,7 @@ class Human36mAlignmentTools:
 
         :param animated_skeleton: animated skeleton joints coordinates
         :param alignment_vector:
+
         :return: (Feature 1, Feature 2)
         """
         feature_1 = animated_skeleton[:, 0]
@@ -150,10 +154,12 @@ class Human36mAlignmentTools:
     def align_skeletons_heights(animated_skeletons_set: list[joints_batch], in_average: bool = True) -> list[joints_batch]:
         """
         Description:
+            Make skeletons of equal heights.
 
+        :param animated_skeletons_set: list of animated skeletons
+        :param in_average: if True, scale all skeletons in joints batch using single scale factor value. Otherwise, use per frame scake factors for every
+            skeleton in every joint batch.
 
-        :param animated_skeletons_set:
-        :param in_average:
         :return: list of joints batches
         """
         if in_average:
@@ -165,9 +171,11 @@ class Human36mAlignmentTools:
     def align_skeletons_heights_in_average(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
         """
         Description:
+            Align skeletons heights using mean skeleton height across each joints batch.
+            In other words each joints batch will be scaled using single factor value across animation frames.
 
+        :param animated_skeletons_set: list of animated skeletons (joints batches).
 
-        :param animated_skeletons_set:
         :return: list of joints batches
         """
         number_skeletons = len(animated_skeletons_set)
@@ -187,36 +195,48 @@ class Human36mAlignmentTools:
 
     @staticmethod
     def align_skeletons_heights_per_animation_frame(animated_skeletons_set: list[joints_batch]) -> list[joints_batch]:
+        """
+        Description:
+            Per frame skeletons heights alignment.
+            In other words each skeleton height will coincide with mean of skeletons heights across all joints batches.
+
+        :param animated_skeletons_set: list of animated skeletons (joints batches).
+
+        :return: list of joints batches
+        """
         number_skeletons = len(animated_skeletons_set)
         heights_per_frame = [np.ndarray] * number_skeletons
-
-        for index_skeleton in range(number_skeletons):
-            heights_per_frame[index_skeleton] = Human36mStatistics.skeletons_heights(animated_skeletons_set[index_skeleton])
 
         mean_heights = [np.mean(height) for height in heights_per_frame]
         mean_height = sum(mean_heights) / number_skeletons
 
         for index_skeleton in range(number_skeletons):
-            animated_skeletons_set[index_skeleton] *= scale_factors_per_frame[index_skeleton]
+            per_frame_skeleton_heights = Human36mStatistics.skeletons_heights(animated_skeletons_set[index_skeleton])
+            per_frame_scale_factors = mean_height / per_frame_skeleton_heights
+            animated_skeletons_set[index_skeleton] *= per_frame_scale_factors
 
         return animated_skeletons_set
 
     @staticmethod
-    def stack_joints_coordinates(skeletons_animations: list[joints_batch], use_root_depth: bool = False) -> list[np.ndarray]:
+    def stack_joints_coordinates(skeletons_animations: list[joints_batch], use_root_joint_depth: bool = False) -> np.ndarray:
         """
         Description:
-            Stack
+            Stack joints coordinates from list of [N, 17, 3] arrays to [51, M] if use_root_joint_depth is False or [50, M] otherwise.
+            Here M equals list length times N.
 
-        :param skeletons_animations:
-        :param use_root_depth:
+        :param skeletons_animations: list of skeleton animations (joints batches).
+        :param use_root_joint_depth: use third coordinate of the root joint (depth coordinate) in joints stack.
+
+        :return: stacked joints coordinates from all joints batches
         """
-        current_number_animation_frames = len(skeletons_animations)
+        animation_frames_number = len(skeletons_animations)
+        stacked_joints = np.empty((0, 51))
+        for skeleton_animation in skeletons_animations:
+            current_animation_frames_number = skeleton_animation.shape[0]
+            current_animation_stacked = skeleton_animation.reshape(current_animation_frames_number, 51)
+            stacked_joints = np.vstack((stacked_joints, current_animation_stacked))
 
-        current_root_animation = skeletons_animations[:, 0]
-        current_root_animation_vertical_horizontal_component = current_root_animation[:, :2].reshape(-1, 2)
+        if not use_root_joint_depth:
+            stacked_joints = np.delete(stacked_joints, 2, axis=1)
 
-        aligned_skeleton_animation = np.delete(aligned_skeleton_animation, 0, axis=1)
-
-        stacked_skeleton_animation = aligned_skeleton_animation.reshape(current_number_animation_frames, -1)
-        stacked_skeleton_animation = np.hstack((stacked_skeleton_animation, current_root_animation_vertical_horizontal_component))
-        skeletons_3d_stacked = np.hstack((skeletons_3d_stacked, stacked_skeleton_animation.T))
+        return stacked_joints

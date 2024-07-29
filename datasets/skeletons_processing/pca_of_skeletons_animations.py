@@ -30,7 +30,7 @@ def run_skeletons_pca(root_directory: str):
 
     skeletons_animations = Human36mAlignmentTools.align_skeletons_heights(skeletons_animations)
     skeletons_animations = Human36mAlignmentTools.align_skeleton_with_global_frame(skeletons_animations)
-    stacked_skeletons_animations = Human36mAlignmentTools.stack_joints_coordinates(skeletons_animations, use_root_depth=False)
+    stacked_skeletons_animations = Human36mAlignmentTools.stack_joints_coordinates(skeletons_animations, use_root_joint_depth=False)
 
     skeletons_pca = Human36mPca()
     skeletons_pca.fit(stacked_skeletons_animations)
