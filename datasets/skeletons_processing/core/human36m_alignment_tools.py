@@ -86,7 +86,14 @@ class Human36mAlignmentTools:
         return so3_matrices
 
     @staticmethod
-    def align_skeleton_with_global_frame(animated_skeleton: joints_batch, keep_root_unchanged: bool = True) -> joints_batch:
+    def align_animated_skeletons_to_global_frame(animated_skeletons: list[joints_batch], keep_root_unchanged: bool = True) -> list[joints_batch]:
+        for index in range(len(animated_skeletons)):
+            animated_skeletons[index] = Human36mAlignmentTools.align_animated_skeleton_to_global_frame(animated_skeletons[index], keep_root_unchanged)
+
+        return animated_skeletons
+
+    @staticmethod
+    def align_animated_skeleton_to_global_frame(animated_skeleton: joints_batch, keep_root_unchanged: bool = True) -> joints_batch:
         r"""
         Description:
             Transforms skeleton in such a way, that root joint coordinate frame and  "global" coordinate frames are coincide.
@@ -114,7 +121,7 @@ class Human36mAlignmentTools:
         aligned_skeletons = np.transpose(aligned_skeletons, axes=(0, 2, 1))
 
         if keep_root_unchanged:
-            aligned_skeletons[:, 0] = animated_root
+            aligned_skeletons[:, 0] = animated_root.reshape((aligned_skeletons.shape[0], 3))
 
         return aligned_skeletons
 

@@ -18,9 +18,9 @@ class Human36mPca:
         data to project it to a lower dimensional space. The input data is centered or just shifted
         but not scaled for each feature before applying the SVD.
 
-    :ivar skeletons_pca: skeletons dimensionality reduction engine
-    :ivar use_neutral_pose: use given skeleton to center data (instead mean value in classical PCA)
-    :ivar number_components: number of PCA components
+    :ivar skeletons_pca: skeletons dimensionality reduction engine;
+    :ivar use_neutral_pose: use given skeleton to center data (instead if calculating mean value in classical PCA approach);
+    :ivar number_components: number of PCA components.
     """
     def __init__(self, neutral_poses: np.ndarray | None = None, number_components=1):
         self.skeletons_pca = None
@@ -35,8 +35,11 @@ class Human36mPca:
         :param skeleton_animation: joints batch
 
         """
-        self.skeletons_pca = PCA(n_components=self.number_components)
-        self.skeletons_pca.fit(skeleton_animation)
+        if not self.use_neutral_pose:
+            self.skeletons_pca = PCA(n_components=self.number_components)
+            self.skeletons_pca.fit(skeleton_animation)
+        else:
+            raise NotImplementedError('Code for true use_neutral_pose value is not implemented yet.')
 
     def transform(self, skeleton_animation: joints_batch) -> np.ndarray:
         """
@@ -48,4 +51,7 @@ class Human36mPca:
         :return: joints batch PCA
 
         """
-        return self.skeletons_pca.transform(skeleton_animation)
+        if not self.use_neutral_pose:
+            return self.skeletons_pca.transform(skeleton_animation)
+        else:
+            raise NotImplementedError('Code for true use_neutral_pose value is not implemented yet.')

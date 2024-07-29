@@ -28,7 +28,7 @@ for video_filename, skeleton_animation in joints_3d_data.items():
     current_root_animation = skeleton_animation[:, 0]
     current_root_animation_vertical_component = current_root_animation[:, 1].reshape(-1, 1)
 
-    current_aligned_skeleton_animation = Human36mAlignmentTools.align_skeleton_with_global_frame(skeleton_animation)
+    current_aligned_skeleton_animation = Human36mAlignmentTools.align_animated_skeleton_to_global_frame(skeleton_animation)
     current_aligned_skeleton_animation = np.delete(current_aligned_skeleton_animation, 0, axis=1)
 
     current_stacked_skeleton_animation = current_aligned_skeleton_animation.reshape(current_number_animation_frames, -1)
