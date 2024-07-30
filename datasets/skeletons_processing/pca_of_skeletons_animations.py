@@ -4,7 +4,7 @@ from datasets.skeletons_processing.core.human36m_alignment_tools import Human36m
 from datasets.skeletons_processing.core.human36m_pca import Human36mPca
 
 
-def run_skeletons_pca(root_directory: str, save_intermediate_data: bool = False):
+def skeletons_pca(root_directory: str, save_intermediate_data: bool = False):
     input_videos_folder = os.path.join(root_directory, 'filtered_final_video')
     input_joints_folder = os.path.join(root_directory, 'joints3d')
 
@@ -57,4 +57,4 @@ def run_skeletons_pca(root_directory: str, save_intermediate_data: bool = False)
 
 if __name__ == '__main__':
     root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_skeletons/results_base_video_mp3'
-    run_skeletons_pca(root_folder, save_intermediate_data=True)
+    skeletons_pca(root_folder, save_intermediate_data=True)

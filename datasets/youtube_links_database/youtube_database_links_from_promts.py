@@ -74,7 +74,6 @@ def main():
     chapter_not_like_patterns = squats_tokens['exclude_tokens']
 
     # chapter_not_like_patterns.extend(squats_types)
-
     chapters = filter_chapters(connection, squats_types, chapter_not_like_patterns)
     # chapters = filter_chapters(connection, pure_squats, chapter_not_like_patterns)
     chapters_links = convert_chapter_data_to_link(chapters)
