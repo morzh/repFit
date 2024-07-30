@@ -37,16 +37,18 @@ def run_skeletons_pca(root_directory: str, save_intermediate_data: bool = False)
     skeletons_pca.fit(stacked_skeletons_animations)
 
     for video_filename, skeleton_animation in zip(video_filenames, skeletons_animations):
+        current_video_filename_base = os.path.splitext(video_filename)[0]
         current_stacked_skeleton_animation = Human36mAlignmentTools.stack_joints_coordinates([skeleton_animation], use_root_joint_depth=False)
         current_skeleton_animation_pca = skeletons_pca.transform(current_stacked_skeleton_animation)
-        current_output_filepath = os.path.join(output_joints_pca_folder, video_filename + '.npy')
+        current_output_filepath = os.path.join(output_joints_pca_folder, current_video_filename_base + '.npy')
         np.save(current_output_filepath, current_skeleton_animation_pca)
 
     if save_intermediate_data:
         for filename_index, video_filename in enumerate(video_filenames):
-            current_output_aligned_height_filepath = os.path.join(output_joints_aligned_heights_folder, video_filename + '.npy')
-            current_output_aligned_to_global_frame_filepath = os.path.join(output_joints_aligned_aligned_to_global_folder, video_filename + '.npy')
-            current_output_stacked_filepath = os.path.join(output_joints_stacked_folder, video_filename + '.npy')
+            current_video_filename_base = os.path.splitext(video_filename)[0]
+            current_output_aligned_height_filepath = os.path.join(output_joints_aligned_heights_folder, current_video_filename_base + '.npy')
+            current_output_aligned_to_global_frame_filepath = os.path.join(output_joints_aligned_aligned_to_global_folder, current_video_filename_base + '.npy')
+            current_output_stacked_filepath = os.path.join(output_joints_stacked_folder, current_video_filename_base + '.npy')
 
             np.save(current_output_aligned_height_filepath, aligned_height_skeletons_animations[filename_index])
             np.save(current_output_aligned_to_global_frame_filepath, aligned_to_global_frame_skeletons_animations[filename_index])

@@ -34,7 +34,7 @@ class Human36mAlignmentTools:
 
         :param animated_skeleton: input animated skeleton
 
-        :return: orthogonal coordinate frames of an animated skeleton (joints batch).
+        :return: orthogonal coordinate frames of an animated skeleton (or joints batch).
         """
 
         if animated_skeleton.shape[1:] != (17, 3):

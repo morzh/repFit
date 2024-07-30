@@ -19,7 +19,7 @@ class Human36mPca:
         but not scaled for each feature before applying the SVD.
 
     :ivar skeletons_pca: skeletons dimensionality reduction engine;
-    :ivar use_neutral_pose: use given skeleton to center data (instead if calculating mean value in classical PCA approach);
+    :ivar use_neutral_pose: use given skeleton pose to center data (instead of calculating mean value in classical PCA approach);
     :ivar number_components: number of PCA components.
     """
     def __init__(self, neutral_poses: np.ndarray | None = None, number_components=1):
