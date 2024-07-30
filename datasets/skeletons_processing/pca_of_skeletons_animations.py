@@ -29,7 +29,7 @@ def run_skeletons_pca(root_directory: str, save_intermediate_data: bool = False)
         skeleton_animation_filepath = os.path.join(input_joints_folder, skeleton_animation_filename)
         skeletons_animations[filename_index] = np.load(skeleton_animation_filepath)
 
-    aligned_height_skeletons_animations = Human36mAlignmentTools.align_skeletons_heights(skeletons_animations, in_average=True)
+    aligned_height_skeletons_animations = Human36mAlignmentTools.align_skeletons_heights(skeletons_animations, in_average=True, verbose=True)
     aligned_to_global_frame_skeletons_animations = Human36mAlignmentTools.align_animated_skeletons_to_global_frame(aligned_height_skeletons_animations)
     stacked_skeletons_animations = Human36mAlignmentTools.stack_joints_coordinates(aligned_to_global_frame_skeletons_animations, use_root_joint_depth=False)
 

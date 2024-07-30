@@ -288,11 +288,9 @@ def create_constant_video_material(video_file_pathname: str) -> any:
 def create_skeleton_video_sample(joints_3d_animations_folder: str, joints_filename: str, joints_skeleton_material: any) -> Type[bpy.context.active_object]:
 
     animated_skeletons_filepath = os.path.join(joints_3d_animations_folder, joints_filename)
-
     if not os.path.exists(animated_skeletons_filepath):
         exit()
 
-    
     animated_skeletons = np.load(animated_skeletons_filepath)
     vertical_component_animation = animated_skeletons[:, -1]
     number_animation_frames = vertical_component_animation.shape[0]
@@ -323,7 +321,6 @@ def create_skeleton_video_sample(joints_3d_animations_folder: str, joints_filena
     parent_skeleton_curves(skeleton_curves, joints_animation_coordinate_frame)
     assign_material_skeleton_curves(skeleton_curves, joints_skeleton_material)
     
-
     for joint_index in range(number_skeleton_joints):
         bpy.ops.mesh.primitive_ico_sphere_add(radius=0.025)
         bpy.ops.object.shade_smooth()
