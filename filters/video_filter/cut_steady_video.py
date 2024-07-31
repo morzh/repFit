@@ -3,7 +3,7 @@ from pathlib import Path
 
 from paths import STEADY_VIDEO_DPATH, RESULTS_ROOT
 from utils.file_reader import read_pickle
-from cv_utils.tools import trim
+from utils.cv.tools import trim
 
 
 def trim_video_by_steady(video_fpath: Path):

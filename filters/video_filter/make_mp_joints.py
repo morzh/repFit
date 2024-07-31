@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 
 from paths import RESULTS_DPATH
-from cv_utils.video_reader import VideoReader
+from utils.cv.video_reader import VideoReader
 from utils.file_reader import write_json
 from constants import model_complexity
 
