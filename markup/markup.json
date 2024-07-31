@@ -4,7 +4,6 @@
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/z7P0dDzuNXg_0_0.mp4": [[100,  175, 255, 340]],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/3UrUhMuWwfY_0_0.mp4": [[45,72],  [87, 111], [128, 151], [166, 193], [207, 233], [245, 270], [285, 308], [322, 345], [362, 385], [400, 425], [435, 466], [480, 512], [518, 552], [560, 595] ],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/hVI6VQIS2Yo_0_0.mp4": [[26, 60], [70, 107], [117, 156], [167, 203], [217, 253], [270, 306], [320, 360], [372, 411], [425, 459] ],
-//  "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/aH7CsxXDj5w_0_0.mp4": [[]  ],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/O7Z0IOdLgkY_1_0.mp4": [],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/Lk47htGB_OA_0_0.mp4": [  ],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/WGmeZPkyRJ0_0_1.mp4": [[12, 77, 136, 198, 261], [285, 351], [364, 425], [437, 493], [503, 565], [575, 638], [653, 718]],
@@ -13,8 +12,6 @@
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/VCPJbiTq9YU_0_0.mp4": [[114, 221], [284, 394], [580, 692], [764, 880]],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/KpnjJfdJZP0_0_0.mp4": [[10, 58], [106, 153], [177, 233]],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/Ml4YTCH6Fhc_0_0.mp4": [[310, 383], [408, 480], [534, 615], [814, 890], [1053, 1133], [1342, 1428], [1708, 1780], [2048, 2115], [2400, 2475], [2800, 2887]],
-//  "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/o2R4TZouG1I_4_0.mp4": [],
-//  "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/0fdlHxqKBOU_0_0.mp4": [],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/kuV3OYak1yE_0_0.mp4": [[312, 378], [455, 513], [540, 596] ],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/3iUj5rHybUM_0_0.mp4": [[833, 883], [1450, 1500], [1610, 1658]],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/mMsG9-5zLc0_0_0.mp4": [[0, 43], [60, 116], [139, 194], [216, 270], [296, 345], [441, 519], [550, 630], [660, 740], [770, 830]],
@@ -24,5 +21,5 @@
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/Wp6YHVj9Urw_0_0.mp4": [[40, 92], [118, 174], [200, 253], [283, 338], [368, 423], [647, 700], [728, 785], [812, 868], [896, 952]],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/MM5m3oPeMcI_0_0.mp4": [  ],
   "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/zawXRtyOTuA_0_0.mp4": [[0, 56], [75, 132], [154, 210], [230, 282], [310, 360], [383, 430], [457, 505], [532, 575], [603, 648], [671, 719]],
-  "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/YduwRC64IQo_0_0.mp4": [[140, 188], [376, 423], [640, 686], [875, 922], [1126, 1176], [1390, 1440], [1660, 1704], [1910, 1957], [2166, 2214], [2590, 2635]],
+  "/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/PCA_5.07.24/filtered_final_video/YduwRC64IQo_0_0.mp4": [[140, 188], [376, 423], [640, 686], [875, 922], [1126, 1176], [1390, 1440], [1660, 1704], [1910, 1957], [2166, 2214], [2590, 2635]]
 }
