@@ -4,7 +4,7 @@ import time
 import torch
 from torch import nn
 from model import ModelClassifier
-from dataset import SkeletonDataset
+from dataset import SegmentationDataset
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -13,12 +13,15 @@ num_classes = 10
 lr = 0.001
 num_epochs = 200
 
+# length of one data sample in frames. Calc it as fpt*seconds
+sample_length = 200
+
 # Device will determine whether to run the training on GPU or CPU.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-def train(model_name: str = 'classifier_v1.0'):
-    train_loader = SkeletonDataset(epoch_size=10, batch_size=100)
+def train(model_name: str = 'segmentation_v1.0'):
+    train_loader = SegmentationDataset(sample_length, epoch_size=10, batch_size=1000)
     model = ModelClassifier()
 
     loss_fn = nn.MSELoss()
