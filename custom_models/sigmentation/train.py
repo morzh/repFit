@@ -3,7 +3,7 @@ import numpy as np
 import time
 import torch
 from torch import nn
-from model import ModelClassifier
+from model import SegmentationModel
 from dataset import SegmentationDataset
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -22,15 +22,14 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def train(model_name: str = 'segmentation_v1.0'):
     train_loader = SegmentationDataset(sample_length, epoch_size=10, batch_size=1000)
-    model = ModelClassifier()
+    model = SegmentationModel()
 
     loss_fn = nn.MSELoss()
 
-    # Set optimizer with optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     model = model.to(device)
     model.parameters()
-    # model.load_state_dict(torch.load(f"/home/ubuntu/PycharmProjects/scince/FilterAI/checkpoints/{model_name}.pt"))
+    # model.load_state_dict(torch.load(f"./checkpoints/{model_name}.pt"))
     # model.eval()
 
     for epoch in range(num_epochs):
@@ -38,10 +37,8 @@ def train(model_name: str = 'segmentation_v1.0'):
         model.train()
         avg_loss = 0.
         for i, (x_batch, y_batch) in enumerate(train_loader):
-            y_pred = model(to_tensor(y_batch).cuda())
-            # make_figs(x_batch, y_pred, model_name)
-            # exit(0)
-            loss = loss_fn(y_pred.cpu(), to_tensor(x_batch))
+            y_pred = model(to_tensor(x_batch).cuda())
+            loss = loss_fn(y_pred.cpu(), to_tensor(y_batch))
 
             optimizer.zero_grad()
             loss.backward()
@@ -54,8 +51,8 @@ def train(model_name: str = 'segmentation_v1.0'):
         if epoch % 10 == 0:
             avg_val_loss = 0.
             for i, (x_batch, y_batch) in enumerate(train_loader):
-                y_pred = model(to_tensor(y_batch).cuda())
-                val_loss = loss_fn(y_pred.detach().cpu(), to_tensor(x_batch)).item() / len(train_loader)
+                y_pred = model(to_tensor(x_batch).cuda())
+                val_loss = loss_fn(y_pred.detach().cpu(), to_tensor(y_batch)).item() / len(train_loader)
                 avg_val_loss += val_loss
 
             elapsed_time = time.time() - start_time
