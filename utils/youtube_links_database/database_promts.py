@@ -33,13 +33,15 @@ def filter_chapters(database_filepath: str, like_entries: list[str], not_like_en
     return chapters_with_entry
 
 
-def convert_chapter_data_to_link(chapters_data: list[tuple]) -> list[str]:
+def convert_chapters_data_to_links(chapters_data: list[tuple]) -> list[str]:
     """
 
     """
     youtube_link_base = 'https://www.youtube.com/watch?v='
     youtube_links = [f"{youtube_link_base}{data[5]}&t={int(data[2])}" for data in chapters_data]
     return youtube_links
+
+# def convert_chapter_data_to_
 
 
 def chapters_statistics(chapters: list[tuple]) -> None:
@@ -64,7 +66,7 @@ def filter_channels():
     pass
 
 
-def chapters_links_via_promt(database_filepath: str, promts_filepath: str, verbose=1):
+def chapters_links_via_promt(database_filepath: str, promts_filepath: str, return_links=True, verbose=True) -> list:
     with open(promts_filepath) as f:
         squats_tokens = json.load(f)
 
@@ -72,9 +74,11 @@ def chapters_links_via_promt(database_filepath: str, promts_filepath: str, verbo
     chapter_not_like_patterns = squats_tokens['exclude_tokens']
 
     chapters = filter_chapters(database_filepath, squats_types, chapter_not_like_patterns)
-    chapters_links = convert_chapter_data_to_link(chapters)
 
-    if verbose == 1:
+    if verbose:
         chapters_statistics(chapters)
-    if verbose == 2:
-        pprint.pprint(chapters_links, width=120)
+
+    if return_links:
+        return convert_chapters_data_to_links(chapters)
+    else:
+        return chapters
