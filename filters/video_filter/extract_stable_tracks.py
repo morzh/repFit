@@ -4,7 +4,7 @@ from paths import YOLO_BBOXES_DPATH, VIDEO_DPATH, STABLE_FILTER_DPATH
 from pathlib import Path
 from constants import min_track_length_sec, min_occurrence_rate
 from utils.cv.video_reader import VideoReader
-from utils.file_reader import write_pickle
+from utils.io.file_reader import write_pickle
 
 
 class HumanTracker:

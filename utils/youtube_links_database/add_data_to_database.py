@@ -6,7 +6,7 @@ import deep_translator.exceptions
 from loguru import logger
 import requests, http.client
 
-from utils.youtube.fetch_information import (
+from utils.youtube_links_database.fetch_information_from_youtube import (
     fetch_youtube_channel_information,
     fetch_youtube_video_information,
     delete_keys_from_dictionary

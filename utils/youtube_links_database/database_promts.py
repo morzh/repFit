@@ -2,16 +2,14 @@ import os
 import pprint
 import sqlite3
 import json
-
 import numpy as np
-import pandas as pd
-from pathlib import Path
-from loguru import logger
 
 
-def filter_chapters(connection: sqlite3.Connection, like_entries: list[str], not_like_entries: list[str]) -> list[tuple]:
+def filter_chapters(database_filepath: str, like_entries: list[str], not_like_entries: list[str]) -> list[tuple]:
     """
     """
+    connection = sqlite3.connect(database_filepath)
+
     execute_command = f"""SELECT * FROM VideosChapter WHERE ("""
 
     like_patterns = [f"""title LIKE '%{entry}%' OR""" for entry in like_entries]
@@ -36,12 +34,18 @@ def filter_chapters(connection: sqlite3.Connection, like_entries: list[str], not
 
 
 def convert_chapter_data_to_link(chapters_data: list[tuple]) -> list[str]:
+    """
+
+    """
     youtube_link_base = 'https://www.youtube.com/watch?v='
     youtube_links = [f"{youtube_link_base}{data[5]}&t={int(data[2])}" for data in chapters_data]
     return youtube_links
 
 
 def chapters_statistics(chapters: list[tuple]) -> None:
+    """
+
+    """
     durations = np.empty(len(chapters))
     for chapter_index, chapter in enumerate(chapters):
         current_duration = chapter[3] - chapter[2]
@@ -60,28 +64,17 @@ def filter_channels():
     pass
 
 
-def main():
-    database_folder = '/home/anton/work/fitMate/datasets'
-    database_filename = 'youtube_rep_fit_database.db'
-    database_filepath = os.path.join(database_folder, database_filename)
-    connection = sqlite3.connect(database_filepath)
-
-    with open('squats_non_compound.json') as f:
+def chapters_links_via_promt(database_filepath: str, promts_filepath: str, verbose=1):
+    with open(promts_filepath) as f:
         squats_tokens = json.load(f)
 
-    pure_squats = ['squat']
-    squats_types = squats_tokens['squat_types']
+    squats_types = squats_tokens['include_tokens']
     chapter_not_like_patterns = squats_tokens['exclude_tokens']
 
-    # chapter_not_like_patterns.extend(squats_types)
-    chapters = filter_chapters(connection, squats_types, chapter_not_like_patterns)
-    # chapters = filter_chapters(connection, pure_squats, chapter_not_like_patterns)
+    chapters = filter_chapters(database_filepath, squats_types, chapter_not_like_patterns)
     chapters_links = convert_chapter_data_to_link(chapters)
 
-    chapters_statistics(chapters)
-    # pprint.pprint(chapters, width=120)
-    pprint.pprint(chapters_links, width=120)
-
-
-if __name__ == '__main__':
-    main()
+    if verbose == 1:
+        chapters_statistics(chapters)
+    if verbose == 2:
+        pprint.pprint(chapters_links, width=120)

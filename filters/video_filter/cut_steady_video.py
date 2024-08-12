@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 from paths import STEADY_VIDEO_DPATH, RESULTS_ROOT
-from utils.file_reader import read_pickle
+from utils.io.file_reader import read_pickle
 from utils.cv.tools import trim
 
 camera_steady = read_pickle(RESULTS_ROOT/"camera_steady_segments.pickle")

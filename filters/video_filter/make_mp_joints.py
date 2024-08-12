@@ -3,7 +3,7 @@ import numpy as np
 
 from paths import JOINTS_MP_DPATH
 from utils.cv.video_reader import VideoReader
-from utils.file_reader import write_json
+from utils.io.file_reader import write_json
 from constants import model_complexity
 
 import mediapipe as mp
