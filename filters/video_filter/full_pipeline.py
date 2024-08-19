@@ -2,6 +2,7 @@ from paths import VIDEO_DPATH, STEADY_VIDEO_DPATH
 from utils.multiprocess import run_pool
 
 from extract_stable_tracks import extract_stable_tracks
+# from extract_stable_tracks_metrabs import extract_stable_tracks
 from cut_boxes import cut_videos_by_filters
 from cut_steady_video import trim_video_by_steady
 
@@ -17,6 +18,8 @@ def run_full_pipeline():
     # run_pool(trim_video_by_steady, base_videos)
 
     steady_videos = list(STEADY_VIDEO_DPATH.glob('*.mp4'))
+    # for video in steady_videos:
+    #     extract_stable_tracks(video)
     run_pool(extract_stable_tracks, steady_videos)
 
     joints_credibility = filter_by_joints_credibility()

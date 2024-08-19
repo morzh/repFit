@@ -5,20 +5,12 @@ from pathlib import Path
 from constants import min_track_length_sec, min_occurrence_rate
 from utils.cv.video_reader import VideoReader
 from utils.file_reader import write_pickle
+import tensorflow as tf
+import tensorflow_hub as tfhub
 
-
-class HumanTrackerYolo:
-    def __init__(self, model_name: str = 'yolov8x-pose.pt'):
-        self.detector_model = YOLO(model_name)
-        self.detector_params = dict(
-            classes=0,
-            persist=True,
-            conf=0.7,
-            iou=0.7,
-            show=False,
-            tracker='tracker_conf.yaml',
-            verbose=False
-        )
+class HumanTrackerMetrabs:
+    def __init__(self, model_name: str = 'https://bit.ly/metrabs_l'):
+        self.detector_model = tfhub.load(model_name)
         self.video_reader = None
 
     def extract_tracks(self, video_fpath: str) -> dict:
@@ -27,24 +19,12 @@ class HumanTrackerYolo:
 
         self.video_reader = VideoReader(video_fpath)
         tracks = {}
+        # image = tf.image.decode_jpeg(tf.io.read_file('img/test_image_3dpw.jpg'))
+        # pred['boxes'], pred['poses2d'], pred['poses3d']
+
         for frame in self.video_reader.frame_generator():
-            results = self.detector_model.track(frame, **self.detector_params)[0]
-            idxs = results.boxes.id
-            if idxs is not None:
-                for bbox, keypoints in zip(
-                    results.boxes.data.numpy(),
-                    results.keypoints.data.cpu().numpy()
-                ):
-                    try:
-                        idx = int(bbox[4])
-                    except Exception as ex:
-                        continue
-                    if idx not in tracks:
-                        tracks[idx] = {}
-                    tracks[idx][self.video_reader.progress] = {
-                        "bbox": bbox,
-                        "keypoints": keypoints
-                        }
+            pred = self.detector_model.detect_poses(frame)
+
 
         return tracks
 
@@ -61,8 +41,9 @@ def extract_stable_tracks(video_fpath: Path):
         result_fpath.parents[0].mkdir(exist_ok=True, parents=True)
         print(f"Start processing of video {str(video_fpath)}")
 
-        tracker = HumanTrackerYolo()
+        tracker = HumanTrackerMetrabs()
         tracks = tracker.extract_tracks(video_fpath)
+        return
         write_pickle(tracks, result_fpath)
 
         min_track_length_frames = min_track_length_sec * tracker.video_reader.fps

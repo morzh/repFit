@@ -1,4 +1,5 @@
 import json
+import pickle
 import threading
 from dataclasses import dataclass
 import numpy as np
@@ -22,6 +23,7 @@ class SegmentationDataset(Dataset):
     ):
         self.pca_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d_pca"
         self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints3d"
+        self.skeleton_info_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints2d_info"
         self.markup_fpath = PROJECT_ROOT / "markup" / "markup.json"
 
         self.sample_length = sample_length
@@ -31,8 +33,8 @@ class SegmentationDataset(Dataset):
 
         self.dataset = self.load_data()
 
-
         self.speed_range = (0.8, 1.2)
+
         self.amplitudes_range = (0, 15)
         self.noise_range = (0, 0.5)
         self.sin_power_range = (1, 2)
@@ -60,18 +62,22 @@ class SegmentationDataset(Dataset):
         """
 
         markup = self.load_markup()
-        files_list = list(markup.keys())
+        markup_files_list = list(markup.keys())
         original_data = []
 
         for pca_fpath in self.pca_dpath.glob("*.npy"):
             stem = pca_fpath.stem
-            if pca_fpath.stem not in files_list:
+            if pca_fpath.stem not in markup_files_list:
                 continue
             pca_row = np.load(str(pca_fpath))
             joints = np.load(self.skeleton_dpath / pca_fpath.name)
 
             length = min(pca_row.shape[0], joints.shape[0])
             if length < self.min_sample_length:
+                continue
+            start_frame_idx, stop_frame_idx = self.read_frame_range(stem)
+            print(f"{stem=}; {start_frame_idx=}; {stop_frame_idx=}; {pca_row.shape[0]=}; {joints.shape[0]=}")
+            if start_frame_idx is None:
                 continue
 
             # cut data to same length
@@ -81,9 +87,37 @@ class SegmentationDataset(Dataset):
             # flatten joint 3d to 2d shape
             joints = np.reshape(joints, (length, np.dot(*joints.shape[1:])))
 
-            y = self.make_y_sample(joints.shape[0], markup[stem])
+            marks = self.move_markup(markup[stem], start_frame_idx)
+
+            y = self.make_y_sample(joints.shape[0], marks)
             original_data.append(self.join_data_sample(pca_row, joints, y))
         return original_data
+
+    def read_frame_range(self, stem: str) -> (int, int):
+        # with open(self.skeleton_info_dpath / (stem + ".pickle"), 'rb') as file:
+        #     joints_info = pickle.load(file)
+
+        with open(self.skeleton_info_dpath / (stem + ".json"), 'r') as file:
+            joints_info = json.load(file)
+
+        if not joints_info:
+            return None, None
+        # skeleton_frames = list(list(joints_info.values())[0].keys())
+        skeleton_frames = list(joints_info.keys())
+        start_frame_idx = int(skeleton_frames[0])
+        stop_frame_idx = int(skeleton_frames[-1])
+        return start_frame_idx, stop_frame_idx
+
+    def move_markup(self, marks: list, start_frame_idx: int):
+        """
+        Change coordinate indexes system from video frames to skeleton frames.
+        Move point to left on index of first frame with skeleton.
+        """
+        marks = marks.copy()
+        for mark in marks:
+            for i in range(len(mark)):
+                mark[i] -= start_frame_idx
+        return marks
 
     def make_y_sample(self, y_length: int, marks: list):
         """
