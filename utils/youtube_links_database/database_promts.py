@@ -1,21 +1,26 @@
-import os
+from dataclasses import dataclass
 import pprint
 import sqlite3
 import json
 import numpy as np
 
 
-class Color:
-   PURPLE = '\033[95m'
-   CYAN = '\033[96m'
-   DARK_CYAN = '\033[36m'
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
+@dataclass(frozen=True, slots=True)
+class PrintColor:
+    """
+    Description:
+        Class for print function options
+    """
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARK_CYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END = '\033[0m'
 
 
 def filter_chapters(database_filepath: str, like_entries: list[str], not_like_entries: list[str]) -> list[tuple]:
@@ -56,17 +61,15 @@ def filter_chapters(database_filepath: str, like_entries: list[str], not_like_en
 def convert_chapters_data_to_links(chapters_data: list[tuple]) -> list[str]:
     """
     Description:
-        Convert chapters data to YouTube links
+        Convert chapters data to YouTube links (with start and end times)
 
     :param chapters_data: input chapters data
 
     :return: list of YouTube links with chapters timestamps
     """
     youtube_link_base = 'https://www.youtube.com/watch?v='
-    youtube_links = [f"{youtube_link_base}{data[5]}&t={int(data[2])}" for data in chapters_data]
+    youtube_links = [f"{youtube_link_base}{data[5]}?start={int(data[2])}&end={int(data[3])}" for data in chapters_data]
     return youtube_links
-
-# def convert_chapter_data_to_
 
 
 def chapters_statistics(chapters_data: list[tuple]) -> tuple[float, float]:
@@ -87,13 +90,6 @@ def chapters_statistics(chapters_data: list[tuple]) -> tuple[float, float]:
     durations_std = np.std(durations)
 
     return durations_mean, durations_std
-
-def filter_videos():
-    raise NotImplementedError
-
-
-def filter_channels():
-    raise NotImplementedError
 
 
 def chapters_data_via_promts(database_filepath: str, promts_filepath: str) -> dict[str, list]:
@@ -140,7 +136,7 @@ def links_from_database_promts(database_filepath, promts_filepath, **kwargs) -> 
     total_chapter_number = 0
 
     for chapter_folder, chapters_data in chapters_promts.items():
-        print(Color.BOLD + Color.YELLOW + chapter_folder + Color.END)
+        print(PrintColor.BOLD + PrintColor.YELLOW + chapter_folder + PrintColor.END)
         current_chapters_links = convert_chapters_data_to_links(chapters_data)
         links[chapter_folder] = current_chapters_links
         if print_links:
@@ -153,6 +149,6 @@ def links_from_database_promts(database_filepath, promts_filepath, **kwargs) -> 
 
     if verbose:
         print('-' * 40)
-        print(Color.BOLD + Color.GREEN +  f'Total number of chapters is {total_chapter_number}' + Color.END)
+        print(PrintColor.BOLD + PrintColor.GREEN + f'Total number of chapters is {total_chapter_number}' + PrintColor.END)
 
     return links
