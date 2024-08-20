@@ -4,7 +4,10 @@ import yt_dlp
 from deep_translator import GoogleTranslator
 import deep_translator.exceptions
 from loguru import logger
+from retry import retry
 import requests, http.client
+from sympy.integrals.meijerint_doc import category
+from torch import NoneType
 
 from utils.youtube_links_database.fetch_information_from_youtube import (
     fetch_youtube_channel_information,
@@ -131,7 +134,7 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
 
     if len(video_information.get('description', '')):
         try:
-            video_information['description'] = GoogleTranslator(source='auto', target='en').translate(video_information['description'])
+            video_information['description'] = GoogleTranslator(source='auto', target='en', proxies={"socks5://": "127.0.0.1"}).translate(video_information['description'])
         except deep_translator.exceptions.RequestError as error:
             logger.info(f'Translating video {video_id} description to English request error::{error.message}')
         except deep_translator.exceptions.NotValidLength:
@@ -139,7 +142,8 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
         except requests.exceptions.ConnectionError as error:
             logger.info(f'{video_id} video connection error {error.errno}.')
 
-    if len(video_information.get('categories', [])):
+    categories = video_information.get('categories')
+    if categories is not None and len(categories):
         try:
             video_information['categories'] = GoogleTranslator(source='auto', target='en').translate_batch(video_information['categories'])
         except deep_translator.exceptions.RequestError as error:

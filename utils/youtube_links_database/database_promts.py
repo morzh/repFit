@@ -12,6 +12,8 @@ def filter_chapters(database_filepath: str, like_entries: list[str], not_like_en
     :param database_filepath:
     :param like_entries:
     :param not_like_entries:
+
+    :return: list with chapters data
     """
     connection = sqlite3.connect(database_filepath)
 
@@ -44,6 +46,7 @@ def convert_chapters_data_to_links(chapters_data: list[tuple]) -> list[str]:
         Convert chapters data to YouTube links
 
     :param chapters_data: input chapters data
+
     :return: list of YouTube links with chapters timestamps
     """
     youtube_link_base = 'https://www.youtube.com/watch?v='
@@ -53,12 +56,14 @@ def convert_chapters_data_to_links(chapters_data: list[tuple]) -> list[str]:
 # def convert_chapter_data_to_
 
 
-def chapters_statistics(chapters_data: list[tuple]) -> None:
+def chapters_statistics(chapters_data: list[tuple]) -> tuple[float, float]:
     """
     Description:
         Calculate chapters statistics
         
-    :param chapters_data: input chapters data 
+    :param chapters_data: input chapters data
+
+    :return: mean and standard deviation of durations of the chapters
     """
     durations = np.empty(len(chapters_data))
     for chapter_index, chapter in enumerate(chapters_data):
@@ -67,8 +72,8 @@ def chapters_statistics(chapters_data: list[tuple]) -> None:
 
     durations_mean = np.mean(durations)
     durations_std = np.std(durations)
-    print(f'Chapters number is {len(chapters_data)}. Chapters durations mean is {durations_mean:.2f} seconds and σ is {durations_std:.2f} seconds.')
 
+    return durations_mean, durations_std
 
 def filter_videos():
     raise NotImplementedError
@@ -78,28 +83,29 @@ def filter_channels():
     raise NotImplementedError
 
 
-def chapters_links_via_promt(database_filepath: str, promts_filepath: str, return_links=True, verbose=True) -> list:
+def chapters_data_via_promts(database_filepath: str, promts_filepath: str, verbose=True) -> dict[str, list]:
     """
     Description:
         Get chapters data from promt (represented by file)
 
     :param database_filepath:
     :param promts_filepath:
-    :param return_links: return links to videos with chapter timestamp
     :param verbose: print chapters statistics
+
+    :return: list of chapters data
     """
     with open(promts_filepath) as f:
         squats_tokens = json.load(f)
 
-    squats_types = squats_tokens['include_tokens']
+    exercises_types = squats_tokens['include_tokens']
     chapter_not_like_patterns = squats_tokens['exclude_tokens']
 
-    chapters = filter_chapters(database_filepath, squats_types, chapter_not_like_patterns)
+    chapters_data = {}
+    for exercise in exercises_types:
+        current_chapters = filter_chapters(database_filepath, [exercise], chapter_not_like_patterns)
+        chapters_data[exercise] = current_chapters
+        if verbose:
+            mean, std = chapters_statistics(current_chapters)
+            print(f'Chapters number is {len(current_chapters)}. Chapters durations mean is {mean:.2f} seconds and σ is {std:.2f} seconds.')
 
-    if verbose:
-        chapters_statistics(chapters)
-
-    if return_links:
-        return convert_chapters_data_to_links(chapters)
-    else:
-        return chapters
+    return chapters_data
