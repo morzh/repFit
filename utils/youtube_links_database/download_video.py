@@ -18,7 +18,6 @@ def download_youtube_video_chapter(video_id: str,
     :param video_segment: video segment [time_start, time_end] in seconds
     :key video_chapter_offset_seconds: add offset to video segment. New segment will be [time_start - offset, time_end + offset]
     """
-    offset = kwargs.get('video_chapter_offset_seconds', 1)
     video_format = kwargs.get('video_format','mp4')
     video_quality = kwargs.get('video_quality', 720)
 
@@ -47,7 +46,7 @@ def download_youtube_video_chapter(video_id: str,
 
     pts = 'PTS-STARTPTS'
     input_stream = ffmpeg.input(video_temporal_filepath)
-    video_cut = input_stream.trim(start=video_segment[0] - offset, end=video_segment[1] + offset).setpts(pts)
+    video_cut = input_stream.trim(start=video_segment[0], end=video_segment[1]).setpts(pts)
     output_video = ffmpeg.output(video_cut, video_output_filepath, format='mp4')
     output_video.run()
 

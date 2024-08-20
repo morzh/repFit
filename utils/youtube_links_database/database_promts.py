@@ -83,16 +83,15 @@ def filter_channels():
     raise NotImplementedError
 
 
-def chapters_data_via_promts(database_filepath: str, promts_filepath: str, verbose=True) -> dict[str, list]:
+def chapters_data_via_promts(database_filepath: str, promts_filepath: str) -> dict[str, list]:
     """
     Description:
         Get chapters data from promt (represented by file)
 
     :param database_filepath:
     :param promts_filepath:
-    :param verbose: print chapters statistics
 
-    :return: list of chapters data
+    :return: dictionary with keys representing each promt from include_promts and value is a list of chapters data
     """
     with open(promts_filepath) as f:
         squats_tokens = json.load(f)
@@ -104,8 +103,5 @@ def chapters_data_via_promts(database_filepath: str, promts_filepath: str, verbo
     for exercise in exercises_types:
         current_chapters = filter_chapters(database_filepath, [exercise], chapter_not_like_patterns)
         chapters_data[exercise] = current_chapters
-        if verbose:
-            mean, std = chapters_statistics(current_chapters)
-            print(f'Chapters number is {len(current_chapters)}. Chapters durations mean is {mean:.2f} seconds and σ is {std:.2f} seconds.')
 
     return chapters_data
