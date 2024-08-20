@@ -48,10 +48,12 @@ def download_youtube_chapters_videos(database_filepath: str, promts_filepath: st
             if os.path.exists(current_output_filepath) and os.stat(current_output_filepath).st_size > 1024:
                 continue
 
-            download_youtube_video_chapter(current_video_id,
-                                           current_output_filepath,
-                                           (current_time_start, current_time_end),
-                                           **kwargs)
+            video_segment = (current_time_start, current_time_end)
+            download_youtube_video_chapter(current_video_id, current_output_filepath, video_segment, **kwargs)
+
+            if kwargs['print_chapters_links']:
+                current_chapter_link = f'https://www.youtube.com/watch?v={current_video_id}?start={current_time_start}&end={current_time_end}'
+                print(f'{current_chapter_link} -> {current_output_filename}')
 
 
 if __name__ == '__main__':
@@ -60,9 +62,9 @@ if __name__ == '__main__':
         'video_chapter_offset_seconds': 8,
         'video_format': 'mp4',
         'video_quality': 720,
-        'print_links': True,
-        'print_chapters_data': True,
-        'print_chapters_name': True,
+        'print_chapters_links': True,
+        'print_chapters_data': False,
+        'print_chapters_name': False,
         'use_proxy': True,
     }
 
