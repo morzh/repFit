@@ -91,12 +91,13 @@ def read_input(json_path, vid_size, scale_range, focus):
     image_ids = [_ for _ in range(i)] + image_ids
     keypoints = start_keypoints + keypoints
 
-    keypoints_array = np.empty((image_ids[-1] + 1, len(keypoints[0])))
-    keypoints_array[image_ids] = keypoints
-
     if non_image_ids:
         # add extra points for avoid interpolation side artifacts
         n_extra_points = 10
+
+        keypoints_array = np.empty((image_ids[-1] + 1, len(keypoints[0])))
+        keypoints_array[image_ids] = keypoints
+
         keypoints = ([keypoints[0] for _ in range(n_extra_points)] +
                      keypoints +
                      [keypoints[-1] for _ in range(n_extra_points)])
@@ -104,19 +105,21 @@ def read_input(json_path, vid_size, scale_range, focus):
                      image_ids +
                      [i for i in range(image_ids[-1]+1, image_ids[-1] + n_extra_points + 1)])
 
-        keypoints = np.array(keypoints)
-        interp_func = interp1d(image_ids, keypoints, kind='cubic', axis=0)
+        interp_func = interp1d(image_ids, np.array(keypoints), kind='cubic', axis=0)
         new_points = interp_func(non_image_ids)
+        keypoints_array[non_image_ids] = new_points
+    else:
+        keypoints_array = np.array(keypoints)
+    # kpts_all = []
+    # for item in results:
+    #     if focus != None and item['idx'] != focus:
+    #         continue
+    #     kpts = np.array(item['keypoints']).reshape([-1, 3])
+    #     kpts_all.append(kpts)
+    # kpts_all = np.array(kpts_all)
+    # kpts_all = halpe2h36m(kpts_all)
 
-
-    kpts_all = []
-    for item in results:
-        if focus != None and item['idx'] != focus:
-            continue
-        kpts = np.array(item['keypoints']).reshape([-1, 3])
-        kpts_all.append(kpts)
-    kpts_all = np.array(kpts_all)
-    kpts_all = halpe2h36m(kpts_all)
+    kpts_all = halpe2h36m(keypoints_array.reshape([-1, 26, 3]))
     if vid_size:
         w, h = vid_size
         scale = min(w, h) / 2.0
