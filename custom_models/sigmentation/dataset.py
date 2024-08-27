@@ -34,10 +34,7 @@ class SegmentationDataset(Dataset):
         self.dataset = self.load_data()
 
         self.speed_range = (0.8, 1.2)
-
-        self.amplitudes_range = (0, 15)
-        self.noise_range = (0, 0.5)
-        self.sin_power_range = (1, 2)
+        self.stretch_by_axis_range = (0.8, 1.2)
 
         self.n_threads = 10
 
@@ -102,7 +99,6 @@ class SegmentationDataset(Dataset):
 
         if not joints_info:
             return None, None
-        # skeleton_frames = list(list(joints_info.values())[0].keys())
         skeleton_frames = list(joints_info.keys())
         start_frame_idx = int(skeleton_frames[0])
         stop_frame_idx = int(skeleton_frames[-1])
@@ -160,11 +156,8 @@ class SegmentationDataset(Dataset):
         for idx in data_indexes:
             data_array = self.dataset[idx]
             sample = self.speed_augmentation(data_array)
-
-            # TODO: add axis augmentation
-
+            sample = self.stretch_by_axis(sample)
             sample = self.cut_sample(sample)
-
 
             # cut sample by x and y parts
             x.append(sample[:-1, ...])
@@ -172,7 +165,7 @@ class SegmentationDataset(Dataset):
 
         return np.array(x, dtype="float32"), np.array(y, dtype="float32")
 
-    def speed_augmentation(self, data_array):
+    def speed_augmentation(self, data_array: np.ndarray):
         speed = np.random.uniform(*self.speed_range)
         y = np.arange(data_array.shape[0])
         x = np.arange(data_array.shape[1])
@@ -181,8 +174,14 @@ class SegmentationDataset(Dataset):
 
         return sample
 
+    def stretch_by_axis(self, data_array: np.ndarray):
+        data_array = np.copy(data_array)
+        for i, k in enumerate(np.random.uniform(*self.stretch_by_axis_range, size=3)):
+            data_array[1+i:-1:3, :] = data_array[1+i:-1:3, :] * k
+        return data_array
+
     def cut_sample(self, input_array: np.ndarray) -> np.ndarray:
-        """ Cut sample with shape self._sample_shape """
+        """ Cut sample with shape self._sample_shape from random position inside the input_array """
         max_position = input_array.shape[-1] - self.sample_length
         if max_position > 0:
             start_idx = np.random.randint(input_array.shape[-1] - self.sample_length)
