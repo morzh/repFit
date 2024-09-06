@@ -8,7 +8,7 @@ from utils.youtube_links_database.database_promts import chapters_data_via_promt
 
 
 @retry(yt_dlp.utils.DownloadError, delay=2, backoff=2, max_delay=4, tries=5)
-def download_youtube_video_chapter(video_id: str, output_filepath: str, video_segment: tuple[int, int] | None, **kwargs) -> None:
+def download_single_video_chapter_from_youtube(video_id: str, output_filepath: str, video_segment: tuple[int, int] | None, **kwargs) -> None:
     """
     Description
         Download YouTube video chapter.
@@ -25,13 +25,14 @@ def download_youtube_video_chapter(video_id: str, output_filepath: str, video_se
     video_quality = kwargs.get('video_quality', 720)
 
     video_temporal_filepath = f'__tmp__.{video_format}'
+    video_partial_filepath = '__tmp__.mp4.part'
 
-    if os.path.exists(video_temporal_filepath):
-        os.remove(video_temporal_filepath)
+    if os.path.exists(video_temporal_filepath): os.remove(video_temporal_filepath)
+    if os.path.exists(video_partial_filepath): os.remove(video_partial_filepath)
 
     ydl_options = {
         'verbose': True,
-        'format': f'{video_format}[height={video_quality}]',
+        'format': f'bestvideo[height={video_quality}]',
         # 'download_ranges': download_range_func([chapter_name], [video_segment]),
         'force_keyframes_at_cuts': True,
         'outtmpl': video_temporal_filepath,
@@ -53,7 +54,7 @@ def download_youtube_video_chapter(video_id: str, output_filepath: str, video_se
     output_video.run()
 
 
-def download_youtube_chapters(database_filepath: str, promts_filepath: str, output_folder: str, **kwargs) -> None:
+def download_video_chapters_from_youtube(database_filepath: str, promts_filepath: str, output_folder: str, **kwargs) -> None:
     """
     Description:
         This functions downloads chapters from YouTube.
@@ -78,6 +79,8 @@ def download_youtube_chapters(database_filepath: str, promts_filepath: str, outp
     total_chapters_number = sum(len(l) for l in chapters_promts.values())
     print('Overall number of chapters is', total_chapters_number)
 
+    chapters_links_filepath = kwargs.get('chapters_links_filepath', None)
+
     offset = kwargs.get('video_chapter_offset_seconds', 1)
     for chapter_folder, chapters_data in chapters_promts.items():
         current_output_folder = os.path.join(output_folder, chapter_folder) if key_per_include_promt else output_folder
@@ -96,9 +99,18 @@ def download_youtube_chapters(database_filepath: str, promts_filepath: str, outp
             if os.path.exists(current_output_filepath) and os.stat(current_output_filepath).st_size > 1024:
                 continue
 
-            current_video_segment = (current_time_start, current_time_end)
-            download_youtube_video_chapter(current_video_id, current_output_filepath, current_video_segment, **kwargs)
+            try:
+                current_video_segment = (current_time_start, current_time_end)
+                download_single_video_chapter_from_youtube(current_video_id, current_output_filepath, current_video_segment, **kwargs)
 
-            if kwargs['print_chapters_links']:
-                current_chapter_link = f'https://www.youtube.com/watch?v={current_video_id}?start={current_time_start}&end={current_time_end}'
-                print(f'{current_chapter_link} -> {current_output_filename}')
+                if kwargs['print_chapters_links']:
+                    current_chapter_link = f'https://www.youtube.com/watch?v={current_video_id}?start={current_time_start}&end={current_time_end}'
+                    print(f'{current_chapter_link} -> {current_output_filename}')
+
+                if kwargs.get('write_chapters_links', False) and chapters_links_filepath is not None:
+                    current_chapter_link = f'https://www.youtube.com/embed/{current_video_id}?start={current_time_start}&end={current_time_end}'
+                    with open(chapters_links_filepath, 'a') as f:
+                        f.write(f'{current_chapter_link} -> {current_output_filename}\n')
+            except Exception as e:
+                print(e)
+

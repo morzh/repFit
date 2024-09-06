@@ -17,5 +17,3 @@ if __name__ == '__main__':
     }
 
     chapters_links = links_from_database_promts(database_file_path, promts_file_path, **parameters)
-
-    # pprint.pprint(chapters_links)

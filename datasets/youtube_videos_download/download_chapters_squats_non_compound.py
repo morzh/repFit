@@ -1,5 +1,5 @@
 import os
-from utils.youtube_links_database.download_video import download_youtube_chapters
+from utils.youtube_links_database.video_chapters_download import download_video_chapters_from_youtube
 
 
 if __name__ == '__main__':
@@ -8,9 +8,11 @@ if __name__ == '__main__':
         'video_chapter_offset_seconds': 8,
         'video_format': 'mp4',
         'video_quality': 720,
-        'print_chapters_links': True,
+        'print_chapters_links': False,
         'print_chapters_data': False,
         'print_chapters_name': False,
+        'write_chapters_links': True,
+        'chapters_links_filepath': 'chapters_filenames_links.txt',
         'use_proxy': True,
     }
 
@@ -24,4 +26,4 @@ if __name__ == '__main__':
 
     output_videos_folder = '/home/anton/work/fitMate/datasets/squats_non_compound'
 
-    download_youtube_chapters(database_file_path, promts_file_path, output_videos_folder, **download_parameters)
+    download_video_chapters_from_youtube(database_file_path, promts_file_path, output_videos_folder, **download_parameters)

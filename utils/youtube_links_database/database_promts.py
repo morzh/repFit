@@ -95,10 +95,10 @@ def chapters_statistics(chapters_data: list[tuple]) -> tuple[float, float]:
 def chapters_data_via_promts(database_filepath: str, promts_filepath: str) -> dict[str, list]:
     """
     Description:
-        Get chapters data from promt (represented by file)
+        Get chapters data from database using promts (promts represented by JSON file, database bby SQLITE3 .db file).
 
-    :param database_filepath:
-    :param promts_filepath:
+    :param database_filepath: SQLite3 database filepath
+    :param promts_filepath: promts dictionary JSON file
 
     :return: dictionary with keys representing each promt from include_promts and value is a list of chapters data
     """
@@ -119,12 +119,13 @@ def chapters_data_via_promts(database_filepath: str, promts_filepath: str) -> di
 def links_from_database_promts(database_filepath, promts_filepath, **kwargs) -> dict[str, list]:
     """
     Description:
+        Get links to YouTube chapters using promts from SQLite3 database (promts represented by JSON file, database bby SQLITE3 .db file).
 
-    :param database_filepath:
-    :param promts_filepath:
+    :param database_filepath: SQLite3 database filepath
+    :param promts_filepath: promts dictionary JSON file
 
     :key print_links: print chapter links
-    :key verbose:
+    :key verbose: if True print chapter number
 
     :return: dictionary, where each key is a squat type and value is list of links to chapters
     """
@@ -150,5 +151,7 @@ def links_from_database_promts(database_filepath, promts_filepath, **kwargs) -> 
     if verbose:
         print('-' * 40)
         print(PrintColor.BOLD + PrintColor.GREEN + f'Total number of chapters is {total_chapter_number}' + PrintColor.END)
+
+    if print_links: pprint.pprint(links)
 
     return links

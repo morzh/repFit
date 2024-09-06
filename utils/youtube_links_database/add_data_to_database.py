@@ -20,6 +20,7 @@ def define_database_tables(connection: sqlite3.Connection) -> None:
     """
     Description:
         Tables for YouTube database. There are three tables, first for channels, second for videos and third for video chapters.
+
     :param connection: connection to SQLite3 database
     """
     cursor = connection.cursor()
@@ -58,7 +59,8 @@ def define_database_tables(connection: sqlite3.Connection) -> None:
 def add_channel_data(channel_id: str, connection: sqlite3.Connection) -> None:
     """
     Description:
-        Given YouTube channel_id fetch information about this channel and store it in YoutubeChannel database table
+        Given YouTube channel_id fetch information about this channel and store it in YoutubeChannel database table.
+
     :param channel_id: YouTube channel id
     :param connection: connection to SQLite3 database
     """
@@ -106,9 +108,11 @@ def add_channel_video_data(video_id: str, channel_id: str, connection: sqlite3.C
     Description:
         Given YouTube video_id and channel_id fetch video information and add it to YoutubeVideo database table.
         Returned chapters will be used later to add them to the VideosChapter table.
+
     :param video_id: YouTube video id
     :param channel_id: YouTube channel id
     :param connection: connection to SQLite3 database
+
     :return: list of chapters of the YouTube video or None
     """
     video_url = f'https://www.youtube.com/watch?v={video_id}'
@@ -175,6 +179,7 @@ def add_video_chapters_data(chapters: list[dict] | None, video_id: str, connecti
     Remarks:
         VideosChapter.source is always 'youtube' for fetched video information.
         It will be used later to signal, from which source video segments annotation came.
+
     :param chapters: list of dicts with video chapters information
     :param video_id: YouTube video id
     :param connection: connection to SQLite3 database
