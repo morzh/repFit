@@ -28,20 +28,20 @@ class PrintColors:
     UNDERLINE = '\033[4m'
 
 
-def read_yaml(filepath: str) -> dict:
+def read_yaml(yaml_filepath: str) -> dict:
     """
     Description:
         Read yaml file
 
-    :param filepath: filepath to .yaml file
+    :param yaml_filepath: filepath to .yaml file
 
     :return: dictionary with yaml data
     """
     parameters = None
-    if not os.path.exists(filepath):
+    if not os.path.exists(yaml_filepath):
         raise FileNotFoundError('Parameters YAML file does not exist')
 
-    with open('steady_camera_filter_parameters.yaml') as f:
+    with open(yaml_filepath) as f:
         try:
             parameters = yaml.safe_load(f)
         except yaml.YAMLError as e:

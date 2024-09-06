@@ -1,0 +1,13 @@
+database:
+  'folder': '/home/anton/work/fitMate/datasets'
+  'filename': 'youtube_rep_fit_database.db'
+
+video_chapters_promts:
+  'folder': '/home/anton/work/fitMate/datasets/exercises_filter_promts'
+  'filename': 'squats_non_compound.json'
+
+videos_promts:
+  'folder': '/home/anton/work/fitMate/datasets/exercises_filter_promts'
+  'filename': 'squats_non_compound.json'
+
+'output_folder': '/home/anton/work/fitMate/datasets/squats_non_compound'
