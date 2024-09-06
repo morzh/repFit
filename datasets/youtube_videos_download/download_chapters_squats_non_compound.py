@@ -16,7 +16,7 @@ if __name__ == '__main__':
         'use_proxy': True,
     }
 
-    database_folder ='/home/anton/work/fitMate/datasets'
+    database_folder = '/home/anton/work/fitMate/datasets'
     database_filename = 'youtube_rep_fit_database.db'
     database_file_path = os.path.join(database_folder, database_filename)
 
