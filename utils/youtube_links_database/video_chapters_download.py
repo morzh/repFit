@@ -4,7 +4,7 @@ import yt_dlp
 import pprint
 from retry import retry
 
-from utils.youtube_links_database.database_promts import chapters_data_via_promts
+from utils.youtube_links_database.database_promts import chapters_data_from_database_promts
 
 
 @retry(yt_dlp.utils.DownloadError, delay=2, backoff=2, max_delay=4, tries=5)
@@ -74,7 +74,7 @@ def download_video_chapters_from_youtube(database_filepath: str, promts_filepath
     """
 
     key_per_include_promt = kwargs['each_include_promt_to_separate_folder']
-    chapters_promts = chapters_data_via_promts(database_filepath, promts_filepath)
+    chapters_promts = chapters_data_from_database_promts(database_filepath, promts_filepath)
     video_format = kwargs.get('video_format','mp4')
     total_chapters_number = sum(len(l) for l in chapters_promts.values())
     print('Overall number of chapters is', total_chapters_number)
