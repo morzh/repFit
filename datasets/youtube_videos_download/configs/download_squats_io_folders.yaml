@@ -4,10 +4,10 @@ database:
 
 video_chapters_promts:
   'folder': '/home/anton/work/fitMate/datasets/exercises_filter_promts'
-  'filename': 'squats_non_compound.json'
+  'filename': 'squats_non_compound_chapters.json'
 
 videos_promts:
   'folder': '/home/anton/work/fitMate/datasets/exercises_filter_promts'
-  'filename': 'squats_non_compound.json'
+  'filename': 'squats_challenge_videos.json'
 
 'output_folder': '/home/anton/work/fitMate/datasets/squats_non_compound'

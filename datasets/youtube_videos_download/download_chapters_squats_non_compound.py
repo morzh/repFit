@@ -1,4 +1,6 @@
 import os
+
+from filters.steady_camera.extract_video_segmens import read_yaml
 from utils.youtube_links_database.video_chapters_download import download_video_chapters_from_youtube
 
 
@@ -15,15 +17,14 @@ if __name__ == '__main__':
         'chapters_links_filepath': 'chapters_filenames_links.txt',
         'use_proxy': True,
     }
+    folders_parameters = read_yaml('configs/download_squats_io_folders.yaml')
 
-    database_folder = '/home/anton/work/fitMate/datasets'
-    database_filename = 'youtube_rep_fit_database.db'
-    database_file_path = os.path.join(database_folder, database_filename)
+    database_input = folders_parameters['database']
+    database_file_path = str(os.path.join(database_input['folder'], database_input['filename']))
 
-    promts_folder = '/home/anton/work/fitMate/datasets/exercises_filter_promts'
-    promts_filename = 'squats_non_compound.json'
-    promts_file_path = os.path.join(promts_folder, promts_filename)
+    promts_input = folders_parameters['video_chapters_promts']
+    promts_file_path = str(os.path.join(promts_input['folder'], promts_input['filename']))
 
-    output_videos_folder = '/home/anton/work/fitMate/datasets/squats_non_compound'
+    output_folder = folders_parameters['output_folder']
 
-    download_video_chapters_from_youtube(database_file_path, promts_file_path, output_videos_folder, **download_parameters)
+    download_video_chapters_from_youtube(database_file_path, promts_file_path, output_folder, **download_parameters)
