@@ -8,9 +8,9 @@ video_chapters_promts:
 
 videos_promts:
   'folder': '/home/anton/work/fitMate/datasets/exercises_filter_promts'
-  'filename': 'squats_challenge_videos.json'
+  'filename': 'squats_short_videos.json'
 
 output:
   'chapters_output_folder': '/home/anton/work/fitMate/datasets/squats_non_compound'
-  'videos_output_folder': '/home/anton/work/fitMate/datasets/squats_challenge'
+  'videos_output_folder': '/home/anton/work/fitMate/datasets/squats_short_videos'
 

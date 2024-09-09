@@ -93,6 +93,8 @@ def select_videos_from_database(database_filepath: str, promts: dict[str, tuple]
     and_tokens = list(promts['and_tokens'])
     or_tokens = list(promts['or_tokens'])
     exclude_tokens = list(promts['and_not_tokens'])
+    video_minimum_duration = promts['video_options']['minimum_duration']
+    video_maximum_duration = promts['video_options']['maximum_duration']
 
     execute_command = f"SELECT * FROM YoutubeVideo WHERE"
     and_pattern = database_logical_element('title LIKE', and_tokens, 'AND', wildcard='%')
@@ -102,7 +104,13 @@ def select_videos_from_database(database_filepath: str, promts: dict[str, tuple]
     if len(and_pattern): execute_command = " ".join([execute_command, and_pattern])
     if len(or_pattern): execute_command = " ".join(['AND', execute_command, or_pattern])
     if len(not_pattern): execute_command = " ".join([execute_command, 'AND NOT', not_pattern])
-    # print(execute_command)
+
+    if video_minimum_duration > 0:
+        execute_command = " ".join([execute_command, f' AND duration > {video_minimum_duration}'])
+    if video_maximum_duration > 0:
+        execute_command = " ".join([execute_command, f' AND duration < {video_maximum_duration}'])
+
+    print(execute_command)
 
     connection = sqlite3.connect(database_filepath)
     cursor = connection.cursor()
@@ -193,9 +201,9 @@ def videos_data_from_database_promts(database_filepath: str, promts_filepath: st
     :return: dictionary with keys representing each promt from include_promts and value is a list of chapters data
     """
     with open(promts_filepath) as f:
-        squats_tokens = json.load(f)
+        promt_tokens = json.load(f)
 
-    selected_videos_data = select_videos_from_database(database_filepath, squats_tokens)
+    selected_videos_data = select_videos_from_database(database_filepath, promt_tokens)
     return selected_videos_data
 
 
