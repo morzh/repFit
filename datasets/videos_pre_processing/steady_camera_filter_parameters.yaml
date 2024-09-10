@@ -49,5 +49,5 @@ video_segments_writer:
   verbose_filename: true
   save_steady_camera_segments_values: true
   save_non_steady_camera_segments_values: true
-  write_segments_complement: true
+  write_segments_complement: false
   minimum_non_steady_camera_time_segment: 2 # time in seconds

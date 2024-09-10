@@ -1,5 +1,6 @@
 import cv2
 from loguru import logger
+import os
 import os.path
 import shutil
 import time
@@ -10,6 +11,7 @@ import filters.steady_camera.core.persons_mask.persons_mask_factory as persons_m
 from filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from filters.steady_camera.core.video_segments import VideoSegments
 from utils.cv.video_segments_writer import VideoSegmentsWriter
+from utils.multiprocess import run_pool_steady_camera_filter
 
 
 class PrintColors:
@@ -263,3 +265,36 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str, stead
         elif steady_suffix in filename:
             target_filepath = str(os.path.join(videos_source_folder, steady_suffix, filename))
             shutil.move(source_filepath, target_filepath)
+
+@logger.catch
+def cut_videos(**kwargs):
+    """
+    Description:
+
+    """
+    videos_source_folder = str(os.path.join(kwargs['videos_root_folder'], kwargs['videos_source_subfolder']))
+    videos_target_folder = str(os.path.join(kwargs['videos_root_folder'], kwargs['videos_target_subfolder']))
+    videos_extensions = kwargs['videos_extensions']
+    use_multiprocessing = kwargs.get('use_multiprocessing', False)
+    number_processes = kwargs.get('number_processes', 2)
+    move_to_folders_strategy = kwargs.get('move_to_folders_strategy', 'none')
+
+    video_source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
+                              if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
+    os.makedirs(videos_target_folder, exist_ok=True)
+
+    steady_camera_filter_kwargs = read_yaml('steady_camera_filter_parameters.yaml')
+    time_start = time.time()
+    if use_multiprocessing:
+        run_pool_steady_camera_filter(extract_and_write_steady_camera_segments,
+                                      video_source_filepaths,
+                                      videos_target_folder,
+                                      number_processes=number_processes,
+                                      **steady_camera_filter_kwargs
+                                      )
+    else:
+        for video_source_filepath in video_source_filepaths:
+            extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **steady_camera_filter_kwargs)
+    time_end = time.time()
+    logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
+    sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)

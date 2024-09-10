@@ -80,15 +80,12 @@ def download_youtube_videos(database_filepath, promts_filepath, output_folder, c
 
         if check_file(output_folder, video_data[0]):
             """
-            In our case, base names of video files are just YouTube ids. But format or video file (or extension) could be different.
+            In our case, base names of video files are just YouTube ids. But format of video file (it's extension) could be different.
             So we need to check only if filename base is exist (in other words ignore extension of the video file).
             """
             continue
 
         try:
-            # if os.path.exists(current_output_filepath):
-                # continue
-
             download_single_video_from_youtube(current_video_id, current_output_filepath, use_proxy, **video_options)
             if debug_options['print_chapters_links']:
                 print(f'{current_video_link} -> {current_output_filename}')
