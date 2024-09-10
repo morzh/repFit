@@ -6,6 +6,20 @@ from retry import retry
 from utils.youtube_links_database.database_promts import videos_data_from_database_promts
 
 
+def check_file(directory, filename_base) -> bool:
+    """
+    Description:
+
+    :param directory:
+    :param filename_base:
+    """
+    for s in os.listdir(directory):
+        if os.path.splitext(s)[0] == filename_base and os.path.isfile(os.path.join(directory, s)):
+            return True
+
+    return False
+
+
 @retry(yt_dlp.utils.DownloadError, delay=2, backoff=2, max_delay=4, tries=5)
 def download_single_video_from_youtube(video_id: str, output_filepath: str, use_proxy: bool, **kwargs) -> None:
     """
@@ -24,7 +38,6 @@ def download_single_video_from_youtube(video_id: str, output_filepath: str, use_
 
     ydl_options = {
         'verbose': True,
-        'vcodec': 'av1',
         'outtmpl': output_filepath,
         'prefer_ffmpeg': True,
     }
@@ -56,17 +69,25 @@ def download_youtube_videos(database_filepath, promts_filepath, output_folder, c
     video_options = config['video_options']
     debug_options = config['debug_videos_options']
     use_proxy = config['connection']['use_proxy']
-    print('Overall number of chapters is', len(videos_data))
+    video_format = video_options['video_format']
+    print('Overall number of videos is', len(videos_data))
 
     for video_data in videos_data:
         current_video_id = video_data[0]
         current_video_link = f'https://www.youtube.com/watch?v={current_video_id}'
-        current_output_filename = ''.join([video_data[0], '.', video_options['video_format']])
+        current_output_filename = ''.join([video_data[0], '.', video_format]) if video_format else video_data[0]
         current_output_filepath = os.path.join(output_folder, current_output_filename)
 
+        if check_file(output_folder, video_data[0]):
+            """
+            In our case, base names of video files are just YouTube ids. But format or video file (or extension) could be different.
+            So we need to check only if filename base is exist (in other words ignore extension of the video file).
+            """
+            continue
+
         try:
-            if os.path.exists(current_output_filepath):
-                continue
+            # if os.path.exists(current_output_filepath):
+                # continue
 
             download_single_video_from_youtube(current_video_id, current_output_filepath, use_proxy, **video_options)
             if debug_options['print_chapters_links']:

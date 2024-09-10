@@ -105,12 +105,10 @@ def select_videos_from_database(database_filepath: str, promts: dict[str, tuple]
     if len(or_pattern): execute_command = " ".join(['AND', execute_command, or_pattern])
     if len(not_pattern): execute_command = " ".join([execute_command, 'AND NOT', not_pattern])
 
-    if video_minimum_duration > 0:
-        execute_command = " ".join([execute_command, f' AND duration > {video_minimum_duration}'])
-    if video_maximum_duration > 0:
-        execute_command = " ".join([execute_command, f' AND duration < {video_maximum_duration}'])
+    if video_minimum_duration > 0: execute_command = " ".join([execute_command, f' AND duration > {video_minimum_duration}'])
+    if video_maximum_duration > 0: execute_command = " ".join([execute_command, f' AND duration < {video_maximum_duration}'])
 
-    print(execute_command)
+    # print(execute_command)
 
     connection = sqlite3.connect(database_filepath)
     cursor = connection.cursor()

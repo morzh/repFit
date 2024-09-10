@@ -1,5 +1,5 @@
 video_options:
-  'video_format': 'mp4'
+  'video_format': null  # 'mp4'
   'video_quality': 720
 
 chapters_options:
