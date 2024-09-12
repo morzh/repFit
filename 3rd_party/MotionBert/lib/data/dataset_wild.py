@@ -69,16 +69,28 @@ def halpe2h36m(x):
     return y
 
 
-def read_input(json_path, vid_size, scale_range, focus):
+def read_input(json_path, vid_size, scale_range, length):
     with open(json_path, "r") as read_file:
         results = json.load(read_file)
 
     keypoints, image_ids = [], []
     for r in results:
-        keypoints.append(r['keypoints'])
-        image_ids.append(int(r['image_id'][:-4]))
+        img_id = int(r['image_id'][:-4])
+        img_keypoints = r['keypoints']
+        if image_ids and image_ids[-1] == img_id:
+            if len(image_ids) == 1:
+                continue
+            dist1 = np.sum(np.abs(np.array(keypoints[-2]) - img_keypoints))
+            dist2 = np.sum(np.abs(np.array(keypoints[-2]) - np.array(keypoints[-1])))
+            if dist2 > dist1:
+                keypoints.pop(-1)
+                image_ids.pop(-1)
+            else:
+                continue
+        keypoints.append(img_keypoints)
+        image_ids.append(img_id)
 
-    non_image_ids = [i for i in range(image_ids[-1]) if i not in image_ids]
+    non_image_ids = [i for i in range(length) if i not in image_ids]
 
     # if first skeleton is not in 0 frame, fill empty started frames with first met skeleton
     start_keypoints = []
@@ -86,28 +98,43 @@ def read_input(json_path, vid_size, scale_range, focus):
         if i in non_image_ids:
             start_keypoints.append(keypoints[0])
             non_image_ids.pop(0)
+            image_ids.insert(i, i)
         else:
             break
-    image_ids = [_ for _ in range(i)] + image_ids
-    keypoints = start_keypoints + keypoints
+
+    stop_keypoints = []
+    extra_indexes = []
+    for i in range(length-1, 0, -1):
+        if i in non_image_ids:
+            stop_keypoints.append(keypoints[-1])
+            non_image_ids.pop(-1)
+            extra_indexes.append(i)
+        else:
+            break
+    image_ids.extend(reversed(extra_indexes))
+    keypoints = start_keypoints + keypoints + stop_keypoints
 
     if non_image_ids:
-        # add extra points for avoid interpolation side artifacts
-        n_extra_points = 10
+        try:
+            # add extra points for avoid interpolation side artifacts
+            n_extra_points = 10
 
-        keypoints_array = np.empty((image_ids[-1] + 1, len(keypoints[0])))
-        keypoints_array[image_ids] = keypoints
+            keypoints_array = np.empty((image_ids[-1] + 1, len(keypoints[0])))
+            keypoints_array = np.empty((length, len(keypoints[0])))
+            keypoints_array[image_ids] = keypoints
 
-        keypoints = ([keypoints[0] for _ in range(n_extra_points)] +
-                     keypoints +
-                     [keypoints[-1] for _ in range(n_extra_points)])
-        image_ids = ([i for i in range(image_ids[0] - n_extra_points, image_ids[0])] +
-                     image_ids +
-                     [i for i in range(image_ids[-1]+1, image_ids[-1] + n_extra_points + 1)])
+            keypoints = ([keypoints[0] for _ in range(n_extra_points)] +
+                         keypoints +
+                         [keypoints[-1] for _ in range(n_extra_points)])
+            image_ids = ([i for i in range(image_ids[0] - n_extra_points, image_ids[0])] +
+                         image_ids +
+                         [i for i in range(image_ids[-1]+1, image_ids[-1] + n_extra_points + 1)])
 
-        interp_func = interp1d(image_ids, np.array(keypoints), kind='cubic', axis=0)
-        new_points = interp_func(non_image_ids)
-        keypoints_array[non_image_ids] = new_points
+            interp_func = interp1d(image_ids, np.array(keypoints), kind='cubic', axis=0)
+            new_points = interp_func(non_image_ids)
+            keypoints_array[non_image_ids] = new_points
+        except Exception as ex:
+            r=0
     else:
         keypoints_array = np.array(keypoints)
     # kpts_all = []
@@ -120,6 +147,8 @@ def read_input(json_path, vid_size, scale_range, focus):
     # kpts_all = halpe2h36m(kpts_all)
 
     kpts_all = halpe2h36m(keypoints_array.reshape([-1, 26, 3]))
+    if kpts_all.shape[0] != length:
+        d=0
     if vid_size:
         w, h = vid_size
         scale = min(w, h) / 2.0
@@ -133,10 +162,11 @@ def read_input(json_path, vid_size, scale_range, focus):
 
 
 class WildDetDataset(Dataset):
-    def __init__(self, json_path, clip_len=243, vid_size=None, scale_range=None, focus=None):
+    def __init__(self, json_path, length=None, clip_len=243, vid_size=None, scale_range=None, focus=None):
         self.json_path = json_path
         self.clip_len = clip_len
-        self.vid_all = read_input(json_path, vid_size, scale_range, focus)
+        self.length = length
+        self.vid_all = read_input(json_path, vid_size, scale_range, length)
 
     def __len__(self):
         'Denotes the total number of samples'

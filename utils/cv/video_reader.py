@@ -14,7 +14,7 @@ class VideoReader:
             pass
 
     """
-    def __init__(self, fpath: str | Path, use_tqdm=True):
+    def __init__(self, fpath: Path, use_tqdm=True):
         self.fpath = fpath
         if os.path.exists(str(fpath)):
             self.video_capture = cv2.VideoCapture(str(fpath))
@@ -94,7 +94,7 @@ class VideoReader:
         return int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     @property
-    def resolution(self) -> tuple[int, int]:
+    def resolution(self) -> (int, int):
         """
         Resolution in (width, height) format
         """
