@@ -22,7 +22,7 @@ class SegmentationDataset(Dataset):
         batch_size: int = 1000
     ):
         self.pca_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d_pca"
-        self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints3d"
+        self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d"
         self.skeleton_info_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints2d_info"
         self.markup_fpath = PROJECT_ROOT / "markup" / "markup.json"
 
@@ -72,21 +72,12 @@ class SegmentationDataset(Dataset):
             length = min(pca_row.shape[0], joints.shape[0])
             if length < self.min_sample_length:
                 continue
-            start_frame_idx, stop_frame_idx = self.read_frame_range(stem)
-            print(f"{stem=}; {start_frame_idx=}; {stop_frame_idx=}; {pca_row.shape[0]=}; {joints.shape[0]=}")
-            if start_frame_idx is None:
-                continue
-
-            # cut data to same length
-            pca_row = pca_row[:length, ...]
-            joints = joints[:length, ...]
+            print(f"{stem=}; {pca_row.shape[0]=}; {joints.shape[0]=}")
 
             # flatten joint 3d to 2d shape
             joints = np.reshape(joints, (length, np.dot(*joints.shape[1:])))
 
-            marks = self.move_markup(markup[stem], start_frame_idx)
-
-            y = self.make_y_sample(joints.shape[0], marks)
+            y = self.make_y_sample(joints.shape[0], markup[stem])
             original_data.append(self.join_data_sample(pca_row, joints, y))
         return original_data
 

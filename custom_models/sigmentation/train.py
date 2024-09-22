@@ -19,6 +19,8 @@ sample_length = 200
 # Device will determine whether to run the training on GPU or CPU.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+models_dpath = "./checkpoints"
+os.makedirs(models_dpath, exist_ok=True)
 
 def train(model_name: str = 'segmentation_v1.0'):
     train_loader = SegmentationDataset(sample_length, epoch_size=10, batch_size=1000)
@@ -58,7 +60,8 @@ def train(model_name: str = 'segmentation_v1.0'):
             elapsed_time = time.time() - start_time
 
         print(f'Epoch {epoch + 1}/{num_epochs} \t loss={avg_loss} \t   val_loss={avg_val_loss} \t  time={elapsed_time}s')
-    torch.save(model.state_dict(), f'checkpoints/{model_name}.pt')
+
+    torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
     make_figs(x_batch, y_pred, model_name)
 
 
