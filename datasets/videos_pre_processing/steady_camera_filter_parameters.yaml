@@ -12,7 +12,7 @@ video_segments_extraction:
     poc_registration_verbose: false
     poc_minimum_confidence: 0.2
     poc_show_averaged_frames_pair: false
-    maximum_shift_length: 3.0
+    maximum_shift_length: 4.0
     verbose_steady_segments: false
     text_mask_model: craft
     persons_mask_model: yolo_segmentation
@@ -47,7 +47,7 @@ video_segments_extraction:
 
 video_segments_writer:
   verbose_filename: true
-  save_steady_camera_segments_values: true
-  save_non_steady_camera_segments_values: true
+  save_steady_camera_segments_values: false
+  save_non_steady_camera_segments_values: false
   write_segments_complement: false
   minimum_non_steady_camera_time_segment: 2 # time in seconds

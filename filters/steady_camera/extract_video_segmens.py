@@ -12,6 +12,7 @@ from filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraC
 from filters.steady_camera.core.video_segments import VideoSegments
 from utils.cv.video_segments_writer import VideoSegmentsWriter
 from utils.multiprocess import run_pool_steady_camera_filter
+from utils.youtube_links_database.videos_download import check_file_basename_in_folder, check_filename_entry_in_folder
 
 
 class PrintColors:
@@ -172,6 +173,11 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
 
     :return: None
     """
+    video_source_filename = os.path.basename(video_source_filepath)
+    video_source_filename_base = video_source_filename.split('.')[0]
+    if check_filename_entry_in_folder(videos_target_folder, video_source_filename_base):
+        return
+
     video_processing_start_time = time.time()
     minimum_resolution = kwargs['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
     video_filename = os.path.basename(video_source_filepath)
@@ -204,8 +210,10 @@ def sort_videos_by_criteria(move_to_folders_strategy: str, raw_videos_folder: st
             move_steady_non_steady_videos_to_subfolders(filtered_videos_folder, 'steady', 'nonsteady')
         case 'by_source_filename':
             move_videos_by_filename(raw_videos_folder, filtered_videos_folder)
+        case 'do_not_sort':
+            return
         case _:
-            raise ValueError("Only 'steady_non_steady' and 'by_source_filename' strategies are supported.")
+            raise ValueError("Only 'steady_non_steady' and 'by_source_filename' sorting strategies are supported.")
 
 
 def move_videos_by_filename(videos_source_folder: str, processed_videos_folder: str) -> None:
@@ -267,13 +275,18 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str, stead
             shutil.move(source_filepath, target_filepath)
 
 @logger.catch
-def cut_videos(**kwargs):
+def steady_camera_filter(**kwargs) -> None:
     """
     Description:
+
+    :key videos_root_folder:
+    :key videos_source_subfolder:
+    :key videos_target_subfolder:
 
     """
     videos_source_folder = str(os.path.join(kwargs['videos_root_folder'], kwargs['videos_source_subfolder']))
     videos_target_folder = str(os.path.join(kwargs['videos_root_folder'], kwargs['videos_target_subfolder']))
+
     videos_extensions = kwargs['videos_extensions']
     use_multiprocessing = kwargs.get('use_multiprocessing', False)
     number_processes = kwargs.get('number_processes', 2)
@@ -296,5 +309,6 @@ def cut_videos(**kwargs):
         for video_source_filepath in video_source_filepaths:
             extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **steady_camera_filter_kwargs)
     time_end = time.time()
+
     logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
     sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)
