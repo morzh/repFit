@@ -1,6 +1,6 @@
 import os
 
-from filters.steady_camera.extract_video_segmens import read_yaml
+from filters.steady_camera.steady_camera_video_segments import read_yaml
 from utils.youtube_links_database.video_chapters_download import download_video_chapters_from_youtube
 
 
