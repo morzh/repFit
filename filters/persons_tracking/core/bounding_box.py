@@ -6,6 +6,8 @@ from loguru import logger
 from typing import TypeVar
 from typing import Union
 
+from sympy import andre
+
 numeric = Union[int, float]
 BoundingBoxType = TypeVar("BoundingBoxType", bound="BoundingBox")
 
@@ -32,7 +34,7 @@ class BoundingBox:
         """
         return self.area <= numeric(threshold)
 
-    def has_bounding_box_inside(self, bounding_box: BoundingBoxType) -> bool:
+    def is_bounding_box_inside(self, bounding_box: BoundingBoxType) -> bool:
         """
         Description:
             Checks if this bounding box has another inside of it.
@@ -40,7 +42,21 @@ class BoundingBox:
         :param bounding_box: Bounding box to check.
 
         :return: True if given bounding_box is inside, False otherwise.
+        """
 
+        return (self.has_point_inside(bounding_box.top_left) and
+                self.has_point_inside(bounding_box.top_right) and
+                self.has_point_inside(bounding_box.bottom_right) and
+                self.has_point_inside(bounding_box.bottom_left))
+
+    def is_bounding_box_outside(self, bounding_box: BoundingBoxType) -> bool:
+        """
+        Description:
+            Checks if this bounding box has another outside of it.
+
+        :param bounding_box: Bounding box to check.
+
+        :return: True if given bounding_box is outside, False otherwise.
         """
 
     def has_point_inside(self, point: tuple[numeric, numeric], use_closure=True ) -> bool:
@@ -103,9 +119,35 @@ class BoundingBox:
         """
         Description:
             Calculates intersection (which is also a box) of this bounding box with the given bounding_box.
+            If intersection is empty BoundingBox(0, 0, 0, 0) will be returned.
 
         :return: bounding box (result of intersection).
         """
+        if self.is_degenerate() or bounding_box.is_degenerate(): return BoundingBox(0, 0, 0, 0)
+        if self.is_bounding_box_outside(bounding_box):  return BoundingBox(0, 0, 0, 0)
+
+        # /** projecting  horizontal side of the bounding_box angles to X axis */
+        segments_x_begin = (self._x, bounding_box.x)
+        segments_x_end = (self._x + self._width, bounding_box.x + bounding_box.width)
+        # projecting vertical side of the rectangles to Y  axis
+        segments_y_begin = (self._y, bounding_box.y)
+        segments_y_end = (self._y + self._height, bounding_box.y + bounding_box.height)
+
+        segments_x_intersection = (max(segments_x_begin[0], segments_x_begin[1]), min(segments_x_end[0], segments_x_end[1]))
+        segments_y_intersection = (max(segments_y_begin[0], segments_y_begin[1]), min(segments_y_end[0], segments_y_end[1]))
+
+        # /** check if rectangles have non empty intersection * /
+        if (segments_x_intersection[1] < segments_x_intersection[0]) or (segments_y_intersection[1] < segments_y_intersection[0]):
+            return BoundingBox(0, 0, 0, 0)
+
+        # / ** do  inPlace assignment * /
+        intersected_x = segments_x_intersection[0]
+        intersected_y = segments_y_intersection[0]
+        intersected_width = segments_x_intersection[1] - segments_x_intersection[0]
+        intersected_height = segments_y_intersection[1] - segments_y_intersection[0]
+
+        return  BoundingBox(intersected_x, intersected_y, intersected_width, intersected_height)
+
 
     def subtract(self, bounding_box: BoundingBoxType) -> list[BoundingBoxType]:
         """
@@ -140,11 +182,13 @@ class BoundingBox:
         return bounding_box_circumscribed
 
 
-    def intersection_over_union(self) -> None:
+    def intersection_over_union(self, bounding_box: BoundingBoxType) -> numeric:
         """
         Description:
             Calculates intersection over union (IOU) metric.
         """
+        intersection_area = self.intersect(bounding_box).area()
+        return intersection_area / (self.area + bounding_box.area)
 
     def distance_to_bounding_box(self, bounding_box: BoundingBoxType) -> numeric:
         """
@@ -164,7 +208,6 @@ class BoundingBox:
             Returns top left coordinates of the bounding box.
         """
         return self._x, self._y
-
 
     @property
     def top_right(self) -> tuple[numeric, numeric]:
@@ -191,18 +234,22 @@ class BoundingBox:
         return self._x, self._y + self._height
 
     @property
-    def width(self):
+    def width(self) -> numeric:
         """
         Description:
             Returns width of the bounding box.
+            
+        :return: bounding box width
         """
         return self._width
 
     @property
-    def height(self):
+    def height(self) -> numeric:
         """
         Description:
             Returns height of the bounding box.
+            
+        :return: bounding box height
         """
         return self._height
 
@@ -210,7 +257,9 @@ class BoundingBox:
     def area(self) -> numeric:
         """
         Description:
-            Returns area of the bounding box.
+            Calculates area of the bounding box.
+            
+        :return: bounding box area
         """
         return self._width * self._height
 
@@ -218,7 +267,9 @@ class BoundingBox:
     def perimeter(self) -> numeric:
         """
         Description:
-            Returns perimeter of the bounding box.
+            Calculates perimeter of the bounding box.
+            
+        :return: bounding box perimeter
         """
         return self._width + self._height
 
@@ -227,6 +278,7 @@ class BoundingBox:
     def top_left(self, coordinates: tuple[numeric, numeric] | np.ndarray):
         """
         Description:
+            Set top left coordinates of the bounding box.
 
         """
         self._x = coordinates[0]
@@ -235,7 +287,8 @@ class BoundingBox:
     @bottom_right.setter
     def bottom_right(self, coordinates: tuple[numeric, numeric] | np.ndarray):
         """
-            Description:
+        Description:
+            Set bottom right coordinates of the bounding box.
 
         """
         new_width = coordinates[0] - self._x
@@ -252,12 +305,12 @@ class BoundingBox:
         self._height = new_height
 
     @width.setter
-    def width(self, width: numeric) -> None:
+    def width(self, width: numeric):
         """
         Description:
             Sets width of the BoundingBox instance.
         """
-        self._width = abs(int(width))
+        self._width = abs(width)
 
     @height.setter
     def height(self, height: numeric) -> None:
@@ -265,5 +318,5 @@ class BoundingBox:
         Description:
             Sets height of the BoundingBox instance.
         """
-        self._height = abs(int(height))
+        self._height = abs(height)
 
