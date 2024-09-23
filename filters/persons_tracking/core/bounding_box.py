@@ -83,7 +83,6 @@ class BoundingBox:
         """
         return BoundingBox(self._x + values[0], self._y + values[1], self._width, self._height)
 
-
     def scale_dimensions(self, values: tuple[numeric, numeric]) -> BoundingBoxType:
         """
         Description:
@@ -95,15 +94,19 @@ class BoundingBox:
         """
         return BoundingBox(self._x, self._y, self._width * values[0], self._height * values[1])
 
-    def offset_by(self, value: numeric) -> BoundingBoxType:
+    def offset(self, value: numeric) -> BoundingBoxType:
         """
         Description:
-            Offsets each border segment of this bounding box by a certain value.
+            Offsets each border segment of this bounding box by a certain value. Positive values decreases box area, negative increases.
 
         :param value:
 
         :return: offset BoundingBox instance
         """
+        if (2 * value > self._width) or (2 * value > self._height):
+            return BoundingBox(0, 0, 0, 0)
+
+        return BoundingBox(self._x + value, self._y + value, self._width - 2 * value, self._height - 2 * value)
 
     def offset_to(self, target: BoundingBoxType) -> BoundingBoxType:
         """
@@ -150,19 +153,72 @@ class BoundingBox:
 
 
     def subtract(self, bounding_box: BoundingBoxType) -> list[BoundingBoxType]:
-        """
+        r"""
         Description:
             Calculates subtraction (which is a list of bounding boxes) of this bounding box minus given bounding_box.
 
+                :math:`Rect_1 \setminus Rect_2`
+            ┏━━━━━━━━━━━━━━━━━━━━━━━┓
+            ┃      Rect_1           ┃
+            ┃                       ┃
+            ┃    ┏━━━━━━━━━━━━━┓    ┃
+            ┃    ┃ Rect_2      ┃    ┃
+            ┃    ┗━━━━━━━━━━━━━┛    ┃
+            ┃                       ┃
+            ┃                       ┃
+            ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+
+            If you subtract rectangle 2 from rectangle 1, you will get an area with a hole. This area can be decomposed into 4 rectangles
+            ┏━━━━━━━━━━━━━━━━━━━━━━━┓
+            ┃          A            ┃
+            ┃                       ┃
+            ┣━━━━━┳━━━━━━━━━━━┳━━━━━┫
+            ┃  B  ┃   hole    ┃  C  ┃
+            ┣━━━━━┻━━━━━━━━━━━┻━━━━━┫
+            ┃                       ┃
+            ┃          D            ┃
+            ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+
         :return: list of bounding boxes (result of subtraction).
         """
+
+        if self.is_degenerate(): return list()
+
+        intersected_bbox = self.intersect(bounding_box) # rect1 | rect2;
+
+        # Case 1. No intersection
+        if intersected_bbox.is_degenerate(): return [self]
+
+        raise NotImplementedError
+        '''
+        results = []
+        remainder, subtractedArea
+
+        subtractedArea = rectBetween(*this, intersected_bbox, & remainder, RectangleEdge::maxYEdge);
+        if subtractedArea.area() != 0: results.append(subtractedArea);
+
+        subtractedArea = rectBetween(remainder, intersected_bbox, & remainder, RectangleEdge::minYEdge);
+        if subtractedArea.area != 0: results.append(subtractedArea);
+
+        subtractedArea = rectBetween(remainder, intersected_bbox, & remainder, RectangleEdge::maxXEdge);
+        if not subtractedArea.is_degenerate(): results.append(subtractedArea)
+
+        subtractedArea = rectBetween(remainder, intersected_bbox, & remainder, RectangleEdge::minXEdge);
+        if not subtractedArea.is_degenerate(): results.append(subtractedArea)
+        return results
+        '''
 
 
     def circumscribe(self, bounding_box: BoundingBoxType) -> BoundingBoxType:
         """
         Description:
+            Circumscribe this bounding box with the given one.
 
+        :param bounding_box:
+
+        :return: bounding box
         """
+
         if self._width == 0 and self._height == 0:
             return bounding_box
 
@@ -190,7 +246,19 @@ class BoundingBox:
         intersection_area = self.intersect(bounding_box).area()
         return intersection_area / (self.area + bounding_box.area)
 
-    def distance_to_bounding_box(self, bounding_box: BoundingBoxType) -> numeric:
+    def fit(self, obstacles: list[BoundingBoxType], bounding_box: BoundingBoxType) -> BoundingBoxType:
+        """
+        Description:
+
+        """
+        distances_to_neighbours = [self.distance_to(bbox) for bbox in obstacles]
+
+        offset_value = min(distances_to_neighbours)
+        offset_bbox = self.offset(offset_value)
+        return offset_bbox.intersect(bounding_box)
+
+
+    def distance_to(self, bounding_box: BoundingBoxType) -> numeric:
         """
         Description:
             Calculates shortest distance between this bounding box and given bounding_box.
@@ -199,6 +267,13 @@ class BoundingBox:
 
         :return: distance between bounding boxes
         """
+        if self.intersect(bounding_box).is_degenerate():
+            return -1
+
+        raise NotImplementedError
+
+    # def rectBetween(self):
+    #     pass
 
 
     @property
