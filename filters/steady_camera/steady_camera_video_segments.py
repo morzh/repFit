@@ -291,9 +291,9 @@ def steady_camera_filter(**config_io) -> None:
 
     """
 
-    videos_root_folder = config_io.get(config_io['videos_root_folder'], None)
-    videos_source_subfolder = config_io.get(config_io['videos_source_subfolder'], None)
-    videos_target_subfolder = config_io.get(config_io['videos_target_subfolder'], None)
+    videos_root_folder = config_io.get('videos_root_folder', None)
+    videos_source_subfolder = config_io.get('videos_source_subfolder', None)
+    videos_target_subfolder = config_io.get('videos_target_subfolder', None)
 
     if videos_root_folder is None:
         raise ValueError('**config_io should contain videos_root_folder key argument')
