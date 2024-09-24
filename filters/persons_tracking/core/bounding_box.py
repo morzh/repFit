@@ -168,7 +168,7 @@ class BoundingBox:
             ┃                       ┃
             ┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
-            If you subtract rectangle 2 from rectangle 1, you will get an area with a hole. This area can be decomposed into 4 rectangles
+            If you subtract Rect_2 from Rect_1, you will get an area with a hole. This area can be decomposed into 4 rectangles
             ┏━━━━━━━━━━━━━━━━━━━━━━━┓
             ┃          A            ┃
             ┃                       ┃
@@ -208,6 +208,15 @@ class BoundingBox:
         return results
         '''
 
+    def union(self, bounding_box: BoundingBoxType) -> list[BoundingBoxType]:
+        """
+        Description:
+            Calculates bounding boxes union (which is a list of bounding boxes)
+
+        :return: list of bounding boxes (result of union).
+        """
+        raise NotImplementedError
+
 
     def circumscribe(self, bounding_box: BoundingBoxType) -> BoundingBoxType:
         """
@@ -243,8 +252,9 @@ class BoundingBox:
         Description:
             Calculates intersection over union (IOU) metric.
         """
-        intersection_area = self.intersect(bounding_box).area()
-        return intersection_area / (self.area + bounding_box.area)
+        intersection_area = self.intersect(bounding_box).area
+        union_area = self.area + bounding_box.area - self.intersect(bounding_box).area
+        return intersection_area / union_area
 
     def fit(self, obstacles: list[BoundingBoxType], bounding_box: BoundingBoxType) -> BoundingBoxType:
         """
