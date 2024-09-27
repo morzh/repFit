@@ -1,126 +1,120 @@
-from typing import Type
-
 from copy import deepcopy
+from enum import Enum
 import numpy as np
-from dataclasses import dataclass
 from loguru import logger
+
 from typing import TypeVar
 from typing import Union
 
-from sympy import andre
 
 numeric = Union[int, float]
-BoundingBoxType = TypeVar("BoundingBoxType", bound="BoundingBox")
-
-from enum import Enum
+BoundingBox2DType = TypeVar("BoundingBox2DType", bound="BoundingBox2D")
 
 
-class BoxMode(Enum):
-    """
-    BoxMode2D defines the mode in which the bounding box is defined.
-
-    Most data sources have bounding boxes defined as ``XYWH`` where `XY` is the top left corner \
-        and `W` and `H` are the width and height of the box, respectively.
-
-    However, many algorithms prefer to deal with bounding boxes as ``XYXY`` where the box is \
-        defined is defined by the top-left corner and the bottom-right corner.
-
-    To help disambiguate between these two configurations, `bbox` provides a means to specify the \
-        mode and maintains the state internally.
-    """
-    XYWH = 0
-    XYXY = 1
-
-
-XYWH = BoxMode.XYWH.value
-XYXY = BoxMode.XYXY.value
-
-
-# @dataclass
-class BoundingBox:
+class BoundingBox2D:
     """
     Description:
         BoundingBox class should serve for .
     """
-    # _x: numeric = -1
-    # _y: numeric = -1
-    # _width: numeric = 0
-    # _height: numeric = 0
+    __slots__ = ['_x', '_y', '_width', '_height']
+    class BoxMode(Enum):
+        """
+        Description:
+            BoxMode defines the mode in which the bounding box is defined.
 
-    def __init__(self, x: numeric, y: numeric, w_x2: numeric, h_y2: numeric, mode: BoxMode = XYWH):
-        if mode == XYWH:
+            Most data sources have bounding boxes defined as ``XYWH`` where `XY` is the top left corner
+                and `W` and `H` are the width and height of the box, respectively.
+
+            However, many algorithms prefer to deal with bounding boxes as ``XYXY`` where the box is \
+                defined is defined by the top-left corner and the bottom-right corner.
+
+            To help disambiguate between these two configurations, `bbox` provides a means to specify the \
+                mode and maintains the state internally.
+        """
+        XYWH = 0
+        XYXY = 1
+
+    XYWH = BoxMode.XYWH.value
+    XYXY = BoxMode.XYXY.value
+
+    def __init__(self, x: numeric = 0, y: numeric = 0, w_x2: numeric = 0, h_y2: numeric = 0, mode: BoxMode = XYWH):
+        if mode == BoundingBox2D.XYWH:
             self._x = x
             self._y = y
             self._width = w_x2
             self._height = h_y2
-        elif mode == XYXY:
+        elif mode == BoundingBox2D.XYXY:
             self._x = x
             self._y = y
             self._width = w_x2 - x
             self._height = h_y2 - y
 
 
-    def __eq__(self, other: BoundingBoxType) -> bool:
-        if not isinstance(other, BoundingBox):
+    def __eq__(self, other: BoundingBox2DType) -> bool:
+        if not isinstance(other, BoundingBox2D):
             return False
-
         return (self._x == other._x) and (self._y == other._y) and (self._width == other._width) and (self._height == other._height)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"BoundingBox([{self._x}, {self._y}, {self._width}, {self._height}])"
 
-    def apply_aspect_ratio(self, ratio):
+    @staticmethod
+    def from_list(values: list, mode: BoxMode = XYWH) -> BoundingBox2DType:
+        pass
+
+    @staticmethod
+    def from_numpy(values: np.ndarray, mode: BoxMode = XYWH) -> BoundingBox2DType:
+        pass
+
+    def apply_aspect_ratio(self, ratio: numeric) -> BoundingBox2DType:
         """
         Description:
             Return bounding box mapped to new aspect ratio denoted by ``ratio``.
 
-        Args:
-            ratio (:py:class:`float`): The new ratio should be given as \
-                the result of `width / height`.
+        :param ratio: The new ratio should be given as the result of `width / height`.
+        :return: ``BoundingBox`` with new aspect ratio.
         """
         # we need ratio as height/width for the below formula to be correct
         ratio = 1.0 / ratio
 
-        area = self.w * self.h
+        area = self._width * self._height
         area_ratio = area / ratio
         new_width = np.round(np.sqrt(area_ratio))
         new_height = np.round(ratio * new_width)
-        new_bbox = BoundingBox(self._x, self._y, new_width, new_height)
+        new_bbox = BoundingBox2D(self._x, self._y, new_width, new_height)
         return new_bbox
 
-    def aspect_ratio(self):
+    def aspect_ratio(self) -> numeric:
         """
         Description:
+            Calculates aspect ratio, which is width / height value.
+
+        :return: aspect ratio value
         """
         return self._width / self._height
 
-    def to_list(self, mode='xywh') -> list:
+    def to_list(self, mode:BoxMode=XYWH) -> list:
         """
         Description:
             Return bounding box as a `list` of 4 numbers. Format depends on ``mode`` flag (default is xywh).
 
         :param mode: Mode in which to return the box, 'xywh' ot 'xyxy'.
 
-        :raise ValueError: if ``mode`` is not 'xywh' or 'xyxy'.
-
-        :return: list of values
+        :return: list of values, representing bounding box
         """
-        if mode == 'xywh':
+        if mode == BoundingBox2D.XYWH:
             return [self._x, self._y, self._width, self._height]
-        elif mode == 'xyxy':
+        elif mode == BoundingBox2D.XYXY:
             bottom_right = self.bottom_right
             return [self._x, self._y, bottom_right[0], bottom_right[1]]
-        else:
-            raise ValueError(f"Only 'xywh' and 'xyxy' modes are supported, but {mode} was given.")
 
-
-    def to_numpy(self, mode='xywh') -> np.ndarray:
+    def to_numpy(self, mode=XYWH) -> np.ndarray:
         """
         Description:
         """
-        if mode == 'xywh':
+        if mode == BoundingBox2D.XYWH:
             return np.array([self._x, self._y, self._width, self._height])
-        elif mode == 'xyxy':
+        elif mode == BoundingBox2D.XYXY:
             bottom_right = self.bottom_right
             return np.array([self._x, self._y, bottom_right[0], bottom_right[1]])
 
@@ -143,45 +137,49 @@ class BoundingBox:
         """
         return self.area <= numeric(threshold)
 
-    def is_bounding_box_inside(self, bounding_box: BoundingBoxType) -> bool:
-        """
-        Description:
-            Checks if this bounding box has another inside of it.
 
-        :param bounding_box: Bounding box to check.
-
-        :return: True if given bounding_box is inside, False otherwise.
-        """
-
-        return (self.contain_point(bounding_box.top_left) and
-                self.contain_point(bounding_box.top_right) and
-                self.contain_point(bounding_box.bottom_right) and
-                self.contain_point(bounding_box.bottom_left))
-
-    def is_bounding_box_outside(self, bounding_box: BoundingBoxType) -> bool:
-        """
-        Description:
-            Checks if this bounding box has another outside of it.
-
-        :param bounding_box: Bounding box to check.
-
-        :return: True if given bounding_box is outside, False otherwise.
-        """
-
-    def contains_point(self, point: tuple[numeric, numeric], use_closure=True) -> bool:
+    def contains_point(self, point: tuple[numeric, numeric], use_border=True) -> bool:
         """
         Description:
             Checks if bounding box has given point inside of it. In case use_closure is True point could be at the border of the box.
 
         :return: True if point is inside bounding box, False otherwise.
         """
-        if use_closure:
+        if use_border:
             return (self._x <= point[0] <= self._x + self._width) and (self._y <= point[1] <= self._y + self._height)
         else:
             return (self._x < point[0] < self._x + self._width) and (self._y < point[1] < self._y + self._height)
 
+    def contains_bounding_box(self, bounding_box: BoundingBox2DType, use_border=True) -> bool:
+        """
+        Description:
+            Checks if this bounding box has another ``bounding_box`` inside of it.
 
-    def shift(self, values: tuple[numeric, numeric]) -> BoundingBoxType:
+        :param bounding_box: Bounding box to check.
+        :param use_border: Include bounding box border
+
+        :return: True if given bounding_box is inside, False otherwise.
+        """
+
+        return (self.contains_point(bounding_box.top_left, use_border) and
+                self.contains_point(bounding_box.top_right, use_border) and
+                self.contains_point(bounding_box.bottom_right, use_border) and
+                self.contains_point(bounding_box.bottom_left, use_border))
+
+    def contained_in_bounding_box(self, other: BoundingBox2DType, use_border=True) -> bool:
+        """
+        Description:
+            Checks if this bounding box has ``other`` outside of it.
+
+        :param other: Bounding box to check.
+        :param use_border: Include bounding box border.
+
+        :return: True if given bounding_box is outside, False otherwise.
+        """
+
+
+
+    def shift(self, values: tuple[numeric, numeric]) -> BoundingBox2DType:
         """
         Description:
             Shifts bounding box by a given value.
@@ -190,9 +188,9 @@ class BoundingBox:
 
         :return: Shifted BoundingBox instance.
         """
-        return BoundingBox(self._x + values[0], self._y + values[1], self._width, self._height)
+        return BoundingBox2D(self._x + values[0], self._y + values[1], self._width, self._height)
 
-    def scale_dimensions(self, values: tuple[numeric, numeric]) -> BoundingBoxType:
+    def scale(self, values: tuple[numeric, numeric]) -> BoundingBox2DType:
         """
         Description:
             Scales width and height. Top left corner remains the same.
@@ -201,9 +199,9 @@ class BoundingBox:
 
         :return: Scaled BoundingBox instance
         """
-        return BoundingBox(self._x, self._y, self._width * values[0], self._height * values[1])
+        return BoundingBox2D(self._x, self._y, self._width * values[0], self._height * values[1])
 
-    def offset(self, value: numeric) -> BoundingBoxType:
+    def offset(self, value: numeric) -> BoundingBox2DType:
         """
         Description:
             Offsets each border segment of this bounding box by a certain value. Positive values decreases box area, negative increases.
@@ -213,44 +211,44 @@ class BoundingBox:
         :return: offset BoundingBox instance
         """
         if (2 * value > self._width) or (2 * value > self._height):
-            return BoundingBox(0, 0, 0, 0)
+            return BoundingBox2D(0, 0, 0, 0)
 
-        return BoundingBox(self._x + value, self._y + value, self._width - 2 * value, self._height - 2 * value)
+        return BoundingBox2D(self._x + value, self._y + value, self._width - 2 * value, self._height - 2 * value)
 
-    def offset_to(self, target: BoundingBoxType) -> BoundingBoxType:
+    def expand(self, target: BoundingBox2DType) -> BoundingBox2DType:
         """
         Description:
-            Offsets this bounding box in a way, when some border lies on the border of given bounding box.
+            Offsets this bounding box in a way, when some of the borders touches some border of the ``target`` bounding box.
 
-        :param target:
+        :param target: Bounding box to enlarge to.
 
         :return: offset BoundingBox instance
         """
 
-    def intersect(self, bounding_box: BoundingBoxType) -> BoundingBoxType:
+    def intersect(self, target: BoundingBox2DType) -> BoundingBox2DType:
         """
         Description:
-            Calculates intersection (which is also a box) of this bounding box with the given ``bounding_box``.
+            Calculates intersection (which is also a box) of this bounding box with the ``target`` bounding box.
             If intersection is empty BoundingBox(0, 0, 0, 0) will be returned.
 
         :return: bounding box (result of intersection).
         """
-        if self.is_degenerate() or bounding_box.is_degenerate(): return BoundingBox(0, 0, 0, 0)
-        if self.is_bounding_box_outside(bounding_box):  return BoundingBox(0, 0, 0, 0)
+        if self.is_degenerate() or target.is_degenerate(): return BoundingBox2D(0, 0, 0, 0)
+        if self.contained_in_bounding_box(target):  return self
 
         # /** projecting  horizontal side of the bounding_box angles to X axis */
-        segments_x_begin = (self._x, bounding_box.x)
-        segments_x_end = (self._x + self._width, bounding_box.x + bounding_box.width)
+        segments_x_begin = (self._x, target.x)
+        segments_x_end = (self._x + self._width, target.x + target.width)
         # projecting vertical side of the rectangles to Y  axis
-        segments_y_begin = (self._y, bounding_box.y)
-        segments_y_end = (self._y + self._height, bounding_box.y + bounding_box.height)
+        segments_y_begin = (self._y, target.y)
+        segments_y_end = (self._y + self._height, target.y + target.height)
 
         segments_x_intersection = (max(segments_x_begin[0], segments_x_begin[1]), min(segments_x_end[0], segments_x_end[1]))
         segments_y_intersection = (max(segments_y_begin[0], segments_y_begin[1]), min(segments_y_end[0], segments_y_end[1]))
 
-        # /** check if rectangles have non empty intersection * /
+        # /** check if rectangles have non-empty intersection * /
         if (segments_x_intersection[1] < segments_x_intersection[0]) or (segments_y_intersection[1] < segments_y_intersection[0]):
-            return BoundingBox(0, 0, 0, 0)
+            return BoundingBox2D(0, 0, 0, 0)
 
         # / ** do  inPlace assignment * /
         intersected_x = segments_x_intersection[0]
@@ -258,10 +256,10 @@ class BoundingBox:
         intersected_width = segments_x_intersection[1] - segments_x_intersection[0]
         intersected_height = segments_y_intersection[1] - segments_y_intersection[0]
 
-        return  BoundingBox(intersected_x, intersected_y, intersected_width, intersected_height)
+        return  BoundingBox2D(intersected_x, intersected_y, intersected_width, intersected_height)
 
 
-    def subtract(self, bounding_box: BoundingBoxType) -> list[BoundingBoxType]:
+    def subtract(self, other: BoundingBox2DType) -> list[BoundingBox2DType]:
         r"""
         Description:
             Calculates subtraction (which is a list of bounding boxes) of this bounding box minus given ``bounding_box``.
@@ -288,46 +286,37 @@ class BoundingBox:
             ┃          D            ┃
             ┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
+        :param other:
+
         :return: list of bounding boxes (result of subtraction).
         """
 
-        if self.is_degenerate(): return list()
+        if self.is_degenerate() or other.is_degenerate(): return list()
 
-        intersected_bbox = self.intersect(bounding_box) # rect1 | rect2;
+        intersected_bbox = self.intersect(other) # rect1 | rect2;
+        if intersected_bbox.is_degenerate(): return list()
 
-        # Case 1. No intersection
-        if intersected_bbox.is_degenerate(): return [self]
-
+        intersections_grid = self.__intersections_grid(other)
         raise NotImplementedError
-        '''
-        results = []
-        remainder, subtractedArea
 
-        subtractedArea = rectBetween(*this, intersected_bbox, & remainder, RectangleEdge::maxYEdge);
-        if subtractedArea.area() != 0: results.append(subtractedArea);
 
-        subtractedArea = rectBetween(remainder, intersected_bbox, & remainder, RectangleEdge::minYEdge);
-        if subtractedArea.area != 0: results.append(subtractedArea);
-
-        subtractedArea = rectBetween(remainder, intersected_bbox, & remainder, RectangleEdge::maxXEdge);
-        if not subtractedArea.is_degenerate(): results.append(subtractedArea)
-
-        subtractedArea = rectBetween(remainder, intersected_bbox, & remainder, RectangleEdge::minXEdge);
-        if not subtractedArea.is_degenerate(): results.append(subtractedArea)
-        return results
-        '''
-
-    def union(self, bounding_box: BoundingBoxType) -> list[BoundingBoxType]:
+    def union(self, other: BoundingBox2DType) -> list[BoundingBox2DType]:
         """
         Description:
             Calculates bounding boxes union (which is a list of bounding boxes)
 
         :return: list of bounding boxes (result of union).
         """
+
+        if self.is_degenerate() and other.is_degenerate(): return list()
+        elif self.is_degenerate(): return [other]
+        elif other.is_degenerate(): return [self]
+
+        intersections_grid = self.__intersections_grid(other)
         raise NotImplementedError
 
 
-    def circumscribe(self, bounding_box: BoundingBoxType) -> BoundingBoxType:
+    def circumscribe(self, bounding_box: BoundingBox2DType) -> BoundingBox2DType:
         """
         Description:
             Circumscribe this bounding box with the given one.
@@ -349,14 +338,14 @@ class BoundingBox:
         new_x2 = max(right_bottom[0], right_bottom[0])
         new_y2 = max(right_bottom[1], right_bottom[1])
 
-        bounding_box_circumscribed = BoundingBox()
+        bounding_box_circumscribed = BoundingBox2D()
         bounding_box_circumscribed.top_left = (new_x, new_y)
         bounding_box_circumscribed.bottom_right = (new_x2, new_y2)
 
         return bounding_box_circumscribed
 
 
-    def intersection_over_union(self, bounding_box: BoundingBoxType) -> numeric:
+    def intersection_over_union(self, bounding_box: BoundingBox2DType) -> numeric:
         """
         Description:
             Calculates intersection over union (IOU) metric.
@@ -365,7 +354,7 @@ class BoundingBox:
         union_area = self.area + bounding_box.area - self.intersect(bounding_box).area
         return intersection_area / union_area
 
-    def enlarge(self, obstacles: list[BoundingBoxType], bounding_box: BoundingBoxType) -> BoundingBoxType:
+    def enlarge(self, obstacles: list[BoundingBox2DType], bounding_box: BoundingBox2DType) -> BoundingBox2DType:
         """
         Description:
 
@@ -382,14 +371,19 @@ class BoundingBox:
 
         """
 
-        distances_to_neighbours = [self.distance_to(bbox) for bbox in obstacles]
+        distances_to_neighbours = [self.distance_to_bounding_box(bbox) for bbox in obstacles]
 
         offset_value = min(distances_to_neighbours)
         offset_bbox = self.offset(offset_value)
         return offset_bbox.intersect(bounding_box)
 
+    def distance_top_point(self, point: tuple[numeric, numeric]) -> numeric:
+        """
 
-    def distance_to(self, bounding_box: BoundingBoxType) -> numeric:
+        """
+        raise NotImplementedError
+
+    def distance_to_bounding_box(self, bounding_box: BoundingBox2DType) -> numeric:
         """
         Description:
             Calculates shortest distance between this bounding box and given ``bounding_box``.
@@ -525,4 +519,13 @@ class BoundingBox:
             Sets height of the ``BoundingBox`` instance.
         """
         self._height = abs(height)
+
+
+    def __intersections_grid(self, other: BoundingBox2DType) -> np.ndarray:
+        """
+        Description:
+            Calculates grid n the following way:
+
+        """
+        return np.ndarray
 

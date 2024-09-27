@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-from filters.persons_tracking.core.bounding_box import BoundingBox
+from filters.persons_tracking.core.bounding_box_2d import BoundingBox2D
 
 
 @dataclass
@@ -23,11 +23,11 @@ class PersonIdTrack:
         :param person_id: person's id (from person tracking algorithm)
         """
         self.id: int = person_id
-        self.bounding_box: BoundingBox = BoundingBox()
+        self.bounding_box: BoundingBox2D = BoundingBox2D()
         self.bounding_boxes_areas: np.ndarray = np.empty(0)
         self.segments: np.ndarray = np.empty((0, 2), dtype=np.int32)
 
-    def update(self, bounding_box: BoundingBox, frame_number: int) -> None:
+    def update(self, bounding_box: BoundingBox2D, frame_number: int) -> None:
         """
         Description:
             Update information about video segments at which person is considered to be presented.
