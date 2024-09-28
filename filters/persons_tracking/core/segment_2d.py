@@ -12,7 +12,7 @@ class Segment2D:
         self.start = start
         self.end = end
 
-    def __eq__(self, other):
+    def __eq__(self, other: VectorF2D):
         return self.start == other.start and self.end == other.end
 
     def __repr__(self):

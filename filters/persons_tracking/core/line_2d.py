@@ -9,22 +9,19 @@ Line2DType = TypeVar("Line2DType", bound="Line2D")
 class FloatComponent:
     """
     Description:
-        Descriptor class for float component
+        Descriptor class for float component values.
     """
-    __slots__ = ['value']
-
-    def __init__(self, value=0):
-        self.value = value
+    __slots__ = ['name']
 
     def __set_name__(self, owner, name):
-        self.value = '_' + name
+        self.name = '_' + name
 
     def __get__(self, instance, owner):
-        return getattr(instance, 'value')
+        return getattr(instance, self.name)
 
     def __set__(self, instance, value):
         self.check_type(value)
-        setattr(instance, 'value', value)
+        setattr(instance, self.name, value)
 
     @classmethod
     def check_type(cls, value):
@@ -92,7 +89,7 @@ class Line2D:
         return Line2D(a, b, c)
 
     @staticmethod
-    def from_slope_intercept(k: float, b: float) -> Line2DType:
+    def from_slope_and_intercept(k: float, b: float) -> Line2DType:
         """
         Description:
             The constant term b indicates the point where the line intersects the y-axis.
@@ -120,7 +117,7 @@ class Line2D:
         :return: Line2D class instance or None (if line can not be constructed)
         """
         if abs(a) > threshold and abs(b) > threshold:
-            return Line2D(1/a, 1/b, 1)
+            return Line2D(1/a, 1/b, 1)  # TODO: think about extreme cases
         else:
             return Line2D(0, 0, 0)
 
@@ -143,16 +140,38 @@ class Line2D:
             return float(intersection_point[0] / intersection_point[2]), float(intersection_point[1] / intersection_point[2])
 
 
+    def is_intersecting_with(self, other: Line2DType) -> bool:
+        return True
+
     def distance_to_point(self, point: tuple[float, float]) -> float:
         """
         Description:
             Calculates closest distance from every point of this line to the given ``point``.
+            For reference, see e.g.:  https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+
 
         :param point: given point
 
         :return: distance to point
         """
-        return 0
+        numerator = abs(self.a * point[0] + self.b * point[1] + self.c)
+        denominator = np.sqrt(self.a ** 2 + self.b ** 2)
+        return numerator / denominator
+
+    def closest_point_to_point(self, point: tuple[float, float]) -> tuple[float, float]:
+        """
+        Description:
+            Calculates the point on this line which is closest to the given ``point``.
+
+        :param point: given point
+
+        :return: closest point
+        """
+        denominator = np.sqrt(self.a ** 2 + self.b ** 2)
+        closest_point_x = (self.b * (self.b * point[0]  - self.a * point[1]) - self.a * self.c) / denominator
+        closest_point_y = (self.a * (-self.b * point[0] + self.a * point[1]) - self.b * self.c) / denominator
+
+        return closest_point_x, closest_point_y
 
 
     def distance_to_line(self, line: Line2DType) -> float:
@@ -161,9 +180,16 @@ class Line2D:
             Calculates closest distance from every point of this line to every point of the  given ``line``.
 
         :param line: given line
+
         :return: distance between lines
+
         """
-        return 0
+        if self.is_intersecting_with(line):
+            return 0.0
+
+        numerator = abs(self.c - line.c)
+        denominator = np.sqrt(self.a ** 2 + self.b ** 2)
+        return numerator / denominator
 
     def normal(self) -> tuple[float, float]:
         """
