@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from filters.persons_tracking.core.bounding_box_2d import BoundingBox2D
+from utils.geometry.bounding_box_2d import BoundingBox2D
 from filters.persons_tracking.core.person_id_track import PersonIdTrack
 
 

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-from filters.persons_tracking.core.bounding_box_2d import BoundingBox2D
+from utils.geometry.bounding_box_2d import BoundingBox2D
 
 
 @dataclass

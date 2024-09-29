@@ -49,6 +49,17 @@ class Line2D:
     def __repr__(self):
         return f"Line2D({self.a}, {self.b}, {self.c})"
 
+    def __call__(self, *args) -> float:
+        """
+        Substitute point (x_0, y_0) to left hand side of line equation. In other words calculate a*x_0 + b*y_0 + c.
+
+        :return: result of point substitution
+        :raises: ValueError if argument is not tuple from two floats.
+        """
+        if isinstance(args, tuple) and len(args) == 1 and len(args[0]) == 2:  # TEST it !!!
+            return self.a * args[0] + self.b * args[1] + self.c
+        raise ValueError('Argument for __call__ should be single argument of type tuple[float, float]')
+
     @staticmethod
     def from_two_points(point_1: tuple[float, float], point_2: tuple[float, float]) -> Line2DType:
         """
@@ -63,7 +74,7 @@ class Line2D:
         slope = (point_2[1] - point_1[1]) / (point_2[0] - point_1[0])
         intercept = point_1[1] - slope * point_1[0]
 
-        return Line2D.from_slope_intercept(slope, intercept)
+        return Line2D.from_slope_and_intercept(slope, intercept)
 
     @staticmethod
     def from_point_and_direction(point: tuple[float, float], direction: tuple[float, float]) -> Line2DType:
@@ -174,20 +185,21 @@ class Line2D:
         return closest_point_x, closest_point_y
 
 
-    def distance_to_line(self, line: Line2DType) -> float:
+    def distance_to_line(self, other_line: Line2DType) -> float:
         """
         Description:
             Calculates closest distance from every point of this line to every point of the  given ``line``.
+            For reference, see e.g.: https://www.cuemath.com/geometry/distance-between-two-lines/
 
-        :param line: given line
+        :param other_line: given line
 
         :return: distance between lines
 
         """
-        if self.is_intersecting_with(line):
+        if self.is_intersecting_with(other_line):
             return 0.0
 
-        numerator = abs(self.c - line.c)
+        numerator = abs(self.c - other_line.c)
         denominator = np.sqrt(self.a ** 2 + self.b ** 2)
         return numerator / denominator
 

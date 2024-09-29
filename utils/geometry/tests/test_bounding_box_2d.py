@@ -1,5 +1,5 @@
 import unittest
-from filters.persons_tracking.core.bounding_box_2d import BoundingBox2D
+from utils.geometry.bounding_box_2d import BoundingBox2D
 
 
 class TestBoundingBox(unittest.TestCase):
