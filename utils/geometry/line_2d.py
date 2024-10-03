@@ -61,7 +61,7 @@ class Line2D:
         raise ValueError('Argument for __call__ should be single argument of type tuple[float, float]')
 
     @staticmethod
-    def from_two_points(point_1: tuple[float, float], point_2: tuple[float, float]) -> Line2DType:
+    def from_two_points(point_1: tuple[float, float] | np.ndarray, point_2: tuple[float, float] | np.ndarray) -> Line2DType:
         """
         Description:
             Constructs ``Line2D`` class  from two points.
@@ -71,10 +71,15 @@ class Line2D:
 
         :return: ``Line2D`` class instance.
         """
+        if isinstance(point_1, np.ndarray) and isinstance(point_2, np.ndarray):
+            if point_1.shape[0] != 2 or point_2.shape[0] != 2:
+                raise ValueError('point_1 and point_2 should be both 2D arrays')
+
         slope = (point_2[1] - point_1[1]) / (point_2[0] - point_1[0])
         intercept = point_1[1] - slope * point_1[0]
 
         return Line2D.from_slope_and_intercept(slope, intercept)
+
 
     @staticmethod
     def from_point_and_direction(point: tuple[float, float], direction: tuple[float, float]) -> Line2DType:
@@ -151,7 +156,13 @@ class Line2D:
             return float(intersection_point[0] / intersection_point[2]), float(intersection_point[1] / intersection_point[2])
 
 
-    def is_intersecting_with(self, other: Line2DType) -> bool:
+    def is_intersecting_with(self, other: Line2DType, thresold = 1e-6) -> bool:
+        """
+        Description:
+        """
+        normal_1 = self.normal()
+        normal_2 = other.normal()
+
         return True
 
     def distance_to_point(self, point: tuple[float, float]) -> float:
