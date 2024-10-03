@@ -69,9 +69,7 @@ class Segment2D:
     def distance(self, other: segment2d) -> float:
         """
         Description:
-            Closest distance from this segment to the given one.
-            https://stackoverflow.com/questions/54485106/finding-a-distance-between-two-line-segments
-
+            Closest distance from this segment to the given one. THis method uses paper of
             Vladimir J. LUMELSKY. ON FAST COMPUTATION OF DISTANCE BETWEEN LINE SEGMENTS. 1984.
             https://jasoncantarella.com/octrope/trunk/doc/lumelsky.pdf
 
@@ -120,8 +118,8 @@ class Segment2D:
         """
         return [[self.start[0], self.start[1]], [self.end[0], self.end[1]]]
 
-    def to_numpy(self):
+    def to_tuples(self):
         """
 
         """
-        return np.array([[self.start[0], self.start[1]], [self.end[0], self.end[1]]])
+        return (self.start[0], self.start[1]), ([self.end[0], self.end[1]])
