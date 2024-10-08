@@ -1,13 +1,32 @@
+import enum
+import signal
+
 import numpy as np
-import numpy.typing as npt
+from skimage.filters.rank import threshold
+
 from utils.geometry.line_2d import Line2D
+
+import numpy.typing as npt
 
 from typing import Annotated, Literal,TypeVar
 
-vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]]
+vec2d = Annotated[npt.NDArray[float], Literal[2]]
 segment2d = TypeVar("segment2d", bound="Segment2D")
 
 class Segment2D:
+    class Sign(enum.Enum):
+        """
+        Description
+        """
+        POSITIVE = 0
+        NEGATIVE = 1
+
+        def __neg__(self):
+            if self.value == self.NEGATIVE:
+                return self.POSITIVE
+            else:
+                return self.NEGATIVE
+
     """
     Description:
         Representing 2D segment using start and end points.
@@ -49,6 +68,14 @@ class Segment2D:
 
         return False
 
+    def is_degenerate(self, threshold = 1e-6):
+        """
+        Description:
+        """
+        if self.length() < threshold:
+            return True
+        return False
+
 
     def intersection(self, other: segment2d) -> vec2d | None:
         """
@@ -66,7 +93,7 @@ class Segment2D:
         else:
             return None
 
-    def distance(self, other: segment2d) -> float:
+    def distance(self, other: segment2d) -> tuple[float, vec2d]:
         """
         Description:
             Closest distance from this segment to the given one. THis method uses paper of
@@ -79,24 +106,76 @@ class Segment2D:
         """
 
         if self.has_intersecting_with(other):
-            return 0.0
+            return 0.0, self.intersection(other)
 
-        distances_endpoints = [None] * 4
-        distances_projections = []
+        distances = np.inf * np.ones(5)
+        closest_points_candidates = np.inf * np.ones((8, 2))
 
+        distances[0] = np.linalg.norm(self.start - other.start)
+        distances[1] = np.linalg.norm(self.start - other.end)
+        distances[2] = np.linalg.norm(self.end - other.start)
+        distances[3] = np.linalg.norm(self.end - other.end)
 
+        closest_points_candidates[0] = other.start
+        closest_points_candidates[1] = other.end
+        closest_points_candidates[2] = other.start
+        closest_points_candidates[3] = other.end
+
+        this_segment_line = Line2D.from_two_points(self.start, self.end)
+        other_segment_line = Line2D.from_two_points(other.start, other.end)
+
+        if self.is_parallel_to(other):
+            distances[4] = this_segment_line.distance_to_line(other_segment_line)
+            if self.is_inside_margins(other.start):
+                closest_points_candidates[4] = other.start
+            elif self.is_inside_margins(other.end):
+                closest_points_candidates[4] = other.end
+        else:
+            closest_points_candidates[4] = this_segment_line.closest_point_on_line_to(self.start)
+
+        current_closest_point = this_segment_line.closest_point_on_line_to(other.start)
+        current_index = 4
+        if self.is_inside_margins(current_closest_point):
+            closest_points_candidates[current_index] = other.start
+            distances[current_index] = np.linalg.norm(current_closest_point - other.start)
+            current_index += 1
+
+        current_closest_point = this_segment_line.closest_point_on_line_to(other.end)
+        if self.is_inside_margins(current_closest_point):
+            closest_points_candidates[current_index] = other.end
+            distances[current_index] = np.linalg.norm(current_closest_point - other.end)
+            current_index += 1
+
+        current_closest_point = other_segment_line.closest_point_on_line_to(self.start)
+        if other.is_inside_margins(current_closest_point):
+            closest_points_candidates[current_index] = current_closest_point
+            distances[current_index] = np.linalg.norm(current_closest_point - self.start)
+            current_index += 1
+
+        current_closest_point = other_segment_line.closest_point_on_line_to(self.end)
+        if other.is_inside_margins(current_closest_point):
+            closest_points_candidates[current_index] = current_closest_point
+            distances[current_index] = np.linalg.norm(current_closest_point - self.end)
+
+        minimum_distance_index = np.argmin(distances)
+        return distances[minimum_distance_index], closest_points_candidates[minimum_distance_index]
 
 
     def normal(self, normalize=False) -> vec2d:
         """
         Description:
+            Returns normal of the segment.
+
+        :param normalize: If True normal vector will be normalized
+
+        :return: normal to segment
         """
-        direction = (self.end[0] - self.start[0], self.end[1] - self.start[1])
-        normal = np.array([-direction[1], direction[0]])
+        direction_ = (self.end[0] - self.start[0], self.end[1] - self.start[1])
+        normal_ = np.array([-direction_[1], direction_[0]])
         if normalize:
-            return normal / np.linalg.norm(normal)
+            return normal_ / np.linalg.norm(normal_)
         else:
-            return normal
+            return normal_
 
     def direction(self, normalize = False) -> vec2d:
         """
@@ -111,15 +190,51 @@ class Segment2D:
         else:
             return direction
 
+    def length(self):
+        return np.linalg.norm(self.end - self.start)
+
 
     def to_list(self):
         """
-
+        Description:
         """
         return [[self.start[0], self.start[1]], [self.end[0], self.end[1]]]
 
     def to_tuples(self):
         """
-
+        Description:
         """
         return (self.start[0], self.start[1]), ([self.end[0], self.end[1]])
+
+    def is_inside_margins(self, point: vec2d, threshold: float = 1e-6) -> bool:
+        """
+        Description:
+        """
+        if self.length() < threshold and np.linalg.norm(self.start - point) < threshold:
+            return True
+
+        segment_normal = self.normal()
+        margin_line_1 = Line2D.from_point_and_direction(self.start, segment_normal)
+        margin_line_2 = Line2D.from_point_and_direction(self.end, segment_normal)
+
+
+        check_point = 0.5 * (self.start + self.end)
+        check_point_sign = self.__sign(margin_line_1(check_point))
+
+        if self.__sign(margin_line_1(point)) == check_point_sign and self.__sign(margin_line_2(point)) == -check_point_sign:
+            return True
+
+        return False
+
+    def __sign(self, value) -> Sign:
+        """
+        Description:
+            Returns sign of a float value.
+
+        :return: ``Sign`` enum value
+        """
+        sign_value = self.Sign.POSITIVE if value >= 0 else self.Sign.NEGATIVE
+        return sign_value
+
+
+

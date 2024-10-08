@@ -3,6 +3,8 @@ import numpy as np
 
 from typing import TypeVar
 
+from torch.onnx.symbolic_opset9 import threshold
+
 Line2DType = TypeVar("Line2DType", bound="Line2D")
 
 
@@ -57,7 +59,9 @@ class Line2D:
         :raises: ValueError if argument is not tuple from two floats.
         """
         if isinstance(args, tuple) and len(args) == 1 and len(args[0]) == 2:  # TEST it !!!
-            return self.a * args[0] + self.b * args[1] + self.c
+            return self.a * args[0][0] + self.b * args[0][1] + self.c
+        elif isinstance(args, np.ndarray) and args[0].shape[0] == 2:
+            return self.a * args[0][0] + self.b * args[0][1] + self.c
         raise ValueError('Argument for __call__ should be single argument of type tuple[float, float]')
 
     @staticmethod
@@ -82,7 +86,7 @@ class Line2D:
 
 
     @staticmethod
-    def from_point_and_direction(point: tuple[float, float], direction: tuple[float, float]) -> Line2DType:
+    def from_point_and_direction(point: tuple[float, float] | np.ndarray[float], direction: tuple[float, float]) -> Line2DType:
         r"""
         Description:
             Constructs ``Line2D`` class  from point and direction (2D vector).
@@ -156,16 +160,24 @@ class Line2D:
             return float(intersection_point[0] / intersection_point[2]), float(intersection_point[1] / intersection_point[2])
 
 
-    def is_intersecting_with(self, other: Line2DType, thresold = 1e-6) -> bool:
+    def is_intersecting_with(self, other: Line2DType, threshold = 1e-6) -> bool:
         """
         Description:
         """
-        normal_1 = self.normal()
-        normal_2 = other.normal()
+        this_normal = self.normal()
+        other_normal = other.normal()
+
+        this_normal /= np.linalg.norm(this_normal)
+        other_normal /= np.linalg.norm(other_normal)
+
+        projection = this_normal.dot(other_normal)
+
+        if (1 - projection) < threshold:
+            return False
 
         return True
 
-    def distance_to_point(self, point: tuple[float, float]) -> float:
+    def distance_to_point(self, point: tuple[float, float] | np.ndarray) -> float:
         """
         Description:
             Calculates closest distance from every point of this line to the given ``point``.
@@ -180,7 +192,7 @@ class Line2D:
         denominator = np.sqrt(self.a ** 2 + self.b ** 2)
         return numerator / denominator
 
-    def closest_point_to_point(self, point: tuple[float, float]) -> tuple[float, float]:
+    def closest_point_on_line_to(self, point: tuple[float, float] | np.ndarray) -> tuple[float, float]:
         """
         Description:
             Calculates the point on this line which is closest to the given ``point``.
@@ -214,14 +226,14 @@ class Line2D:
         denominator = np.sqrt(self.a ** 2 + self.b ** 2)
         return numerator / denominator
 
-    def normal(self) -> tuple[float, float]:
+    def normal(self) -> np.ndarray:
         """
         Description:
             Returns normal vector (un normalized)
 
         :return: normal vector
         """
-        return -self.b, self.a
+        return np.array([-self.b, self.a])
 
     def is_parallel_to(self, other: Line2DType, threshold: float = 1e-6) -> bool:
         """
