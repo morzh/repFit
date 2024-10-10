@@ -15,9 +15,9 @@ vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]] | tuple[floa
 class BoundingBox2D:
     """
     Description:
-        BoundingBox class should serve for .
+        BoundingBox2D class should serve for operations with bounding boxes.
     """
-    __slots__ = ['_x', '_y', '_width', '_height']
+
     class BoxMode(Enum):
         """
         Description:
@@ -42,6 +42,7 @@ class BoundingBox2D:
     XYWH = BoxMode.XYWH.value
     XYXY = BoxMode.XYXY.value
 
+    __slots__ = ['_x', '_y', '_width', '_height']
     def __init__(self, x: numeric = 0, y: numeric = 0, w_x2: numeric = 0, h_y2: numeric = 0, mode: BoxMode = XYWH):
         if mode == BoundingBox2D.XYWH:
             self._x = x
@@ -64,12 +65,44 @@ class BoundingBox2D:
         return f"BoundingBox([{self._x}, {self._y}, {self._width}, {self._height}])"
 
     @staticmethod
-    def from_list(values: list, mode: BoxMode = XYWH) -> BoundingBox2DType:
-        pass
+    def from_list(values: list[float], mode: BoxMode = XYWH) -> BoundingBox2DType:
+        """
+        Description:
+            Returns instance of the BoundingBox2D class from list of four values.
+
+        :param values:
+        :param mode:
+
+        :return: BoundingBox2d instance
+        """
+        if len(values) == 4:
+            if mode == BoundingBox2D.XYWH:
+                return BoundingBox2D(values[0], values[1], values[2], values[3])
+            elif mode == BoundingBox2D.XYXY:
+                return BoundingBox2D(values[0], values[1], values[2] - values[0], values[3] - values[1])
+        else:
+            raise ValueError('')
 
     @staticmethod
     def from_numpy(values: np.ndarray, mode: BoxMode = XYWH) -> BoundingBox2DType:
-        pass
+        """
+        Description:
+            Returns instance of the BoundingBox2D class from list of four values.
+
+        :param values:
+
+        :param mode:
+
+        :return: BoundingBox2d instance
+        """
+        if values.shape == (1, 4) or values.shape == (4,):
+            if mode == BoundingBox2D.XYWH:
+                return BoundingBox2D(values[0], values[1], values[2], values[3])
+            elif mode == BoundingBox2D.XYXY:
+                return BoundingBox2D(values[0], values[1], values[2] - values[0], values[3] - values[1])
+        else:
+            raise ValueError('')
+
 
     def apply_aspect_ratio(self, ratio: numeric) -> BoundingBox2DType:
         """
