@@ -1,15 +1,16 @@
 from copy import deepcopy
 from enum import Enum
+from tkinter.constants import VERTICAL, HORIZONTAL
+
 import numpy as np
 from loguru import logger
 
-from typing import TypeVar
-from typing import Union
+import numpy.typing as npt
+from typing import Annotated, Literal,TypeVar, Union
 
-
-numeric = Union[int, float]
+numeric = Union[int, float, np.float32, np.float64]
 BoundingBox2DType = TypeVar("BoundingBox2DType", bound="BoundingBox2D")
-
+vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]] | tuple[float, float]
 
 class BoundingBox2D:
     """
@@ -33,6 +34,10 @@ class BoundingBox2D:
         """
         XYWH = 0
         XYXY = 1
+
+    class Order(Enum):
+        VERTICAL = 0
+        HORIZONTAL = 1
 
     XYWH = BoxMode.XYWH.value
     XYXY = BoxMode.XYXY.value
@@ -87,7 +92,7 @@ class BoundingBox2D:
     def aspect_ratio(self) -> numeric:
         """
         Description:
-            Calculates aspect ratio, which is width / height value.
+            Calculates aspect ratio, as width / height.
 
         :return: aspect ratio value
         """
@@ -98,30 +103,46 @@ class BoundingBox2D:
         Description:
             Return bounding box as a `list` of 4 numbers. Format depends on ``mode`` flag (default is xywh).
 
-        :param mode: Mode in which to return the box, 'xywh' ot 'xyxy'.
+        :param mode: output mode, either XYWH or XYXY.
 
         :return: list of values, representing bounding box
+
+        :raise ValueError: If mode differs from XYWH or XYXY.
         """
         if mode == BoundingBox2D.XYWH:
             return [self._x, self._y, self._width, self._height]
         elif mode == BoundingBox2D.XYXY:
-            bottom_right = self.bottom_right
+            bottom_right = self.right_bottom
             return [self._x, self._y, bottom_right[0], bottom_right[1]]
+        else:
+            raise ValueError('Modes other than XYWH and XYXY are not supported')
 
     def to_numpy(self, mode=XYWH) -> np.ndarray:
         """
         Description:
+            Return [x, y, width, height] values as nump array. If ``mode``is XYWH.
+            If ``mode`` is XYXY, returns [x_left, y_top, x_right, y_bottom] values as a numpy array.
+
+        :param mode: output mode, either XYWH or XYXY.
+
+        :return: bounding box numpy array
+
+        :raise ValueError: If mode differs from XYWH or XYXY.
         """
         if mode == BoundingBox2D.XYWH:
             return np.array([self._x, self._y, self._width, self._height])
         elif mode == BoundingBox2D.XYXY:
-            bottom_right = self.bottom_right
+            bottom_right = self.right_bottom
             return np.array([self._x, self._y, bottom_right[0], bottom_right[1]])
+        else:
+            raise ValueError('Modes other than XYWH and XYXY are not supported')
 
-    def copy(self):
+    def copy(self) -> BoundingBox2DType:
         """
         Description:
-            Return a deep copy of this bounding box.
+            Returns deep copy of this bounding box.
+
+        :return: bounding box
         """
         return deepcopy(self)
 
@@ -138,7 +159,7 @@ class BoundingBox2D:
         return self.area <= numeric(threshold)
 
 
-    def contains_point(self, point: tuple[numeric, numeric], use_border=True) -> bool:
+    def contains_point(self, point: vec2d, use_border=True) -> bool:
         """
         Description:
             Checks if bounding box has given point inside of it. In case use_closure is True point could be at the border of the box.
@@ -161,10 +182,10 @@ class BoundingBox2D:
         :return: True if given bounding_box is inside, False otherwise.
         """
 
-        return (self.contains_point(bounding_box.top_left, use_border) and
-                self.contains_point(bounding_box.top_right, use_border) and
-                self.contains_point(bounding_box.bottom_right, use_border) and
-                self.contains_point(bounding_box.bottom_left, use_border))
+        return (self.contains_point(bounding_box.left_top, use_border) and
+                self.contains_point(bounding_box.right_top, use_border) and
+                self.contains_point(bounding_box.right_bottom, use_border) and
+                self.contains_point(bounding_box.left_bottom, use_border))
 
     def contained_in_bounding_box(self, other: BoundingBox2DType, use_border=True) -> bool:
         """
@@ -176,6 +197,10 @@ class BoundingBox2D:
 
         :return: True if given bounding_box is outside, False otherwise.
         """
+        if use_border:
+            return self._x <= other.x and self._y <= other.y and self._width <= other.width and self._height <= other.height
+        else:
+            return self._x < other.x and self._y < other.y and self._width < other.width and self._height < other.height
 
 
 
@@ -206,7 +231,7 @@ class BoundingBox2D:
         Description:
             Offsets each border segment of this bounding box by a certain value. Positive values decreases box area, negative increases.
 
-        :param value:
+        :param value: offset value
 
         :return: offset BoundingBox instance
         """
@@ -215,33 +240,25 @@ class BoundingBox2D:
 
         return BoundingBox2D(self._x + value, self._y + value, self._width - 2 * value, self._height - 2 * value)
 
-    def expand(self, target: BoundingBox2DType) -> BoundingBox2DType:
-        """
-        Description:
-            Offsets this bounding box in a way, when some of the borders touches some border of the ``target`` bounding box.
-
-        :param target: Bounding box to enlarge to.
-
-        :return: offset BoundingBox instance
-        """
-
-    def intersect(self, target: BoundingBox2DType) -> BoundingBox2DType:
+    def intersect(self, other: BoundingBox2DType) -> BoundingBox2DType:
         """
         Description:
             Calculates intersection (which is also a box) of this bounding box with the ``target`` bounding box.
             If intersection is empty BoundingBox(0, 0, 0, 0) will be returned.
 
+        :param other: bounding box to perform intersection with.
+
         :return: bounding box (result of intersection).
         """
-        if self.is_degenerate() or target.is_degenerate(): return BoundingBox2D(0, 0, 0, 0)
-        if self.contained_in_bounding_box(target):  return self
+        if self.is_degenerate() or other.is_degenerate(): return BoundingBox2D(0, 0, 0, 0)
+        if self.contained_in_bounding_box(other):  return self
 
         # /** projecting  horizontal side of the bounding_box angles to X axis */
-        segments_x_begin = (self._x, target.x)
-        segments_x_end = (self._x + self._width, target.x + target.width)
+        segments_x_begin = (self._x, other.x)
+        segments_x_end = (self._x + self._width, other.x + other.width)
         # projecting vertical side of the rectangles to Y  axis
-        segments_y_begin = (self._y, target.y)
-        segments_y_end = (self._y + self._height, target.y + target.height)
+        segments_y_begin = (self._y, other.y)
+        segments_y_end = (self._y + self._height, other.y + other.height)
 
         segments_x_intersection = (max(segments_x_begin[0], segments_x_begin[1]), min(segments_x_end[0], segments_x_end[1]))
         segments_y_intersection = (max(segments_y_begin[0], segments_y_begin[1]), min(segments_y_end[0], segments_y_end[1]))
@@ -286,7 +303,7 @@ class BoundingBox2D:
             ┃          D            ┃
             ┗━━━━━━━━━━━━━━━━━━━━━━━┛
 
-        :param other:
+        :param other: bounding box to perform subtraction with
 
         :return: list of bounding boxes (result of subtraction).
         """
@@ -297,13 +314,26 @@ class BoundingBox2D:
         if intersected_bbox.is_degenerate(): return list()
 
         intersections_grid = self.__intersections_grid(other)
-        raise NotImplementedError
+        subtraction_result = []
+
+        for x_index in range(3):
+            for y_index in range(3):
+                current_left_top = intersections_grid[0][x_index], intersections_grid[1][y_index]
+                current_width = intersections_grid[0][x_index + 1] - intersections_grid[0][x_index]
+                current_height = intersections_grid[1][y_index + 1] - intersections_grid[1][y_index]
+                current_bounding_box = BoundingBox2D(current_left_top[0], current_left_top[1], current_width, current_height)
+                if self.contains_bounding_box(current_bounding_box) and not other.contained_in_bounding_box(current_bounding_box):
+                    subtraction_result.append(current_bounding_box)
+
+        raise subtraction_result
 
 
     def union(self, other: BoundingBox2DType) -> list[BoundingBox2DType]:
         """
         Description:
             Calculates bounding boxes union (which is a list of bounding boxes)
+
+        :param other: bounding box to perform union with
 
         :return: list of bounding boxes (result of union).
         """
@@ -313,7 +343,18 @@ class BoundingBox2D:
         elif other.is_degenerate(): return [self]
 
         intersections_grid = self.__intersections_grid(other)
-        raise NotImplementedError
+        union_result = []
+
+        for x_index in range(3):
+            for y_index in range(3):
+                current_left_top = intersections_grid[0][x_index], intersections_grid[1][y_index]
+                current_width = intersections_grid[0][x_index + 1] - intersections_grid[0][x_index]
+                current_height = intersections_grid[1][y_index + 1] - intersections_grid[1][y_index]
+                current_bounding_box = BoundingBox2D(current_left_top[0], current_left_top[1], current_width, current_height)
+                if self.contains_bounding_box(current_bounding_box) or other.contained_in_bounding_box(current_bounding_box):
+                    union_result.append(current_bounding_box)
+
+        raise union_result
 
 
     def circumscribe(self, bounding_box: BoundingBox2DType) -> BoundingBox2DType:
@@ -329,8 +370,8 @@ class BoundingBox2D:
         if self._width == 0 and self._height == 0:
             return bounding_box
 
-        top_left = bounding_box.top_left
-        right_bottom = bounding_box.bottom_right
+        top_left = bounding_box.left_top
+        right_bottom = bounding_box.right_bottom
 
         new_x = min(top_left[0], self._x)
         new_y = min(top_left[1], self._y)
@@ -339,11 +380,10 @@ class BoundingBox2D:
         new_y2 = max(right_bottom[1], right_bottom[1])
 
         bounding_box_circumscribed = BoundingBox2D()
-        bounding_box_circumscribed.top_left = (new_x, new_y)
-        bounding_box_circumscribed.bottom_right = (new_x2, new_y2)
+        bounding_box_circumscribed.left_top = (new_x, new_y)
+        bounding_box_circumscribed.right_bottom = (new_x2, new_y2)
 
         return bounding_box_circumscribed
-
 
     def intersection_over_union(self, bounding_box: BoundingBox2DType) -> numeric:
         """
@@ -354,7 +394,7 @@ class BoundingBox2D:
         union_area = self.area + bounding_box.area - self.intersect(bounding_box).area
         return intersection_area / union_area
 
-    def enlarge(self, obstacles: list[BoundingBox2DType], bounding_box: BoundingBox2DType) -> BoundingBox2DType:
+    def enlarge(self, obstacles: list[BoundingBox2DType], bounding_box: BoundingBox2DType, order: Order.VERTICAL) -> BoundingBox2DType:
         """
         Description:
 
@@ -363,75 +403,109 @@ class BoundingBox2D:
             3. For each line which goes along box border find minimal distance to obstacle boxes (-1 if not found).
             4. Offset each this box border by a value from step 3.
 
-
         :param obstacles:
         :param bounding_box:
+        :param order: if VERTICAL enlargement first proceed in vertical direction, then in horizontal
 
         :return: enlarged bounding box
-
         """
+        if not self.contained_in_bounding_box(bounding_box):
+            return self
 
-        distances_to_neighbours = [self.distance_to_bounding_box(bbox) for bbox in obstacles]
+        obstacles_point_cloud = np.empty((0, 2))
+        for obstacle in obstacles:
+            obstacles_point_cloud = np.vstack((obstacles_point_cloud, obstacle.corners))
 
-        offset_value = min(distances_to_neighbours)
-        offset_bbox = self.offset(offset_value)
-        return offset_bbox.intersect(bounding_box)
 
-    def distance_top_point(self, point: tuple[numeric, numeric]) -> numeric:
-        """
+        enlarged_box = self.copy()
 
-        """
-        raise NotImplementedError
+        if order == VERTICAL:
+            enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
+            enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
+        elif order == HORIZONTAL:
+            enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
+            enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
 
-    def distance_to_bounding_box(self, bounding_box: BoundingBox2DType) -> numeric:
-        """
-        Description:
-            Calculates shortest distance between this bounding box and given ``bounding_box``.
+        return BoundingBox2D()
 
-        :param bounding_box:
 
-        :return: distance between bounding boxes
-        """
-        if self.intersect(bounding_box).is_degenerate():
-            return -1
+    def __enlarge_vertically(self, obstacles_point_cloud: np.ndarray, bounding_box: BoundingBox2DType) -> None:
+        points_above_top_segment = np.where(obstacles_point_cloud[:, 1] > self._y, obstacles_point_cloud)
+        points_below_bottom_segment = np.where(obstacles_point_cloud[:, 1] > self._y + self._height, obstacles_point_cloud)
 
-        raise NotImplementedError
+        minimal_distance_to_top_segment = 0
+        if points_above_top_segmentsize.size > 0:
+            points_in_range_of_top_segment = points_above_top_segment[self._x < points_above_top_segment < self._x + self._width]
+            minimal_distance_to_top_segment = np.minimum(points_in_range_of_top_segment - self._y)
+            self._y -= minimal_distance_to_top_segment
+        else:
+            box_left_top = bounding_box.left_top
+            self._y = box_left_top[1]
+            self._height += self._y - box_left_top[1]
 
-    # def rectBetween(self):
-    #     pass
+        if points_in_range_of_bottom_segment.size > 0:
+            points_in_range_of_bottom_segment = points_below_bottom_segment[self._x < points_below_bottom_segment < self._x + self._width]
+            minimal_distance_to_bottom_segment = np.minimum(points_in_range_of_bottom_segment - (self._y + self._height))
+            self._height += minimal_distance_to_top_segment + minimal_distance_to_bottom_segment
+        else:
+            box_right_bottom = bounding_box.right_bottom
+            self._height = box_right_bottom[1] - self._y
+
+    def __enlarge_horizontally(self, obstacles_point_cloud: np.ndarray, bounding_box: BoundingBox2DType) -> None:
+        points_aside_left_segment = np.where(obstacles_point_cloud[:, 1] < self._x)
+        points_aside_right_segment = np.where(obstacles_point_cloud[:, 1] > self._x + self._width)
+
+        minimal_distance_to_left_segment = 0
+
+        if points_aside_left_segment.size > 0:
+            points_in_range_of_left_segment = points_aside_left_segment[self._y < points_aside_left_segment < self._y + self._height]
+            minimal_distance_to_left_segment = np.minimum(points_in_range_of_left_segment - self._x)
+            self._x -= minimal_distance_to_left_segment
+        else:
+            box_left_top = bounding_box.left_top
+            self._x  = box_left_top[0]
+            self._width += box_left_top[0] - self._x
+
+        if points_aside_right_segment.size > 0:
+            points_in_range_of_right_segment = points_aside_right_segment[self._y < points_aside_right_segment < self._y + self._height]
+            minimal_distance_to_right_segment = np.minimum(points_in_range_of_right_segment - (self._x + self._width))
+            self._width += minimal_distance_to_left_segment + minimal_distance_to_right_segment
+        else:
+            box_right_top = bounding_box.right_top
+            self._width += box_left_top[0] - (self._y + self._width)
 
 
     @property
-    def top_left(self) -> tuple[numeric, numeric]:
+    def left_top(self) -> vec2d:
         """
         Description:
             Returns top left coordinates of the bounding box.
         """
-        return self._x, self._y
+        return np.array([self._x, self._y])
 
     @property
-    def top_right(self) -> tuple[numeric, numeric]:
+    def right_top(self) -> vec2d:
         """
         Description:
             Returns top right coordinates of the bounding box.
         """
-        return self._x + self._width, self._y
+        return np.array([self._x + self._width, self._y])
 
     @property
-    def bottom_right(self) -> tuple[numeric, numeric]:
+    def right_bottom(self) -> vec2d:
         """
         Description:
             Returns bottom right coordinates of the bounding box.
         """
-        return self._x + self._width, self._y + self._height
+        return np.array([self._x + self._width, self._y + self._height])
 
     @property
-    def bottom_left(self) -> tuple[numeric, numeric]:
+    def left_bottom(self) -> vec2d:
         """
         Description:
             Returns bottom left coordinates of the bounding box.
         """
-        return self._x, self._y + self._height
+        return np.array([self._x, self._y + self._height])
 
     @property
     def width(self) -> numeric:
@@ -474,8 +548,8 @@ class BoundingBox2D:
         return self._width + self._height
 
 
-    @top_left.setter
-    def top_left(self, coordinates: tuple[numeric, numeric] | np.ndarray):
+    @left_top.setter
+    def left_top(self, coordinates: vec2d):
         """
         Description:
             Set top left coordinates of the bounding box.
@@ -484,8 +558,8 @@ class BoundingBox2D:
         self._x = coordinates[0]
         self._y = coordinates[1]
 
-    @bottom_right.setter
-    def bottom_right(self, coordinates: tuple[numeric, numeric] | np.ndarray):
+    @right_bottom.setter
+    def right_bottom(self, coordinates: vec2d):
         """
         Description:
             Set bottom right coordinates of the bounding box.
@@ -520,12 +594,56 @@ class BoundingBox2D:
         """
         self._height = abs(height)
 
-
-    def __intersections_grid(self, other: BoundingBox2DType) -> np.ndarray:
+    @property
+    def center(self) -> vec2d:
         """
         Description:
-            Calculates grid n the following way:
+            Gets center of the bounding box (half sum of left top corner right bottom corner).
 
+        :return: center point
         """
-        return np.ndarray
+        return np.array([self._x + 0.5 * self._width, self._y  + 0.5 * self._height])
 
+    @property
+    def corners(self) -> np.ndarray:
+        """
+        Description:
+        """
+        return np.vstack((self.left_top, self.right_top, self.right_bottom, self.left_bottom))
+
+
+    def __intersections_grid(self, other: BoundingBox2DType) -> list[np.ndarray]:
+        """
+        Description:
+            Calculates grid of points in the following way:
+            1. Each border of this and other forms a line ( 4 horizontal and 4 vertical lines).
+            2. grid of intersection each vertical line with horizontal line (total 16 points)
+
+        :param other: bounding box to form intersection grid
+
+        :return: points mesh grid
+        """
+        xs = np.zeros(4)
+        ys = np.zeros(4)
+
+        current_point = self.left_top
+        xs[0] = current_point[0]
+        ys[0] = current_point[1]
+
+        current_point = self.right_bottom
+        xs[1] = current_point[0]
+        ys[1] = current_point[1]
+
+
+        current_point = other.left_top
+        xs[2] = current_point[0]
+        ys[2] = current_point[1]
+
+        current_point = other.right_bottom
+        xs[3] = current_point[0]
+        ys[3] = current_point[1]
+
+        xs.sort()
+        ys.sort()
+
+        return np.meshgrid(xs, ys)

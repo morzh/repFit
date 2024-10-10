@@ -1,16 +1,14 @@
 import enum
-import signal
-
 import numpy as np
-from skimage.filters.rank import threshold
+from copy import deepcopy
+
+import numpy.typing as npt
+from typing import Annotated, Literal,TypeVar
 
 from utils.geometry.line_2d import Line2D
 
-import numpy.typing as npt
 
-from typing import Annotated, Literal,TypeVar
-
-vec2d = Annotated[npt.NDArray[float], Literal[2]]
+vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]]
 segment2d = TypeVar("segment2d", bound="Segment2D")
 
 class Segment2D:
@@ -77,6 +75,26 @@ class Segment2D:
         return False
 
 
+    def is_inside_margins(self, point: vec2d, threshold: float = 1e-6) -> bool:
+        """
+        Description:
+        """
+        if self.length() < threshold and np.linalg.norm(self.start - point) < threshold:
+            return True
+
+        segment_normal = self.normal()
+        margin_line_1 = Line2D.from_point_and_direction(self.start, segment_normal)
+        margin_line_2 = Line2D.from_point_and_direction(self.end, segment_normal)
+
+
+        check_point = 0.5 * (self.start + self.end)
+        check_point_sign = self.__sign(margin_line_1(check_point))
+
+        if self.__sign(margin_line_1(point)) == check_point_sign and self.__sign(margin_line_2(point)) == -check_point_sign:
+            return True
+
+        return False
+
     def intersection(self, other: segment2d) -> vec2d | None:
         """
         Description:
@@ -92,6 +110,7 @@ class Segment2D:
             return line_1.intersection_point(line_2)
         else:
             return None
+
 
     def distance(self, other: segment2d) -> tuple[float, vec2d]:
         """
@@ -160,7 +179,6 @@ class Segment2D:
         minimum_distance_index = np.argmin(distances)
         return distances[minimum_distance_index], closest_points_candidates[minimum_distance_index]
 
-
     def normal(self, normalize=False) -> vec2d:
         """
         Description:
@@ -190,9 +208,9 @@ class Segment2D:
         else:
             return direction
 
+
     def length(self):
         return np.linalg.norm(self.end - self.start)
-
 
     def to_list(self):
         """
@@ -206,25 +224,12 @@ class Segment2D:
         """
         return (self.start[0], self.start[1]), ([self.end[0], self.end[1]])
 
-    def is_inside_margins(self, point: vec2d, threshold: float = 1e-6) -> bool:
+    def copy(self) -> segment2d:
         """
         Description:
+            Return a deep copy of the object.
         """
-        if self.length() < threshold and np.linalg.norm(self.start - point) < threshold:
-            return True
-
-        segment_normal = self.normal()
-        margin_line_1 = Line2D.from_point_and_direction(self.start, segment_normal)
-        margin_line_2 = Line2D.from_point_and_direction(self.end, segment_normal)
-
-
-        check_point = 0.5 * (self.start + self.end)
-        check_point_sign = self.__sign(margin_line_1(check_point))
-
-        if self.__sign(margin_line_1(point)) == check_point_sign and self.__sign(margin_line_2(point)) == -check_point_sign:
-            return True
-
-        return False
+        return deepcopy(self)
 
     def __sign(self, value) -> Sign:
         """

@@ -1,10 +1,10 @@
 from copy import deepcopy
 import numpy as np
 
-from typing import TypeVar
+import numpy.typing as npt
+from typing import Annotated, Literal,TypeVar
 
-from torch.onnx.symbolic_opset9 import threshold
-
+vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]] | tuple[float, float]
 Line2DType = TypeVar("Line2DType", bound="Line2D")
 
 
@@ -86,7 +86,7 @@ class Line2D:
 
 
     @staticmethod
-    def from_point_and_direction(point: tuple[float, float] | np.ndarray[float], direction: tuple[float, float]) -> Line2DType:
+    def from_point_and_direction(point: vec2d, direction: vec2d) -> Line2DType:
         r"""
         Description:
             Constructs ``Line2D`` class  from point and direction (2D vector).
@@ -141,7 +141,7 @@ class Line2D:
         else:
             return Line2D(0, 0, 0)
 
-    def intersection_point(self, other: Line2DType, threshold: float = 1e-6) -> tuple[float, float] | None:
+    def intersection_point(self, other: Line2DType, threshold: float = 1e-6) -> vec2d | None:
         """
         Description:
             Calculates intersection point of this line and other line. Returns None is lines are parallel (within some threshold).
@@ -152,12 +152,14 @@ class Line2D:
         :return: intersection point or None (if lines are parallel)
         """
         
-        intersection_point = np.cross(self.to_numpy(), other.to_numpy())  # TODO: get rid of numpy cross product
+        intersection_point_homogenous = np.cross(self.to_numpy(), other.to_numpy())
         
-        if abs(intersection_point[2]) < threshold:
+        if abs(intersection_point_homogenous[2]) < threshold:
             return None
         else:
-            return float(intersection_point[0] / intersection_point[2]), float(intersection_point[1] / intersection_point[2])
+            intersection_point_x = float(intersection_point_homogenous[0] / intersection_point_homogenous[2])
+            intersection_point_y = float(intersection_point_homogenous[1] / intersection_point_homogenous[2])
+            return np.array([intersection_point_x, intersection_point_y])
 
 
     def is_intersecting_with(self, other: Line2DType, threshold = 1e-6) -> bool:
@@ -177,12 +179,11 @@ class Line2D:
 
         return True
 
-    def distance_to_point(self, point: tuple[float, float] | np.ndarray) -> float:
+    def distance_to_point(self, point: vec2d) -> float:
         """
         Description:
             Calculates closest distance from every point of this line to the given ``point``.
             For reference, see e.g.:  https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-
 
         :param point: given point
 
@@ -192,7 +193,7 @@ class Line2D:
         denominator = np.sqrt(self.a ** 2 + self.b ** 2)
         return numerator / denominator
 
-    def closest_point_on_line_to(self, point: tuple[float, float] | np.ndarray) -> tuple[float, float]:
+    def closest_point_on_line_to(self, point: vec2d) -> vec2d:
         """
         Description:
             Calculates the point on this line which is closest to the given ``point``.
@@ -205,7 +206,7 @@ class Line2D:
         closest_point_x = (self.b * (self.b * point[0]  - self.a * point[1]) - self.a * self.c) / denominator
         closest_point_y = (self.a * (-self.b * point[0] + self.a * point[1]) - self.b * self.c) / denominator
 
-        return closest_point_x, closest_point_y
+        return np.array([closest_point_x, closest_point_y])
 
 
     def distance_to_line(self, other_line: Line2DType) -> float:
@@ -256,7 +257,7 @@ class Line2D:
     def copy(self) -> Line2DType:
         """
         Description:
-            Return a deep copy of object.
+            Return a deep copy of the object.
         """
         return deepcopy(self)
         
