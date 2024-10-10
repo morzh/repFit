@@ -181,7 +181,6 @@ class BoundingBox2D:
 
         :return: True if given bounding_box is inside, False otherwise.
         """
-
         return (self.contains_point(bounding_box.left_top, use_border) and
                 self.contains_point(bounding_box.right_top, use_border) and
                 self.contains_point(bounding_box.right_bottom, use_border) and
@@ -362,7 +361,7 @@ class BoundingBox2D:
         Description:
             Circumscribe this bounding box with the given one.
 
-        :param bounding_box:
+        :param bounding_box: bounding box to circumscribe with
 
         :return: bounding box
         """
@@ -416,7 +415,6 @@ class BoundingBox2D:
         for obstacle in obstacles:
             obstacles_point_cloud = np.vstack((obstacles_point_cloud, obstacle.corners))
 
-
         enlarged_box = self.copy()
 
         if order == VERTICAL:
@@ -426,10 +424,13 @@ class BoundingBox2D:
             enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
             enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
 
-        return BoundingBox2D()
+        return enlarged_box
 
 
     def __enlarge_vertically(self, obstacles_point_cloud: np.ndarray, bounding_box: BoundingBox2DType) -> None:
+        """
+        Description:
+        """
         points_above_top_segment = np.where(obstacles_point_cloud[:, 1] > self._y, obstacles_point_cloud)
         points_below_bottom_segment = np.where(obstacles_point_cloud[:, 1] > self._y + self._height, obstacles_point_cloud)
 
@@ -452,6 +453,9 @@ class BoundingBox2D:
             self._height = box_right_bottom[1] - self._y
 
     def __enlarge_horizontally(self, obstacles_point_cloud: np.ndarray, bounding_box: BoundingBox2DType) -> None:
+        """
+        Description:
+        """
         points_aside_left_segment = np.where(obstacles_point_cloud[:, 1] < self._x)
         points_aside_right_segment = np.where(obstacles_point_cloud[:, 1] > self._x + self._width)
 
@@ -554,6 +558,7 @@ class BoundingBox2D:
         Description:
             Set top left coordinates of the bounding box.
 
+        :param coordinates: new left top coordinates
         """
         self._x = coordinates[0]
         self._y = coordinates[1]
@@ -564,6 +569,7 @@ class BoundingBox2D:
         Description:
             Set bottom right coordinates of the bounding box.
 
+        :param coordinates: new right bottom coordinates
         """
         new_width = coordinates[0] - self._x
         new_height = coordinates[1] - self._y
@@ -583,6 +589,8 @@ class BoundingBox2D:
         """
         Description:
             Sets width of the ``BoundingBox`` instance.
+
+        :param width: new width
         """
         self._width = abs(width)
 
@@ -591,6 +599,8 @@ class BoundingBox2D:
         """
         Description:
             Sets height of the ``BoundingBox`` instance.
+
+        :param height: new height
         """
         self._height = abs(height)
 
@@ -608,6 +618,9 @@ class BoundingBox2D:
     def corners(self) -> np.ndarray:
         """
         Description:
+            Returns corners coordinates as [4, 2] numpy array. Order is left top, right top, right bottom, left bottm
+
+        :return: corners coordinates array
         """
         return np.vstack((self.left_top, self.right_top, self.right_bottom, self.left_bottom))
 
@@ -619,7 +632,7 @@ class BoundingBox2D:
             1. Each border of this and other forms a line ( 4 horizontal and 4 vertical lines).
             2. grid of intersection each vertical line with horizontal line (total 16 points)
 
-        :param other: bounding box to form intersection grid
+        :param other: bounding box to form intersection grid with this bounding box
 
         :return: points mesh grid
         """
