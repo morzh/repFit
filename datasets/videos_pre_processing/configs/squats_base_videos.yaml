@@ -1,0 +1,7 @@
+'videos_root_folder': '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets'
+'videos_source_subfolder': 'squats_2022'
+'videos_target_subfolder': 'squats_2022_coarse_steady_camera_yolo_segmentation_yolov9-c'
+'move_to_folders_strategy': 'steady_non_steady'  # 'by_source_filename'
+'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm']
+'use_multiprocessing': True
+'number_processes': 2

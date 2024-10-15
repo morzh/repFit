@@ -3,7 +3,7 @@ import numpy as np
 from itertools import combinations
 from paths import STABLE_FILTER_DPATH, JOINTS2d_TRACK_DPATH
 from constants import credibility_threshold, multi_person_threshold
-from utils.file_reader import write_json, read_pickle
+from utils.io.file_reader import write_json, read_pickle
 
 
 def filter_by_joints_credibility(threshold: float = credibility_threshold) -> dict:

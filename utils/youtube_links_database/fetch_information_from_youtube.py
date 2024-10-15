@@ -103,17 +103,23 @@ def delete_keys_from_dictionary(video_information: dict, keys: list) -> None:
 
 
 @retry((yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError), delay=1, backoff=2, max_delay=4, tries=5, logger=logger)
-def fetch_youtube_video_information(video_url: str, verbose: bool = False) -> dict:
+def fetch_youtube_video_information(video_url: str, use_proxy: bool = True, verbose: bool = False) -> dict:
     """
     Description:
         Fetch YouTube video information
+
     :param video_url: URL to YouTube video
+    :param use_proxy: use proxy
     :param verbose: print fetched information
+
     :return: video information
     """
     ydl_options = {
         'socket_timeout': 40
     }
+    if use_proxy:
+        ydl_options['proxy'] = "socks5://127.0.0.1"
+
     with yt_dlp.YoutubeDL(ydl_options) as ydl:
         video_info = ydl.extract_info(video_url, download=False)
         delete_keys_from_dictionary(video_info, redundant_video_keys_list)
@@ -123,20 +129,25 @@ def fetch_youtube_video_information(video_url: str, verbose: bool = False) -> di
 
 
 @retry((yt_dlp.utils.UnsupportedError, yt_dlp.utils.DownloadError), delay=1, backoff=2, max_delay=4, tries=3, logger=logger)
-def fetch_youtube_channel_information(youtube_channel_url: str, verbose: bool = False) -> dict:
+def fetch_youtube_channel_information(youtube_channel_url: str, use_proxy: bool = True, verbose: bool = False) -> dict:
     """
     Description:
         Fetch YouTube channel information
     :param youtube_channel_url: URL to YouTube channel
+    :param use_proxy: use proxy
     :param verbose: print fetched information
+
     :return: channel information
     """
-    ydl_opts = {
+    ydl_options = {
         'playlist_items': '1',
         'extract_flat': 'in_playlist',
         'socket_timeout': 40
     }
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    if use_proxy:
+        ydl_options['proxy'] = "socks5://127.0.0.1"
+
+    with yt_dlp.YoutubeDL(ydl_options) as ydl:
         channel_info = ydl.extract_info(youtube_channel_url, download=False)
         delete_keys_from_dictionary(channel_info, redundant_channel_keys_list)
         if verbose:

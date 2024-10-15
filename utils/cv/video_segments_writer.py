@@ -14,6 +14,13 @@ from filters.steady_camera.core.video_segments import VideoSegments
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
 
+"""
+Using -vcodec copy was also causing me to have a poorly functioning video at the point of the trim.
+ffmpeg -i nick.mp4 -ss 52 -vcodec libx264 0 -acodec copy nick4.mp4
+Is what I was able to use to accomplish a properly working video trimmed where I wanted it. (Thanks to Karl Wilbur for the hint in one of the comments to an answer)
+"""
+
+
 class VideoSegmentsWriter:
     """
     Class for writing video segments to a different video files to a given output folder.
