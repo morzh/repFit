@@ -10,11 +10,14 @@ class VideoFileSegments:
     """
     Description:
         Data storage class for video segments information.
+
+    :ivar metadata: video file meta data;
+    :ivar frames_segments:
     """
-    __slots__ = ['meta_data', 'frames_segments']
-    def __init__(self, video_filename: str, video_width: int, video_height: int, frames_number: int, video_fps: float, segments):
-        self.meta_data: VideoMetadata(video_filename, video_width, video_height, frames_number, video_fps)
-        self.frames_segments: VideoFramesSegments = VideoFramesSegments(segments)
+    __slots__ = ['metadata', 'frames_segments']
+    def __init__(self, video_metadata: VideoMetadata, segments: VideoFramesSegments):
+        self.metadata: video_metadata
+        self.frames_segments = segments
 
     def filter_by_time(self, time_period_threshold: float) -> None:
         """
@@ -23,7 +26,7 @@ class VideoFileSegments:
 
         :param time_period_threshold: time threshold in seconds
         """
-        self.frames_segments.filter_by_time(self.meta_data.fps, time_period_threshold)
+        self.frames_segments.filter_by_time(self.metadata.fps, time_period_threshold)
 
     def complement(self) -> Self:
         r"""
@@ -33,7 +36,7 @@ class VideoFileSegments:
         :return:  video file segments complement
         """
         video_file_segments = copy.copy(self)
-        video_file_segments.frames_segments = self.frames_segments.complement(self.meta_data.frames_number)
+        video_file_segments.frames_segments = self.frames_segments.complement(self.metadata.frames_number)
         return video_file_segments
 
     def whole_video_segments_check(self) -> bool:
@@ -45,5 +48,5 @@ class VideoFileSegments:
         """
         shape_check = self.frames_segments.segments.shape[0] == 1
         zero_frame_check = self.frames_segments.segments[0, 0] == 0
-        number_frames_check = self.frames_segments.segments[-1, -1] == self.meta_data.frames_number - 1
+        number_frames_check = self.frames_segments.segments[-1, -1] == self.metadata.frames_number - 1
         return shape_check and zero_frame_check and number_frames_check

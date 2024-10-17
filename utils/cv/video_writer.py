@@ -80,7 +80,7 @@ class VideoWriter:
                 current_segment_end = current_segment[1]
 
     def write_person_segments(self, video_person_segments: SinglePersonTrack, filter_name: str = 'person'):
-        if len(video_person_segments.segments) == 0:
+        if len(video_person_segments.frames_segments) == 0:
             fps = self.fps
             return
 

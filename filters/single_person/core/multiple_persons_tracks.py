@@ -37,6 +37,6 @@ class MultiplePersonsTracks:
         for key in small_persons_indices:
             del self.persons[key]
 
-    def filter_by_duration(self, duration=5):
+    def filter_by_duration(self, duration=5.0):
         for person in self.persons.values():
-            person.filter_duration(self.fps, duration)
+            person.filter_duration(self.video_metadata.fps, duration)

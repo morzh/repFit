@@ -27,7 +27,11 @@ class BoundingBoxes2DArray:
     def areas(self) -> np.ndarray:
         """
         Description:
+            Returns areas of all bounding boxes
+
+        :return: array of areas
         """
+        return self.boxes[:, 2] * self.boxes[:, 3]
 
     def perimeters(self) -> np.ndarray:
         """

@@ -1,13 +1,18 @@
 import copy
 import numpy as np
-from dataclasses import dataclass
+import os
 
 from typing import Self
 
 
-@dataclass(slots=True)
 class VideoFramesSegments:
-    segments: np.ndarray
+    """
+    Description:
+
+    """
+    __slots__ = ['segments']
+    def __init__(self, segments):
+        self.segments = segments
 
     def filter_by_time(self, video_fps: float, threshold: float) -> None:
         """

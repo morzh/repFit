@@ -13,6 +13,8 @@ from filters.steady_camera.core.image_registration.image_registration_poc import
 from filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMaskBase
 from filters.steady_camera.core.ocr.ocr_base import OcrBase
 from filters.steady_camera.core.video_file_segments import VideoFileSegments
+from utils.cv.video_frames_segments import VideoFramesSegments
+from utils.cv.video_metadata import VideoMetadata
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]
 image_color = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]
@@ -141,13 +143,15 @@ class SteadyCameraCoarseFilter:
         segments = self.unite_overlapping_ranges(segments_bins)
 
         video_filename = os.path.basename(self.video_frames_batch.video_filepath)
-        video_segments = VideoFileSegments(video_filename=video_filename,
-                                           video_width=self.video_frames_batch.width,
-                                           video_height=self.video_frames_batch.height,
-                                           frames_number=self.video_frames_batch.video_reader.current_frame_index,
-                                           video_fps=self.video_frames_batch.fps,
-                                           segments=segments)
-        return video_segments
+        video_metadata = VideoMetadata(video_filename,
+                                       self.video_frames_batch.width,
+                                       self.video_frames_batch.height,
+                                       self.video_frames_batch.video_reader.current_frame_index,
+                                       self.video_frames_batch.fps)
+        video_frames_segments  = VideoFramesSegments(segments)
+        video_file_segments = VideoFileSegments(video_metadata, video_frames_segments)
+
+        return video_file_segments
 
     @staticmethod
     def unite_overlapping_ranges(segments: segments_list) -> segments_list:
