@@ -2,23 +2,23 @@ import numpy as np
 import torch
 
 from utils.geometry.bounding_box_2d import BoundingBox2D
-from filters.persons_tracking.core.person_id_track import PersonIdTrack
+from filters.single_person.core.single_person_track import SinglePersonTrack
 
 
-class PersonsTracks:
+class MultiplePersonsTracks:
     def __init__(self, fps=30):
         """
 
         """
         self.fps = fps
-        self.persons: dict[int, PersonIdTrack] = {}
+        self.persons: dict[int, SinglePersonTrack] = {}
 
     def update(self, data: torch.Tensor, frame_number: int):
         for index in range(data.shape[0]):
             current_person_id = int(data[index, 4])
             if current_person_id not in self.persons:
                 # current_confidence = data[index, 5]
-                self.persons[current_person_id] = PersonIdTrack(current_person_id)
+                self.persons[current_person_id] = SinglePersonTrack(current_person_id)
             bounding_box = BoundingBox2D(int(data[index, 0]), int(data[index, 1]), int(data[index, 2]), int(data[index, 3]))
             self.persons[current_person_id].update(bounding_box, frame_number)
 

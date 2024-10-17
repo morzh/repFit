@@ -1,15 +1,9 @@
 import enum
 import numpy as np
 from copy import deepcopy
-
-import numpy.typing as npt
-from typing import Annotated, Literal,TypeVar
-
 from utils.geometry.line_2d import Line2D
 
-
-vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]]
-segment2d = TypeVar("segment2d", bound="Segment2D")
+from geometry_typing import vec2d, segment2d
 
 class Segment2D:
     class Sign(enum.Enum):

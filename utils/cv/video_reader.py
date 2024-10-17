@@ -1,14 +1,16 @@
 import os.path
-from tqdm import tqdm
+
 from pathlib import Path
 import cv2
+from tqdm import tqdm
+
 from typing import Generator
 
 
 class VideoReader:
     """
     Description:
-        Read frames from video with frame_generator() or __call__().
+        Read frames from video with frame_generator() or __iter__.
 
     Usage example:
         video_reader = VideoReader(video_fpath)
@@ -16,14 +18,18 @@ class VideoReader:
         for frame in frame_generator:
             pass
     """
-    def __init__(self, filepath: str | Path, skip_frames_number: int = 0, use_tqdm: bool = True):
+    def __init__(self, filepath: str | Path, **reader_options):
         """
         Description:
             VideoReader class constructor.
 
         :param filepath: video file path
-        :param skip_frames_number:
-        :param use_tqdm: use tqdm progress bar for frames generator.
+
+        :keyword skip_first_frames_number:
+        :keyword number_of_frames_to_drop:
+        :keyword skip_last_frames_number:
+
+        :raises FileNotFoundError: If video file is not presented at given path.
         """
         if os.path.exists(str(filepath)):
             self.video_capture = cv2.VideoCapture(str(filepath))
@@ -33,59 +39,80 @@ class VideoReader:
         self.approximate_frames_number: int = 0
         self.success: bool = False
         self.frame = None
-        self.use_tqdm = use_tqdm
+        self._use_tqdm = reader_options.get('use_tqdm', False)
 
         self._fps: float = 0.0
-        self._current_frame_index: int = -1
-        self._integer_division_value = max(skip_frames_number + 1, 1)
-        self._init_info()
+        self._video_current_frame_index: int = -1
+        self._current_captured_frame_index: int = -1
+        self.stride = max(reader_options.get('stride', 1), 1)
 
-    def _init_info(self) -> None:
+        self._init_video_capture()
+
+    def _init_video_capture(self) -> None:
+        """
+        Description:
+            Initialize frames capturing process.
+        """
         if self.video_capture.isOpened():
             self.approximate_frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
-            self.success, self.frame = self.video_capture.read()
-            if self.success and self.use_tqdm:
+
+            self.frame = self.read_frame()
+
+            if self.success and self._use_tqdm:
                 self._progress = tqdm(range(self.approximate_frames_number))
                 self._progress.update()
 
-    def frame_generator(self) -> Generator[cv2.typing.MatLike]:
+    def frame_generator(self, skip_first_frames_number=0) -> Generator[cv2.typing.MatLike]:
         """
         Description:
-            Frames generator with tqdm.
+            Frames generator with skipping frames tqdm options.
 
         :return: generator object
         """
         while self.success:
-            self.success, _frame = self.video_capture.read()
-            return_frame = self.frame
-            self.frame = _frame
-            self._current_frame_index += 1
-            if self.use_tqdm:
-                self._progress.update()
-            yield return_frame
+            current_frame = self.read_frame()
+            if self._video_current_frame_index % self.stride == 0:
+                yield_frame = self.frame
+                self.frame = current_frame
+                self._current_captured_frame_index += 1
+                yield yield_frame
 
     def __iter__(self) -> Generator[cv2.typing.MatLike]:
         """
          Description:
-            Frames generator skipping frames and without tqdm progress.
+            Frames generator  without tqdm progress.
 
         :return: generator object
         """
         while self.success:
-            self.success, _frame = self.video_capture.read()
-            return_frame = self.frame
-            self.frame = _frame
-            self._current_frame_index += 1
-            if not self._current_frame_index % self._integer_division_value:
-                yield return_frame
+            current_frame = self.read_frame()
+            if self._video_current_frame_index % self.stride == 0:
+                yield_frame = self.frame
+                self.frame = current_frame
+                self._current_captured_frame_index += 1
+                yield yield_frame
 
     def __del__(self):
         self.video_capture.release()
 
+    def read_frame(self) -> cv2.typing.MatLike:
+        """
+        Description:
+        """
+        self.success, frame = self.video_capture.read()
+        if self.success:
+            self._video_current_frame_index += 1
+        return frame
+
+
     @property
     def current_frame_index(self):
-        return self._current_frame_index
+        """
+        Description:
+            Returns current video frame index
+        """
+        return self._video_current_frame_index
 
     @staticmethod
     def imshow(frame, window_name: str = 'window') -> None:

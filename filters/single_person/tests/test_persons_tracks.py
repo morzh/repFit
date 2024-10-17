@@ -1,6 +1,6 @@
 import unittest
 
-import filters.persons_tracking.core.person_id_track
+import filters.single_person.core.single_person_track
 
 
 class TestPersonsTracks:

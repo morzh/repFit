@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 
-from filters.persons_tracking.core.persons_tracks import PersonsTracks
+from filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 from utils.cv.video_reader import VideoReader
 
 
@@ -13,14 +13,14 @@ class PersonsTracker:
         self.model = None
         self.video_reader = None
 
-    def persons_segments(self, source_video_filepath: str, target_video_folder: str) -> PersonsTracks:
+    def persons_segments(self, source_video_filepath: str, target_video_folder: str) -> MultiplePersonsTracks:
         if not os.path.isfile(source_video_filepath):
             raise Exception(f"Video {source_video_filepath} was not found")
         if not os.path.exists(target_video_folder):
             os.makedirs(target_video_folder, exist_ok=True)
 
         self.model = YOLO(self.model_name)
-        persons_video_segments = PersonsTracks()
+        persons_video_segments = MultiplePersonsTracks()
         self.video_reader = VideoReader(source_video_filepath, use_tqdm=False)
         # self.video_reader = VideoFramesBatch(source_video_filepath)
 
