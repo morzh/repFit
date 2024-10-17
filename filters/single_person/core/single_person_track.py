@@ -2,6 +2,9 @@ from dataclasses import dataclass
 import numpy as np
 
 from utils.geometry.bounding_box_2d import BoundingBox2D
+from utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+import utils.geometry.bounding_box_2d_dyadic as bbox_bin_op
+
 
 
 @dataclass
@@ -24,7 +27,7 @@ class SinglePersonTrack:
         """
         self.id: int = person_id
         self.overall_bounding_box: BoundingBox2D = BoundingBox2D()
-        self.bounding_boxes: np.ndarray = np.empty(0)
+        self.bounding_boxes: BoundingBoxes2DArray = BoundingBoxes2DArray()
         self.segments: np.ndarray = np.empty((0, 2), dtype=np.int32)
 
     def update(self, bounding_box: BoundingBox2D, frame_number: int) -> None:
@@ -34,10 +37,10 @@ class SinglePersonTrack:
 
         :param bounding_box: tracked bounding box of a person at frame_number
         :param frame_number: frame number
-        :return: None
         """
-        self.overall_bounding_box.circumscribeInPlace(bounding_box)
-        self.bounding_boxes = np.append(self.bounding_boxes, bounding_box.area)
+        self.overall_bounding_box = bbox_bin_op.circumscribe(self.overall_bounding_box, bounding_box)
+        self.bounding_boxes.append(bounding_box)
+
         if self.segments.shape[0] == 0:
             self.segments = np.vstack((self.segments, np.array([frame_number, frame_number])))
         elif self.segments[-1, 1] == (frame_number - 1):

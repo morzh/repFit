@@ -1,16 +1,18 @@
 import numpy as np
 import torch
 
+from utils.cv.video_metadata import VideoMetadata
 from utils.geometry.bounding_box_2d import BoundingBox2D
 from filters.single_person.core.single_person_track import SinglePersonTrack
 
 
 class MultiplePersonsTracks:
-    def __init__(self, fps=30):
+    def __init__(self, video_metadata: VideoMetadata):
         """
+        Description:
 
         """
-        self.fps = fps
+        self.video_metadata = video_metadata
         self.persons: dict[int, SinglePersonTrack] = {}
 
     def update(self, data: torch.Tensor, frame_number: int):

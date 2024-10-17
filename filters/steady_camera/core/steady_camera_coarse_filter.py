@@ -12,7 +12,7 @@ from utils.cv.video_frames_batch import VideoFramesBatch
 from filters.steady_camera.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
 from filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMaskBase
 from filters.steady_camera.core.ocr.ocr_base import OcrBase
-from filters.steady_camera.core.video_segments import VideoSegments
+from filters.steady_camera.core.video_file_segments import VideoFileSegments
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]
 image_color = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]
@@ -119,7 +119,7 @@ class SteadyCameraCoarseFilter:
                     cv2.imshow('POC', reference_target_image)
                     cv2.waitKey(10)
 
-    def steady_camera_video_segments(self) -> VideoSegments:
+    def steady_camera_video_segments(self) -> VideoFileSegments:
         """
         Description:
             Calculate video segments in frames at which camera is steady
@@ -141,12 +141,12 @@ class SteadyCameraCoarseFilter:
         segments = self.unite_overlapping_ranges(segments_bins)
 
         video_filename = os.path.basename(self.video_frames_batch.video_filepath)
-        video_segments = VideoSegments(video_filename=video_filename,
-                                       video_width=self.video_frames_batch.width,
-                                       video_height=self.video_frames_batch.height,
-                                       frames_number=self.video_frames_batch.video_reader.current_frame_index,
-                                       video_fps=self.video_frames_batch.fps,
-                                       segments=segments)
+        video_segments = VideoFileSegments(video_filename=video_filename,
+                                           video_width=self.video_frames_batch.width,
+                                           video_height=self.video_frames_batch.height,
+                                           frames_number=self.video_frames_batch.video_reader.current_frame_index,
+                                           video_fps=self.video_frames_batch.fps,
+                                           segments=segments)
         return video_segments
 
     @staticmethod

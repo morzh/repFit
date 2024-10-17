@@ -3,7 +3,10 @@ from copy import deepcopy
 from enum import Enum
 import numpy as np
 
+
+from bounding_box_mode import BoundingBoxMode
 from geometry_typing import numeric, bbox2d, vec2d
+
 
 
 class BoundingBox2D:
@@ -12,32 +15,15 @@ class BoundingBox2D:
         BoundingBox2D class should serve for operations with bounding boxes.
     """
 
-    class BoxMode(Enum):
-        """
-        Description:
-            BoxMode defines the mode in which the bounding box is defined.
-
-            Most data sources have bounding boxes defined as ``XYWH`` where `XY` is the top left corner
-                and `W` and `H` are the width and height of the box, respectively.
-
-            However, many algorithms prefer to deal with bounding boxes as ``XYXY`` where the box is \
-                defined is defined by the top-left corner and the bottom-right corner.
-
-            To help disambiguate between these two configurations, `bbox` provides a means to specify the \
-                mode and maintains the state internally.
-        """
-        XYWH = 0
-        XYXY = 1
-
     class Order(Enum):
         VERTICAL = 0
         HORIZONTAL = 1
 
-    XYWH = BoxMode.XYWH.value
-    XYXY = BoxMode.XYXY.value
+    XYWH = BoundingBoxMode.XYWH.value
+    XYXY = BoundingBoxMode.XYXY.value
 
     __slots__ = ['_x', '_y', '_width', '_height']
-    def __init__(self, x: numeric = 0, y: numeric = 0, w_x2: numeric = 0, h_y2: numeric = 0, mode: BoxMode = XYWH):
+    def __init__(self, x: numeric = 0, y: numeric = 0, w_x2: numeric = 0, h_y2: numeric = 0, mode: BoundingBoxMode = XYWH):
         if mode == BoundingBox2D.XYWH:
             self._x = x
             self._y = y
@@ -59,7 +45,7 @@ class BoundingBox2D:
         return f"BoundingBox([{self._x}, {self._y}, {self._width}, {self._height}])"
 
     @staticmethod
-    def from_list(values: list[float], mode: BoxMode = XYWH) -> bbox2d:
+    def from_list(values: list[float], mode: BoundingBoxMode = XYWH) -> bbox2d:
         """
         Description:
             Returns instance of the BoundingBox2D class from list of four values.
@@ -78,7 +64,7 @@ class BoundingBox2D:
             raise ValueError('')
 
     @staticmethod
-    def from_numpy(values: np.ndarray, mode: BoxMode = XYWH) -> bbox2d:
+    def from_numpy(values: np.ndarray, mode: BoundingBoxMode = XYWH) -> bbox2d:
         """
         Description:
             Returns instance of the BoundingBox2D class from list of four values.
@@ -125,7 +111,7 @@ class BoundingBox2D:
         """
         return self._width / self._height
 
-    def to_list(self, mode:BoxMode=XYWH) -> list:
+    def to_list(self, mode:BoundingBoxMode=XYWH) -> list:
         """
         Description:
             Return bounding box as a `list` of 4 numbers. Format depends on ``mode`` flag (default is xywh).
@@ -229,7 +215,6 @@ class BoundingBox2D:
             return self._x < other.x and self._y < other.y and self._width < other.width and self._height < other.height
 
 
-
     def shift(self, values: vec2d) -> bbox2d:
         """
         Description:
@@ -290,10 +275,10 @@ class BoundingBox2D:
 
         enlarged_box = self.copy()
 
-        if order == VERTICAL:
+        if order == self.Order.VERTICAL:
             enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
             enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
-        elif order == HORIZONTAL:
+        elif order == self.Order.HORIZONTAL:
             enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
             enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
 
@@ -308,7 +293,7 @@ class BoundingBox2D:
         points_below_bottom_segment = np.where(obstacles_point_cloud[:, 1] > self._y + self._height, obstacles_point_cloud)
 
         minimal_distance_to_top_segment = 0
-        if points_above_top_segmentsize.size > 0:
+        if points_above_top_segment.size > 0:
             points_in_range_of_top_segment = points_above_top_segment[self._x < points_above_top_segment < self._x + self._width]
             minimal_distance_to_top_segment = np.minimum(points_in_range_of_top_segment - self._y)
             self._y -= minimal_distance_to_top_segment
@@ -317,7 +302,7 @@ class BoundingBox2D:
             self._y = box_left_top[1]
             self._height += self._y - box_left_top[1]
 
-        if points_in_range_of_bottom_segment.size > 0:
+        if points_below_bottom_segment.size > 0:
             points_in_range_of_bottom_segment = points_below_bottom_segment[self._x < points_below_bottom_segment < self._x + self._width]
             minimal_distance_to_bottom_segment = np.minimum(points_in_range_of_bottom_segment - (self._y + self._height))
             self._height += minimal_distance_to_top_segment + minimal_distance_to_bottom_segment
@@ -496,40 +481,3 @@ class BoundingBox2D:
         :return: corners coordinates array
         """
         return np.vstack((self.left_top, self.right_top, self.right_bottom, self.left_bottom))
-
-
-    def __intersections_grid(self, other: bbox2d) -> list[np.ndarray]:
-        """
-        Description:
-            Calculates grid of points in the following way:
-            1. Each border of this and other forms a line ( 4 horizontal and 4 vertical lines).
-            2. grid of intersection each vertical line with horizontal line (total 16 points)
-
-        :param other: bounding box to form intersection grid with this bounding box
-
-        :return: points mesh grid
-        """
-        xs = np.zeros(4)
-        ys = np.zeros(4)
-
-        current_point = self.left_top
-        xs[0] = current_point[0]
-        ys[0] = current_point[1]
-
-        current_point = self.right_bottom
-        xs[1] = current_point[0]
-        ys[1] = current_point[1]
-
-
-        current_point = other.left_top
-        xs[2] = current_point[0]
-        ys[2] = current_point[1]
-
-        current_point = other.right_bottom
-        xs[3] = current_point[0]
-        ys[3] = current_point[1]
-
-        xs.sort()
-        ys.sort()
-
-        return np.meshgrid(xs, ys)

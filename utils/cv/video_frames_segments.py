@@ -1,39 +1,31 @@
 import copy
-import os.path
-from dataclasses import dataclass
-from typing import Self
 import numpy as np
+from dataclasses import dataclass
+
+from typing import Self
 
 
 @dataclass(slots=True)
-class VideoSegments:
-    """
-    Description:
-        Data storage class for video segments information.
-    """
-    video_filename: str
-    video_width: int
-    video_height: int
-    video_fps: float
-    frames_number: int
+class VideoFramesSegments:
     segments: np.ndarray
 
-    def filter_by_time_duration(self, time_period_threshold: float) -> None:
+    def filter_by_time(self, video_fps: float, threshold: float) -> None:
         """
         Description:
             Filter video segments by duration in place.
             If segment duration is less than time_period_threshold, it will be deleted.
 
-        :param time_period_threshold: time threshold in seconds
+        :param video_fps: FPS of the video
+        :param threshold: time threshold in seconds
         """
         for segment_index, segment in enumerate(self.segments):
             segment_length = segment[1] - segment[0]
-            if (segment_length / self.video_fps) < time_period_threshold:
+            if (segment_length / video_fps) < threshold:
                 self.segments[segment_index] = np.array([-1, -1])
         mask = self.segments[:, 0] >= 0
         self.segments = self.segments[mask]
 
-    def complement(self) -> Self:
+    def complement(self, frames_number: int) -> Self:
         r"""
         Description:
             Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:
@@ -47,7 +39,7 @@ class VideoSegments:
         """
         segments = self.segments.flatten()
         segments = np.insert(segments, 0, 0)
-        segments = np.append(segments, self.frames_number - 1)
+        segments = np.append(segments, frames_number - 1)
         segments = segments.reshape(-1, 2)
 
         if segments[0, 0] == segments[0, 1]:
@@ -60,22 +52,17 @@ class VideoSegments:
 
         return video_segments_complement
 
-    def whole_video_segments_check(self) -> bool:
+    def write(self, filepath: str):
         """
         Description:
-            Checks if video_segments has only one segment with frame start equals zero and frame end equals frames number - 1
-        :return: True if there is only one whole range video segment, False otherwise
-        """
-        return (self.segments.shape[0] == 1 and
-                self.segments[0, 0] == 0 and
-                self.segments[-1, -1] == self.frames_number - 1)
 
-    def write(self, filepath: str):
+        """
         directory_name = os.path.dirname(filepath)
         if os.path.exists(directory_name):
             np.save(filepath, self.segments)
         else:
             raise OSError('Filepath directory does not exist.')
+
 
     def combine_adjacent_segments(self) -> None:
         """

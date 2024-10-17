@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 from utils.cv.video_reader import VideoReader
-from filters.steady_camera.core.video_segments import VideoSegments
+from filters.steady_camera.core.video_file_segments import VideoFileSegments
 from filters.single_person.core.multiple_persons_tracks import SinglePersonTrack
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
@@ -33,7 +33,7 @@ class VideoWriter:
         self.output_folder = output_folder
         self.fps = fps
 
-    def write_segments(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
+    def write_segments(self, video_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
         """
         Description:
             Write video segments as separate video files.
@@ -42,7 +42,7 @@ class VideoWriter:
         :param filter_name: name of the filter (prefix to frames range)
         """
 
-        if video_segments.segments.size == 0:
+        if video_segments.frames_segments.size == 0:
             return
 
         if video_segments.whole_video_segments_check():
@@ -56,7 +56,7 @@ class VideoWriter:
         video_reader = VideoReader(self.input_filepath, use_tqdm=False)
         resolution = (video_segments.video_width, video_segments.video_height)
         index_segment = 0
-        current_segment = video_segments.segments[index_segment]
+        current_segment = video_segments.frames_segments[index_segment]
         current_segment_start = current_segment[0]
         current_segment_end = current_segment[1]
 
@@ -73,9 +73,9 @@ class VideoWriter:
             if index_frame == current_segment_end:
                 current_video_writer.release()
                 index_segment += 1
-                if index_segment == video_segments.segments.shape[0]:
+                if index_segment == video_segments.frames_segments.shape[0]:
                     return
-                current_segment = video_segments.segments[index_segment]
+                current_segment = video_segments.frames_segments[index_segment]
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 
@@ -111,7 +111,7 @@ class VideoWriter:
         output_filepath = os.path.join(self.output_folder, video_filename)
         return output_filepath
 
-    def write_segments_values(self, video_segments: VideoSegments, filter_name: str = 'steady') -> None:
+    def write_segments_values(self, video_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
         """
         Description:
             Write segments values. This feature is for debug purposes

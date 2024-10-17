@@ -1,15 +1,20 @@
 from dataclasses import dataclass
 import numpy as np
 
+from bounding_box_mode import BoundingBoxMode
 from utils.geometry.bounding_box_2d import BoundingBox2D
 
 
-@dataclass
 class BoundingBoxes2DArray:
-    boxes: np.ndarray
 
+    XYWH = BoundingBoxMode.XYWH.value
+    XYXY = BoundingBoxMode.XYXY.value
 
-    def append(self, bounding_vox, mode=XYWH):
+    __slots__ = ['boxes']
+    def __init__(self):
+        self.boxes: np.ndarray = np.empty((0, 4))
+
+    def append(self, bounding_box, mode=XYWH):
         """
 
         """

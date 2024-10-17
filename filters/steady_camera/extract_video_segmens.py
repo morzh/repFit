@@ -8,7 +8,7 @@ import yaml
 import filters.steady_camera.core.ocr.ocr_factory as ocr_factory
 import filters.steady_camera.core.persons_mask.persons_mask_factory as persons_mask_factory
 from filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
-from filters.steady_camera.core.video_segments import VideoSegments
+from filters.steady_camera.core.video_file_segments import VideoFileSegments
 from utils.cv.video_writer import VideoWriter
 
 
@@ -72,7 +72,7 @@ def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 36
     return False
 
 
-def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **kwargs) -> VideoSegments:
+def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **kwargs) -> VideoFileSegments:
     """
     Description:
         Extract segments from video in frames, where camera is steady (meets steadiness criteria of coarse steady camera filter).
@@ -104,7 +104,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **kw
     steady_camera_filter.process(filter_parameters['poc_show_averaged_frames_pair'])
 
     steady_segments = steady_camera_filter.steady_camera_video_segments()
-    steady_segments.filter_by_time_duration(kwargs['minimum_steady_camera_time_segment'])
+    steady_segments.filter_by_time(kwargs['minimum_steady_camera_time_segment'])
 
     if kwargs['combine_adjacent_segments']:
         steady_segments.combine_adjacent_segments()
@@ -116,7 +116,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **kw
     return steady_segments
 
 
-def write_video_segments(video_filepath, output_folder, video_segments: VideoSegments, **kwargs) -> None:
+def write_video_segments(video_filepath, output_folder, video_segments: VideoFileSegments, **kwargs) -> None:
     """
     Description:
         Cuts input video according video_segments information.
@@ -147,16 +147,16 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoSeg
                                         fps=video_segments.video_fps)
 
     video_segments_writer.write_segments(video_segments, filter_name='steady')
-    if kwargs['save_steady_camera_segments_values'] and video_segments.segments.size > 0:
+    if kwargs['save_steady_camera_segments_values'] and video_segments.frames_segments.size > 0:
         video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
     if kwargs['write_segments_complement']:
         time_threshold = kwargs['minimum_non_steady_camera_time_segment']
         video_segments_complement = video_segments.complement()
-        video_segments_complement.filter_by_time_duration(time_threshold)
+        video_segments_complement.filter_by_time(time_threshold)
         video_segments_writer.write_segments(video_segments_complement, filter_name='nonsteady')
 
-        if kwargs['save_non_steady_camera_segments_values'] and video_segments_complement.segments.size > 0:
+        if kwargs['save_non_steady_camera_segments_values'] and video_segments_complement.frames_segments.size > 0:
             video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
 
 

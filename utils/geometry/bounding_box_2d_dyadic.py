@@ -1,3 +1,4 @@
+import numpy as np
 from bounding_box_2d import  BoundingBox2D
 from geometry_typing import numeric, bbox2d
 
@@ -77,7 +78,7 @@ def subtract(self: bbox2d, other: bbox2d) -> list[bbox2d]:
     intersected_bbox = self.intersect(other) # rect1 | rect2;
     if intersected_bbox.is_degenerate(): return list()
 
-    intersections_grid = self.__intersections_grid(other)
+    intersections_grid = __intersections_grid(self, other)
     subtraction_result = []
 
     for x_index in range(3):
@@ -107,7 +108,7 @@ def union(self: bbox2d, other: bbox2d) -> list[bbox2d]:
     elif self.is_degenerate(): return [other]
     elif other.is_degenerate(): return [self]
 
-    intersections_grid = self.__intersections_grid(other)
+    intersections_grid = __intersections_grid(self, other)
     union_result = []
 
     for x_index in range(3):
@@ -165,3 +166,41 @@ def intersection_over_union(self: bbox2d, bounding_box: bbox2d) -> numeric:
     intersection_area = self.intersect(bounding_box).area
     union_area = self.area + bounding_box.area - self.intersect(bounding_box).area
     return intersection_area / union_area
+
+
+
+def __intersections_grid(self: bbox2d, other: bbox2d) -> list[np.ndarray]:
+    """
+    Description:
+        Calculates grid of points in the following way:
+        1. Each border of this and other forms a line ( 4 horizontal and 4 vertical lines).
+        2. grid of intersection each vertical line with horizontal line (total 16 points)
+
+    :param other: bounding box to form intersection grid with this bounding box
+
+    :return: points mesh grid
+    """
+    xs = np.zeros(4)
+    ys = np.zeros(4)
+
+    current_point = self.left_top
+    xs[0] = current_point[0]
+    ys[0] = current_point[1]
+
+    current_point = self.right_bottom
+    xs[1] = current_point[0]
+    ys[1] = current_point[1]
+
+
+    current_point = other.left_top
+    xs[2] = current_point[0]
+    ys[2] = current_point[1]
+
+    current_point = other.right_bottom
+    xs[3] = current_point[0]
+    ys[3] = current_point[1]
+
+    xs.sort()
+    ys.sort()
+
+    return np.meshgrid(xs, ys)
