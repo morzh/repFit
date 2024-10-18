@@ -12,8 +12,9 @@ class VideoFileSegments:
         Data storage class for video segments information.
 
     :ivar metadata: video file meta data;
-    :ivar frames_segments:
+    :ivar frames_segments: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
     """
+
     __slots__ = ['metadata', 'frames_segments']
     def __init__(self, video_metadata: VideoMetadata, segments: VideoFramesSegments):
         self.metadata: video_metadata

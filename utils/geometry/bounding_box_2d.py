@@ -160,7 +160,7 @@ class BoundingBox2D:
         return deepcopy(self)
 
 
-    def is_degenerate(self, threshold=1e-6) -> bool:
+    def is_degenerate(self, threshold=1e-9) -> bool:
         """
         Description:
             Checks if bounding box is degenerate in other words has zero area.

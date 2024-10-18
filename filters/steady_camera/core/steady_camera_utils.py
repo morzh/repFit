@@ -107,7 +107,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **kw
     steady_segments.filter_by_time(kwargs['minimum_steady_camera_time_segment'])
 
     if kwargs['combine_adjacent_segments']:
-        steady_segments.combine_adjacent_segments()
+        steady_segments.frames_segments.combine_adjacent_segments()
     if filter_parameters['poc_registration_verbose']:
         steady_camera_filter.log_registration_results()
     if filter_parameters['verbose_steady_segments']:
@@ -144,7 +144,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
 
     video_segments_writer = VideoWriter(input_filepath=video_filepath,
                                         output_folder=output_folder,
-                                        fps=video_segments.video_fps)
+                                        fps=video_segments.metadata.video_fps)
 
     video_segments_writer.write_segments(video_segments, filter_name='steady')
     if kwargs['save_steady_camera_segments_values'] and video_segments.frames_segments.size > 0:
@@ -181,7 +181,7 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, **kwargs['video_segments_writer'])
     video_processing_end_time = time.time()
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
-                f'video duration is {(video_segments.frames_number / video_segments.video_fps):.2f} seconds.')
+                f'video duration is {(video_segments.metadata.frames_number / video_segments.metadata.video_fps):.2f} seconds.')
 
 
 def sort_videos_by_criteria(move_to_folders_strategy: str, raw_videos_folder: str, filtered_videos_folder: str) -> None:

@@ -1,1 +1,0 @@
-yt-dlp --flat-playlist --print-to-file webpage_url "TEXT_FILE.txt" "CHANNEL_URL"

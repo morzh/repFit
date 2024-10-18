@@ -4,6 +4,8 @@ import os
 
 from typing import Self
 
+from oauthlib.uri_validate import segment
+
 
 class VideoFramesSegments:
     """
@@ -11,7 +13,7 @@ class VideoFramesSegments:
 
     """
     __slots__ = ['segments']
-    def __init__(self, segments):
+    def __init__(self, segments: np.ndarray):
         self.segments = segments
 
     def filter_by_time(self, video_fps: float, threshold: float) -> None:
@@ -81,3 +83,7 @@ class VideoFramesSegments:
 
         mask = self.segments[:, 0] >= 0
         self.segments = self.segments[mask]
+
+    @property
+    def size(self) -> int:
+        return segment.size
