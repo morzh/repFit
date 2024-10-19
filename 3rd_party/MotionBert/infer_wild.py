@@ -14,7 +14,7 @@ import shutil
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default="configs/pose3d/MB_ft_h36m_global_lite.yaml",
+    parser.add_argument("--config", type=str, default="configs_input_output/pose3d/MB_ft_h36m_global_lite.yaml",
                         help="Path to the config file.")
     parser.add_argument('-e', '--evaluate',
                         default='checkpoint/pose3d/FT_MB_lite_MB_ft_h36m_global_lite/best_epoch.bin',

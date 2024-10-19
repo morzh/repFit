@@ -1,7 +1,0 @@
-'videos_root_folder': '/home/anton/work/fitMate/datasets'
-'videos_source_subfolder': 'squats_short_videos'
-'videos_target_subfolder': 'squats_short_videos_steady_camera'
-'move_to_folders_strategy': 'do_not_sort'  # 'by_source_filename'
-'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm']
-'use_multiprocessing': True
-'number_processes': 2
