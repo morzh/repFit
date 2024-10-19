@@ -13,7 +13,7 @@ from utils.cv.video_writer import VideoWriter
 # from utils.cv.video_segments_writer import VideoSegmentsWriter
 from utils.multiprocess import run_pool_steady_camera_filter
 from utils.youtube_links_database.videos_download import  check_filename_entry_in_folder
-from utils.io.file_reader import read_yaml
+from utils.io.file_read_write import read_yaml
 
 
 class PrintColors:
@@ -254,7 +254,7 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str, stead
 
 
 @logger.catch
-def steady_camera_filter(config_io: dict, filter_parameters: dict) -> None:
+def process_videos_by_steady_camera_filter(config_io: dict, filter_parameters: dict) -> None:
     """
     Description:
         Filter video by steady camera filter. Output of this filter is set of video segments at which camera is steady (within some threshold).
