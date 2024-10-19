@@ -1,5 +1,5 @@
 import sys
-# sys.path.append('/home/anton/work/fitMate/repFit/.venv/lib/python3.11/site-packages')
+# sys.path.append('/home/anton/work/fitMate/repFitDraft/.venv/lib/python3.11/site-packages')
 # import ffmpeg
 import cv2
 import json
@@ -14,8 +14,6 @@ from typing import Type
 import numpy as np
 
 # from blender3d.utils import *
-
-H36M_NUMBER_JOINTS = 17
 
 class BColors:
     HEADER = '\033[95m'
@@ -41,26 +39,26 @@ def get_h36m_joints_colors() -> list[tuple]:
     orange = (0.7, 0.5, 0.1, 1.0)
     red = (1.0, 0.25, 0.25, 1.0)
 
-    joints_colors[0] = orange # root
+    joints_colors[0] =  orange # root
 
-    joints_colors[1] = light_blue # left leg
-    joints_colors[2] = light_blue # left leg
-    joints_colors[3] = light_blue # left leg
+    joints_colors[1] =  light_blue # left leg
+    joints_colors[2] =  light_blue # left leg
+    joints_colors[3] =  light_blue # left leg
 
-    joints_colors[4] = light_green # right leg
-    joints_colors[5] = light_green # right leg
-    joints_colors[6] = light_green # right leg
-
+    joints_colors[4] =  light_green # right leg
+    joints_colors[5] =  light_green # right leg
+    joints_colors[6] =  light_green # right leg
+    
     joints_colors[7] =  orange # spine
     joints_colors[8] =  orange # spine
 
     joints_colors[9] =  red # head
     joints_colors[10] =  red # head
-
+    
     joints_colors[11] =  light_green # right arm
     joints_colors[12] =  light_green # right arm
     joints_colors[13] =  light_green # right arm
-
+    
     joints_colors[14] =  light_blue # left arm
     joints_colors[15] =  light_blue # left arm
     joints_colors[16] =  light_blue # left arm
@@ -278,51 +276,55 @@ def create_constant_video_material(video_file_pathname: str) -> any:
     output = nodes.new(type = 'ShaderNodeOutputMaterial')
     links.new(texture.outputs['Color'], output.inputs['Surface'])
 
-    texture.image = bpy.data.images.load(video_file_pathname)
+    texture._current_video_frame = bpy.data.images.load(video_file_pathname)
     texture.image_user.use_auto_refresh = True
     texture.image_user.frame_duration = int(video_number_frames)
 
     return material
 
 
-def create_skeleton_video_sample(joints_3d_animations_folder: str, joints_filename: str, joints_skeleton_material: any) -> Type[bpy.context.active_object]:
+def create_skeleton_video_sample(root_folder: str, video_filename: str, joints_skeleton_material: any) -> Type[bpy.context.active_object]:
+    root_skeleton_data_folder = os.path.join(root_folder, 'MotionBERT_selected') 
+    root_videos_folder = os.path.join(root_folder, 'AlphaPose', 'video')
+    
+    joints_animation_filename = video_filename[10:] + '.selected_skeleton.npy'
+    joints_animation_file_pathname = os.path.join(root_skeleton_data_folder, joints_animation_filename)
+    video_file_pathname = os.path.join(root_videos_folder, video_filename)
 
-    animated_skeletons_filepath = os.path.join(joints_3d_animations_folder, joints_filename)
-
-    if not os.path.exists(animated_skeletons_filepath):
+    if not os.path.exists(joints_animation_file_pathname):
         exit()
 
-    
-    animated_skeletons = np.load(animated_skeletons_filepath)
-    vertical_component_animation = animated_skeletons[:, -1]
-    number_animation_frames = vertical_component_animation.shape[0]
-    animated_skeletons = animated_skeletons[:, :-1].reshape(-1, 16, 3)
-    root_joint_animation = np.zeros((number_animation_frames, 1, 3))
-    animated_skeletons = np.hstack((root_joint_animation, animated_skeletons))
-    number_animation_frames = animated_skeletons.shape[0]
-    number_skeleton_joints = H36M_NUMBER_JOINTS  # 17 for H3.6M
-    initial_joints_location = animated_skeletons[0]
+    skeleton_animation_curves = np.load(joints_animation_file_pathname)
+    number_joints_frames = skeleton_animation_curves.shape[0]
+    number_skeleton_joints = skeleton_animation_curves.shape[1] # 17
+    initial_joints_location = skeleton_animation_curves[0]
 
     print(BColors.OKBLUE + BColors.BOLD, 'filename:', BColors.ENDC, 
-          BColors.OKGREEN, joints_filename, BColors.ENDC, 
+          BColors.OKGREEN, joints_animation_filename, BColors.ENDC, 
           BColors.OKBLUE + BColors.BOLD, '; number skeleton frames:', BColors.ENDC, 
-          BColors.WARNING, animated_skeletons.shape[0], BColors.ENDC)
-    
+          BColors.WARNING, skeleton_animation_curves.shape[0], BColors.ENDC)
+
     joints_spheres = [None] * number_skeleton_joints
     joints_colors = get_h36m_joints_colors()
     joints_names = get_h36m_joints_names()
 
     bpy.context.scene.frame_start = 0
-    bpy.context.scene.frame_end = number_animation_frames
+    bpy.context.scene.frame_end = number_joints_frames
     bpy.context.scene.frame_set(0)
 
     bpy.ops.object.empty_add(type='ARROWS', location=(0, 0, 0))
-    bpy.context.active_object.name = joints_filename
-    joints_animation_coordinate_frame = bpy.context.active_object
+    bpy.context.active_object.name = video_filename
+    joints_animation_coordinate_frame =  bpy.context.active_object
+
     skeleton_curves = get_h36m_skeleton_curves(initial_joints_location, joints_colors)
+    video_plane = get_video_plane(video_file_pathname)
+    
+    video_plane_material = create_constant_video_material(video_file_pathname)
+    video_plane.data.materials.append(video_plane_material)
+
     parent_skeleton_curves(skeleton_curves, joints_animation_coordinate_frame)
     assign_material_skeleton_curves(skeleton_curves, joints_skeleton_material)
-    
+    video_plane.parent = joints_animation_coordinate_frame
 
     for joint_index in range(number_skeleton_joints):
         bpy.ops.mesh.primitive_ico_sphere_add(radius=0.025)
@@ -332,39 +334,43 @@ def create_skeleton_video_sample(joints_3d_animations_folder: str, joints_filena
         bpy.context.active_object.data.materials.append(joints_skeleton_material)
         joints_spheres[joint_index] = bpy.context.active_object
         
-        for frame_index in range(number_animation_frames):
-            joints_spheres[joint_index].location = animated_skeletons[frame_index, joint_index, :]
+        for frame_index in range(number_joints_frames):
+            joints_spheres[joint_index].location = skeleton_animation_curves[frame_index, joint_index, :]
             joints_spheres[joint_index].keyframe_insert(data_path="location", frame=frame_index)
         
+
         joints_spheres[joint_index].parent = joints_animation_coordinate_frame
 
     bpy.context.scene.frame_set(0)
-    
     hook_skeleton_h36m_curves(skeleton_curves, joints_spheres)
-    joints_animation_coordinate_frame.rotation_euler = (0, -0.5 * np.pi, 0)
-    
+    joints_animation_coordinate_frame.rotation_euler = (-0.5 * np.pi, 0, 0.5 * np.pi)
+
     return joints_animation_coordinate_frame
 
 
 def main():
-    root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_skeletons/results_base_video_mp3'
-    
-    joints_stacked_folder = os.path.join(root_folder, 'joints3d_stacked')
-    # joints_stacked_folder = os.path.join(root_folder, 'joints3d_stacked_procrustes')
+    root_folder = \
+        '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/dataset_aggregation/squats_2022_skeletons_02'
 
-    skeletons_stacked_filenames = [f for f in os.listdir(joints_stacked_folder) if f.endswith('.npy')]
-    print(skeletons_stacked_filenames)
+    video_filenames = [f for f in os.listdir(os.path.join(root_folder, 'AlphaPose', 'video'))]
     joints_skeleton_material = create_joints_skeleton_material()
 
+    with open(os.path.join(root_folder, 'good_videos.json')) as f:
+         good_videos = json.load(f) 
+
+    video_files_selected = []
+    for video_index, video_filename in enumerate(video_filenames):
+        if video_filename[10:]+'.json' in good_videos:
+            video_files_selected.append(video_filename)
+
     grid_width = 6
-    item_space = 3.0
-    for skeleton_index, skeleton_filename in enumerate(skeletons_stacked_filenames):
-        grid_index_row = skeleton_index // grid_width
-        grid_index_column = skeleton_index - grid_width * grid_index_row
-        
-        sample_frame = create_skeleton_video_sample(joints_stacked_folder, skeleton_filename, joints_skeleton_material)
-        sample_frame.location[1] = item_space * grid_index_column
-        sample_frame.location[2] = item_space * grid_index_row
+    for video_index, video_filename in enumerate(video_files_selected):
+        grid_index_row = video_index // grid_width
+        grid_index_column = video_index - grid_width * grid_index_row
+
+        sample_frame = create_skeleton_video_sample(root_folder, videos_folder, video_filename, joints_skeleton_material)
+        sample_frame.location[1] = 5.0 * grid_index_column
+        sample_frame.location[2] = 5.0 * grid_index_row
 
 
 main()

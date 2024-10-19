@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 
 from paths import YOLO_BBOXES_DPATH, STEADY_VIDEO_DPATH, RESULTS_ROOT, STABLE_FILTER_DPATH, FILTERED_VIDEO_DPATH
-from utils.file_reader import read_pickle
+from utils.io.file_reader import read_pickle
 from utils.cv.video_reader import VideoReader
 from constants import min_fragment_n_frames
 

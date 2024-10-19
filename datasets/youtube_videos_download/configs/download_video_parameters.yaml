@@ -1,0 +1,28 @@
+video_options:
+  'video_format': 'mp4'
+  'video_quality': 720
+
+chapters_options:
+  'video_chapter_offset_seconds': 8
+
+output_options:
+  'each_include_promt_to_separate_folder': False
+
+connection:
+  'use_proxy': True
+
+debug_videos_options:
+  'print_links': False
+  'print_data': False
+  'print_name': False
+  'write_links': True
+  'videos_links_filepath': 'videos_filenames_links.txt'
+
+debug_chapters_options:
+  'print_links': False
+  'print_data': False
+  'print_name': False
+  'write_links': True
+  'chapters_links_filepath': 'chapters_filenames_links.txt'
+
+
