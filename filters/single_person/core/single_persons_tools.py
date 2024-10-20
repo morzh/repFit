@@ -1,3 +1,4 @@
+from eta.core.types import Video
 from loguru import logger
 import os
 import time
@@ -82,7 +83,7 @@ def  extract_and_write_single_person_segments(video_source_filepath: os.PathLike
         return
 
     video_bbox_segments = extract_single_persons_from_video(video_source_filepath, **parameters['video_segments_extraction'])
-    # write_video_bbox_segments(video_source_filepath, videos_target_folder, video_segments, **parameters['video_segments_writer'])
+    write_video_bbox_segments(video_source_filepath, videos_target_folder, video_bbox_segments, **parameters['video_segments_writer'])
     video_processing_end_time = time.time()
     # logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
     #             f'video duration is {(video_segments.metadata.frames_number / video_segments.metadata.video_fps):.2f} seconds.')
@@ -95,4 +96,11 @@ def extract_single_persons_from_video(video_source_filepath, **parameters) -> Vi
     """
 
     persons_tracker = PersonsTracker(parameters['weights_pathname'])
-    persons_tracker.track(video_source_filepath)
+    persons_tracks = persons_tracker.track(video_source_filepath)
+    persons_tracks = persons_tracks.filter()
+    return persons_tracks
+
+
+def write_video_bbox_segments(video_source_filepath, videos_target_folder, video_bbox_segments, **parameters):
+    """
+    """

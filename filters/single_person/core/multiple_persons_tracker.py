@@ -13,16 +13,15 @@ class PersonsTracker:
         self.model = None
         self.video_reader = None
 
-    def track(self, source_video_filepath: str, target_video_folder: str) -> MultiplePersonsTracks:
+    def track(self, source_video_filepath: str, stride=2, target_video_folder: os.PathLike | str | None = None) -> MultiplePersonsTracks:
         if not os.path.isfile(source_video_filepath):
             raise Exception(f"Video {source_video_filepath} was not found")
-        if not os.path.exists(target_video_folder):
+        if target_video_folder is not None and not os.path.exists(target_video_folder):
             os.makedirs(target_video_folder, exist_ok=True)
 
         self.model = YOLO(self.model_name)
+        self.video_reader = VideoReader(source_video_filepath, stride=2, use_tqdm=False)
         persons_video_segments = MultiplePersonsTracks()
-        self.video_reader = VideoReader(source_video_filepath, use_tqdm=False)
-        # self.video_reader = VideoFramesBatch(source_video_filepath)
 
         video_filename = os.path.basename(source_video_filepath)
         target_video_filepath = os.path.join(target_video_folder, video_filename)
