@@ -5,7 +5,7 @@ from utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
 @dataclass(slots=True)
-class VideoFramesSegmentsWithBoundingBoxes:
+class VideoSegmentsWithBoundingBoxes:
     """
 
     """

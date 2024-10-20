@@ -17,7 +17,7 @@ if __name__ == '__main__':
         'chapters_links_filepath': 'chapters_filenames_links.txt',
         'use_proxy': True,
     }
-    folders_parameters = read_yaml('configs/download_squats_io_folders.yaml')
+    folders_parameters = read_yaml('configs_input_output/download_squats_io_folders.yaml')
 
     database_input = folders_parameters['database']
     database_file_path = str(os.path.join(database_input['folder'], database_input['filename']))

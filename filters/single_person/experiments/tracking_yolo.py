@@ -12,4 +12,4 @@ source_video_folder = Path(source_folder)
 source_video_filepaths = source_video_folder.glob('*.mp4')
 
 for video_filepath in source_video_filepaths:
-    tracking.persons_segments(str(video_filepath), target_folder)
+    tracking.track(str(video_filepath), target_folder)

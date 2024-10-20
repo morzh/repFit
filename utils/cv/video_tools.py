@@ -27,3 +27,25 @@ def trim(in_file: str, out_file: str, start: int, end: int):
     video = input_stream.trim(start=start/fps, end=end/fps).setpts("PTS-STARTPTS")
     output = ffmpeg.output(video, str(out_file), format="mp4")
     output.run()
+
+
+def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 360) -> bool:
+    """
+    Description:
+        Check if video size is greater than a given threshold.
+
+    :param video_filepath: filepath of the video
+    :param minimum_dimension_size: minimum(video width, video height) threshold
+
+    :return: True if (width, height) >  minimum_dimension_size, False otherwise
+    """
+    video_capture = cv2.VideoCapture(video_filepath)
+    video_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    video_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    maximum_dimension = max(video_width, video_height)
+
+    if maximum_dimension > minimum_dimension_size:
+        return True
+
+    return False
+

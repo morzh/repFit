@@ -3,7 +3,6 @@ import numpy as np
 import os
 
 from typing import Self
-
 from oauthlib.uri_validate import segment
 
 
@@ -87,3 +86,7 @@ class VideoFramesSegments:
     @property
     def size(self) -> int:
         return segment.size
+
+    @property
+    def shape(self) -> tuple:
+        return self.segments.shape

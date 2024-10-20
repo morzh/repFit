@@ -8,12 +8,12 @@ from utils.cv.video_reader import VideoReader
 
 
 class PersonsTracker:
-    def __init__(self, model_name: str = 'yolov10x.pt'):
-        self.model_name = model_name
+    def __init__(self, weights_pathname: str = 'yolov10x.pt'):
+        self.model_name = weights_pathname
         self.model = None
         self.video_reader = None
 
-    def persons_segments(self, source_video_filepath: str, target_video_folder: str) -> MultiplePersonsTracks:
+    def track(self, source_video_filepath: str, target_video_folder: str) -> MultiplePersonsTracks:
         if not os.path.isfile(source_video_filepath):
             raise Exception(f"Video {source_video_filepath} was not found")
         if not os.path.exists(target_video_folder):
