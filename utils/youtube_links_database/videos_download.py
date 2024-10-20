@@ -21,20 +21,6 @@ def check_file_basename_in_folder(folder, filename_base) -> bool:
     return False
 
 
-def check_filename_entry_in_folder(folder, filename_entry) -> bool:
-    """
-    Description:
-        Check if file with given filename_entry exists in folder
-
-    :param folder: folder to check in
-    :param filename_entry:  filename entry
-
-    """
-    for s in os.listdir(folder):
-        if s.find(filename_entry) > -1:
-            return True
-
-    return False
 
 @retry(yt_dlp.utils.DownloadError, delay=2, backoff=2, max_delay=4, tries=5)
 def download_single_video_from_youtube(video_id: str, output_filepath: str, use_proxy: bool, **kwargs) -> None:

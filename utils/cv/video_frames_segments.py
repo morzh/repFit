@@ -87,3 +87,7 @@ class VideoFramesSegments:
     @property
     def size(self) -> int:
         return segment.size
+
+    @property
+    def shape(self) -> tuple:
+        return self.segments.shape

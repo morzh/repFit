@@ -1,5 +1,5 @@
 from loguru import logger
-from utils.io.file_read_write import read_yaml
+from utils.io.files_operations import read_yaml
 from filters.single_person.core.single_persons_tools import process_videos_by_single_persons_filter
 
 

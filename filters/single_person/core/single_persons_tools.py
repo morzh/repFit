@@ -2,16 +2,13 @@ from loguru import logger
 import os
 import time
 
+from filters.single_person.core.multiple_persons_tracker import PersonsTracker
+from filters.single_person.core.video_frames_segments_bounding_boxes import VideoSegmentsWithBoundingBoxes
 from utils.cv.video_writer import VideoWriter
 from utils.multiprocess import run_pool_single_persons_filter
+from utils.io.files_operations import  check_filename_entry_in_folder
+from utils.cv.video_tools import video_resolution_check
 
-
-def  extract_and_write_single_person_segments(video_source_filepath: os.PathLike | str,
-                                              videos_target_folder: os.PathLike | str,
-                                              **filter_parameters):
-    """
-
-    """
 
 @logger.catch
 def process_videos_by_single_persons_filter(input_output_config: dict, filter_parameters: dict) -> None:
@@ -58,3 +55,43 @@ def process_videos_by_single_persons_filter(input_output_config: dict, filter_pa
 
     logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
     # sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)
+
+
+def  extract_and_write_single_person_segments(video_source_filepath: os.PathLike | str,
+                                              videos_target_folder: os.PathLike | str,
+                                              **parameters):
+    """
+    Description:
+        Convenient function for multiprocessing. It violates single responsibility principle, but who cares.
+
+    :param video_source_filepath: source video filepath
+    :param videos_target_folder: output folder for segmented videos
+
+    :return: None
+    """
+    video_source_filename = os.path.basename(video_source_filepath)
+    video_source_filename_base = video_source_filename.split('.')[0]
+    if check_filename_entry_in_folder(videos_target_folder, video_source_filename_base):
+        return
+
+    video_processing_start_time = time.time()
+    minimum_resolution = parameters['video_segments_extraction']['resolution_filter']['minimum_dimension_resolution']
+    video_filename = os.path.basename(video_source_filepath)
+    if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
+        logger.info(f"{video_filename} :: one of the resolution dimension has size less than {minimum_resolution} pixels")
+        return
+
+    video_bbox_segments = extract_single_persons_from_video(video_source_filepath, **parameters['video_segments_extraction'])
+    # write_video_bbox_segments(video_source_filepath, videos_target_folder, video_segments, **parameters['video_segments_writer'])
+    video_processing_end_time = time.time()
+    # logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
+    #             f'video duration is {(video_segments.metadata.frames_number / video_segments.metadata.video_fps):.2f} seconds.')
+
+
+
+def extract_single_persons_from_video(video_source_filepath, **parameters) -> VideoSegmentsWithBoundingBoxes:
+    """
+     Description:
+    """
+
+    tracker = PersonsTracker(parameters['weights_pathname'])

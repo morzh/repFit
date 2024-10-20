@@ -1,7 +1,11 @@
+import os
 from typing import Union, Any
 from pathlib import Path
 import pickle
 import json
+
+import yaml
+
 
 def write_pickle(obj, fpath: Union[str, Path]):
     with open(fpath, 'wb') as file:
@@ -44,3 +48,18 @@ def read_yaml(yaml_filepath: str) -> dict:
 
     return parameters
 
+
+def check_filename_entry_in_folder(folder, filename_entry) -> bool:
+    """
+    Description:
+        Check if file with given filename_entry exists in folder
+
+    :param folder: folder to check in
+    :param filename_entry:  filename entry
+
+    """
+    for s in os.listdir(folder):
+        if s.find(filename_entry) > -1:
+            return True
+
+    return False

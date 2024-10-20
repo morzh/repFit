@@ -12,8 +12,8 @@ from filters.steady_camera.core.video_file_segments import VideoFileSegments
 from utils.cv.video_writer import VideoWriter
 # from utils.cv.video_segments_writer import VideoSegmentsWriter
 from utils.multiprocess import run_pool_steady_camera_filter
-from utils.youtube_links_database.videos_download import  check_filename_entry_in_folder
-from utils.io.file_read_write import read_yaml
+from utils.io.files_operations import  check_filename_entry_in_folder
+from utils.cv.video_tools import video_resolution_check
 
 
 class PrintColors:
@@ -30,26 +30,6 @@ class PrintColors:
     END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-
-
-def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 360) -> bool:
-    """
-    Description:
-        Check if video size is greater than a given threshold.
-
-    :param video_filepath: filepath of the video
-    :param minimum_dimension_size: minimum(video width, video height) threshold
-
-    :return: True if (width, height) >  minimum_dimension_size, False otherwise
-    """
-    video_capture = cv2.VideoCapture(video_filepath)
-    video_width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    video_height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    maximum_dimension = max(video_width, video_height)
-
-    if maximum_dimension > minimum_dimension_size:
-        return True
-    return False
 
 
 def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **options) -> VideoFileSegments:
