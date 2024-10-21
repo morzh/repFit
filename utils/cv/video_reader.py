@@ -1,7 +1,6 @@
-import os.path
-
-from pathlib import Path
 import cv2
+from pathlib import Path
+import os.path
 from tqdm import tqdm
 
 from typing import Generator
@@ -27,10 +26,10 @@ class VideoReader:
 
         :param video_filepath: video file path
 
-        :keyword use_tqdm:
+        :keyword use_tqdm: use console progress indicator
         :keyword stride:
 
-        :raises FileNotFoundError: If video file is not presented at given path.
+        :raises FileNotFoundError: If video file is not presented at given ``video_filepath``.
         """
         if os.path.exists(str(video_filepath)):
             self.video_capture = cv2.VideoCapture(str(video_filepath))

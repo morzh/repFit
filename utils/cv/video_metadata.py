@@ -6,10 +6,10 @@ class VideoProperties:
         Description:
             Video properties storage class
 
-    :ivar filepath:
+    :ivar filepath: video filepath;
     :ivar width: video width;
     :ivar height: video height;
-    :ivar approximate_frames_number: approximate frames number given by cv2.VideoCapture()
+    :ivar approximate_frames_number: approximate frames number given by cv2.VideoCapture();
     :ivar fps: video frames per second
     """
     filepath: str = ''
@@ -17,7 +17,6 @@ class VideoProperties:
     height: int = 0
     approximate_frames_number: int = -1
     fps: float = 0.0
-
 
     @property
     def resolution(self) -> tuple[int, int]:
