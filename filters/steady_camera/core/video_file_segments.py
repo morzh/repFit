@@ -1,6 +1,6 @@
 import copy
 
-from utils.cv.video_metadata import VideoMetadata
+from utils.cv.video_metadata import VideoProperties
 from utils.cv.video_frames_segments import VideoFramesSegments
 
 from typing import Self
@@ -15,9 +15,9 @@ class VideoFileSegments:
     :ivar frames_segments: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
     """
 
-    __slots__ = ['metadata', 'frames_segments']
-    def __init__(self, video_metadata: VideoMetadata, segments: VideoFramesSegments):
-        self.metadata: video_metadata
+    __slots__ = ['video_properties', 'frames_segments']
+    def __init__(self, video_properties: VideoProperties, segments: VideoFramesSegments):
+        self.video_properties: video_properties
         self.frames_segments = segments
 
     def filter_by_time(self, time_period_threshold: float) -> None:
@@ -27,7 +27,7 @@ class VideoFileSegments:
 
         :param time_period_threshold: time threshold in seconds
         """
-        self.frames_segments.filter_by_time(self.metadata.fps, time_period_threshold)
+        self.frames_segments.filter_by_time(self.video_properties.fps, time_period_threshold)
 
     def complement(self) -> Self:
         r"""
@@ -37,7 +37,7 @@ class VideoFileSegments:
         :return:  video file segments complement
         """
         video_file_segments = copy.copy(self)
-        video_file_segments.frames_segments = self.frames_segments.complement(self.metadata.frames_number)
+        video_file_segments.frames_segments = self.frames_segments.complement(self.video_properties.frames_number)
         return video_file_segments
 
     def whole_video_segments_check(self) -> bool:
@@ -49,5 +49,5 @@ class VideoFileSegments:
         """
         shape_check = self.frames_segments.segments.shape[0] == 1
         zero_frame_check = self.frames_segments.segments[0, 0] == 0
-        number_frames_check = self.frames_segments.segments[-1, -1] == self.metadata.frames_number - 1
+        number_frames_check = self.frames_segments.segments[-1, -1] == self.video_properties.frames_number - 1
         return shape_check and zero_frame_check and number_frames_check

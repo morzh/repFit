@@ -1,13 +1,13 @@
 import numpy as np
 import torch
 
-from utils.cv.video_metadata import VideoMetadata
+from utils.cv.video_metadata import VideoProperties
 from utils.geometry.bounding_box_2d import BoundingBox2D
 from filters.single_person.core.single_person_track import SinglePersonTrack
 
 
 class MultiplePersonsTracks:
-    def __init__(self, video_metadata: VideoMetadata):
+    def __init__(self, video_metadata: VideoProperties):
         """
         Description:
 
@@ -37,6 +37,6 @@ class MultiplePersonsTracks:
         for key in small_persons_indices:
             del self.persons[key]
 
-    def filter_by_duration(self, duration=5.0):
+    def filter_by_time(self, duration=5.0):
         for person in self.persons.values():
             person.filter_duration(self.video_metadata.fps, duration)

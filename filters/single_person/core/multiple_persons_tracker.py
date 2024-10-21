@@ -25,7 +25,7 @@ class PersonsTracker:
 
         video_filename = os.path.basename(source_video_filepath)
         target_video_filepath = os.path.join(target_video_folder, video_filename)
-        video_writer = cv2.VideoWriter(target_video_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.video_reader.fps, self.video_reader.resolution)
+        video_writer = cv2.VideoWriter(target_video_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.video_reader.video_properties.fps, self.video_reader.video_properties.resolution)
 
         for frame in self.video_reader:
             predictions = self.model.track(frame, classes=0, persist=True, save=True, show=True, verbose=False)

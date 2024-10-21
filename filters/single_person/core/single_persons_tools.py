@@ -94,13 +94,14 @@ def extract_single_persons_from_video(video_source_filepath, **parameters) -> Vi
     """
      Description:
     """
-
     persons_tracker = PersonsTracker(parameters['weights_pathname'])
-    persons_tracks = persons_tracker.track(video_source_filepath)
-    persons_tracks = persons_tracks.filter()
+    persons_tracks = persons_tracker.track(video_source_filepath, stride=2)
+    persons_tracks = persons_tracks.filter_by_area()
+    persons_tracks = persons_tracks.filter_by_time()
     return persons_tracks
 
 
-def write_video_bbox_segments(video_source_filepath, videos_target_folder, video_bbox_segments, **parameters):
+def write_video_bbox_segments(video_source_filepath, videos_target_folder, video_bbox_segments, **parameters) -> None:
     """
+        Description:
     """

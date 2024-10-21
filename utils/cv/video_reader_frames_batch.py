@@ -26,7 +26,7 @@ class VideoReaderFramesBatch:
         batch = None
         for frame in self.video_reader:
             if not index:
-                batch = np.empty((self.batch_size, self.video_reader.height, self.video_reader.width, 3))
+                batch = np.empty((self.batch_size, self.video_reader.video_properties.height, self.video_reader.video_properties.width, 3))
             batch[index] = frame
             index += 1
             if index == self.batch_size:
@@ -37,16 +37,16 @@ class VideoReaderFramesBatch:
 
     @property
     def fps(self):
-        return self.video_reader.fps
+        return self.video_reader.video_properties.fps
 
     @property
     def resolution(self):
-        return self.video_reader.resolution
+        return self.video_reader.video_properties.resolution
 
     @property
     def width(self):
-        return self.video_reader.width
+        return self.video_reader.video_properties.width
 
     @property
     def height(self):
-        return self.video_reader.height
+        return self.video_reader.video_properties.height

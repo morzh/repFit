@@ -44,7 +44,7 @@ def cut_video_by_yolo_boxes(video_fpath: Path):
             video_writer = cv2.VideoWriter(
                 str(cut_video_fpath),
                 cv2.VideoWriter_fourcc(*'MP4V'),
-                video_reader.fps,
+                video_reader.video_properties.fps,
                 (bbox_max_w-bbox_min_w, bbox_max_h-bbox_min_h)
             )
 
@@ -77,7 +77,7 @@ def cut_videos_by_filters(videos: List[Path], filter_result: dict):
             video_writer = cv2.VideoWriter(
                 str(cut_video_fpath),
                 cv2.VideoWriter_fourcc(*'MP4V'),
-                video_reader.fps,
+                video_reader.video_properties.fps,
                 (bbox_max_w-bbox_min_w, bbox_max_h-bbox_min_h)
             )
 

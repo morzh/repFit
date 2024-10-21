@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 from typing import Generator
 
+from utils.cv.video_metadata import VideoProperties
+
 
 class VideoReader:
     """
@@ -18,29 +20,28 @@ class VideoReader:
         for frame in frame_generator:
             pass
     """
-    def __init__(self, filepath: str | Path, **reader_options):
+    def __init__(self, video_filepath: str | Path, **reader_options):
         """
         Description:
             VideoReader class constructor.
 
-        :param filepath: video file path
+        :param video_filepath: video file path
 
-        :keyword skip_first_frames_number:
-        :keyword number_of_frames_to_drop:
-        :keyword skip_last_frames_number:
+        :keyword use_tqdm:
+        :keyword stride:
 
         :raises FileNotFoundError: If video file is not presented at given path.
         """
-        if os.path.exists(str(filepath)):
-            self.video_capture = cv2.VideoCapture(str(filepath))
+        if os.path.exists(str(video_filepath)):
+            self.video_capture = cv2.VideoCapture(str(video_filepath))
         else:
-            FileNotFoundError(f'Video file {filepath} does not exist')
+            FileNotFoundError(f'Video file {video_filepath} does not exist')
 
-        self.approximate_frames_number: int = 0
         self.success: bool = False
         self.frame = None
         self._use_tqdm = reader_options.get('use_tqdm', False)
 
+        self.video_properties = self._init_video_properties(video_filepath)
         self._fps: float = 0.0
         self._video_current_frame_index: int = -1
         self._current_captured_frame_index: int = -1
@@ -48,19 +49,33 @@ class VideoReader:
 
         self._init_video_capture()
 
+    def _init_video_properties(self, video_filepath) -> VideoProperties:
+        """
+            Description:
+                Initialize VideoProperties class
+
+        :param video_filepath: video filepath
+
+        :return: VideoProperties class instance
+        """
+        width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
+        approximate_frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        return VideoProperties(filepath=video_filepath, width=width, height=height, approximate_frames_number=approximate_frames_number, fps=fps)
+
     def _init_video_capture(self) -> None:
         """
         Description:
             Initialize frames capturing process.
         """
         if self.video_capture.isOpened():
-            self.approximate_frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
 
             self.frame = self.read_frame()
 
             if self.success and self._use_tqdm:
-                self._progress = tqdm(range(self.approximate_frames_number))
+                self._progress = tqdm(range(self.video_properties.approximate_frames_number))
                 self._progress.update()
 
     def frame_generator(self, skip_first_frames_number=0) -> Generator[cv2.typing.MatLike]:
@@ -99,6 +114,9 @@ class VideoReader:
     def read_frame(self) -> cv2.typing.MatLike:
         """
         Description:
+            Read frame from video capture frame generator
+
+        :return: video frame
         """
         self.success, frame = self.video_capture.read()
         if self.success:
@@ -107,15 +125,24 @@ class VideoReader:
 
 
     @property
-    def current_frame_index(self):
+    def current_frame_index(self) -> int:
         """
         Description:
             Returns current video frame index
+
+        :return: current frame index
         """
         return self._video_current_frame_index
 
     @staticmethod
-    def imshow(frame, window_name: str = 'window') -> None:
+    def imshow(frame: cv2.typing.MatLike, window_name: str = 'window') -> None:
+        """
+        Description:
+            Shows image.
+
+        :param frame: video frame
+        :param window_name:  image window title
+        """
         cv2.imshow(window_name, frame)
         key = cv2.waitKey(1)
         if key == 27:  # if ESC is pressed, exit loop
@@ -123,55 +150,9 @@ class VideoReader:
             exit(1)
 
     @property
-    def progress(self):
+    def progress(self) -> any:
+        """
+        Description:
+
+        """
         return self._progress.n
-
-    @property
-    def fps(self) -> float:
-        """
-        Description:
-            Get frames per second value
-
-        :return: frames per second
-        """
-        return self._fps
-
-    @property
-    def width(self) -> int:
-        """
-        Description:
-            Get video width.
-
-        :return: video width
-        """
-        return int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-
-    @property
-    def height(self) -> int:
-        """
-        Description:
-            Get video height.
-
-        :return: video height
-        """
-        return int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    @property
-    def resolution(self) -> tuple[int, int]:
-        """
-        Description:
-            Get resolution in (width, height) format.
-
-        :return: video resolution
-        """
-        return self.width, self.height
-
-    @property
-    def video_duration(self) -> float:
-        """
-        Description:
-            Get video duration in seconds.
-
-        :return: video duration
-        """
-        return self.approximate_frames_number / self._fps

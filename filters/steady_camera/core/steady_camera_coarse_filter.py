@@ -14,7 +14,7 @@ from filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMas
 from filters.steady_camera.core.ocr.ocr_base import OcrBase
 from filters.steady_camera.core.video_file_segments import VideoFileSegments
 from utils.cv.video_frames_segments import VideoFramesSegments
-from utils.cv.video_metadata import VideoMetadata
+from utils.cv.video_metadata import VideoProperties
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]
 image_color = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]
@@ -65,8 +65,8 @@ class SteadyCameraCoarseFilter:
             Calculates factor for image resolution before using images registration. For computational reasons, all images fed to
             image registration procedure will have the same maximum resolution along some dimension.
         """
-        poc_scale_factor = self.poc_maximum_image_dimension / max(self.video_frames_batch.video_reader.resolution)
-        original_resolution = self.video_frames_batch.video_reader.resolution
+        poc_scale_factor = self.poc_maximum_image_dimension / max(self.video_frames_batch.resolution)
+        original_resolution = self.video_frames_batch.resolution
         poc_resolution = (int(original_resolution[0] * poc_scale_factor + 0.5), int(original_resolution[1] * poc_scale_factor + 0.5))
         self.poc_resolution = poc_resolution[0], poc_resolution[1]
 
@@ -143,11 +143,11 @@ class SteadyCameraCoarseFilter:
         segments = self.unite_overlapping_ranges(segments_bins)
 
         video_filename = os.path.basename(self.video_frames_batch.video_filepath)
-        video_metadata = VideoMetadata(video_filename,
-                                       self.video_frames_batch.width,
-                                       self.video_frames_batch.height,
-                                       self.video_frames_batch.video_reader.current_frame_index,
-                                       self.video_frames_batch.fps)
+        video_metadata = VideoProperties(video_filename,
+                                         self.video_frames_batch.width,
+                                         self.video_frames_batch.height,
+                                         self.video_frames_batch.video_reader.current_frame_index,
+                                         self.video_frames_batch.fps)
         video_frames_segments  = VideoFramesSegments(segments)
         video_file_segments = VideoFileSegments(video_metadata, video_frames_segments)
 
