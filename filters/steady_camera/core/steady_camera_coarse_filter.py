@@ -14,7 +14,7 @@ from filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMas
 from filters.steady_camera.core.ocr.ocr_base import OcrBase
 from filters.steady_camera.core.video_file_segments import VideoFileSegments
 from utils.cv.video_frames_segments import VideoFramesSegments
-from utils.cv.video_metadata import VideoProperties
+from utils.cv.video_properties import VideoProperties
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]
 image_color = Annotated[NDArray[np.uint8], Literal["N", "M", 3]]

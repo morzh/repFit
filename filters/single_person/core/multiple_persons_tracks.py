@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from utils.cv.video_metadata import VideoProperties
+from utils.cv.video_properties import VideoProperties
 from utils.geometry.bounding_box_2d import BoundingBox2D
 from filters.single_person.core.single_person_track import SinglePersonTrack
 

@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from typing import Generator
 
-from utils.cv.video_metadata import VideoProperties
+from utils.cv.video_properties import VideoProperties
 
 
 class VideoReader:

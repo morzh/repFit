@@ -1,6 +1,6 @@
 import copy
 
-from utils.cv.video_metadata import VideoProperties
+from utils.cv.video_properties import VideoProperties
 from utils.cv.video_frames_segments import VideoFramesSegments
 
 from typing import Self
