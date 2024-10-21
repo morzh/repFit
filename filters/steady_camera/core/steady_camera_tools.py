@@ -1,4 +1,3 @@
-import cv2
 from loguru import logger
 import os
 import os.path
@@ -10,7 +9,6 @@ import filters.steady_camera.core.persons_mask.persons_mask_factory as persons_m
 from filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
 from filters.steady_camera.core.video_file_segments import VideoFileSegments
 from utils.cv.video_writer import VideoWriter
-# from utils.cv.video_segments_writer import VideoSegmentsWriter
 from utils.multiprocess import run_pool_steady_camera_filter
 from utils.io.files_operations import  check_filename_entry_in_folder
 from utils.cv.video_tools import video_resolution_check
@@ -105,7 +103,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
 
     video_segments_writer = VideoWriter(input_filepath=video_filepath,
                                         output_folder=output_folder,
-                                        fps=video_segments.metadata.video_fps)
+                                        fps=video_segments.video_properties.video_fps)
 
     video_segments_writer.write_segments(video_segments, filter_name='steady')
     if options['save_steady_camera_segments_values'] and video_segments.frames_segments.size > 0:
@@ -147,7 +145,7 @@ def extract_and_write_steady_camera_segments(video_source_filepath, videos_targe
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, **options['video_segments_writer'])
     video_processing_end_time = time.time()
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
-                f'video duration is {(video_segments.metadata.frames_number / video_segments.metadata.video_fps):.2f} seconds.')
+                f'video duration is {(video_segments.video_properties.frames_number / video_segments.video_properties.video_fps):.2f} seconds.')
 
 
 def sort_videos_by_criteria(move_to_folders_strategy: str, raw_videos_folder: str, filtered_videos_folder: str) -> None:

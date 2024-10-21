@@ -1,9 +1,5 @@
-import sys
 import cv2
-import json
 import bpy
-import bmesh
-import glob
 import os.path
 from typing import Type
 import numpy as np

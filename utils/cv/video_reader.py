@@ -19,7 +19,7 @@ class VideoReader:
         for frame in frame_generator:
             pass
     """
-    def __init__(self, video_filepath: str | Path, **reader_options):
+    def __init__(self, video_filepath: str | Path, **options):
         """
         Description:
             VideoReader class constructor.
@@ -39,10 +39,11 @@ class VideoReader:
         self.success: bool = False
         self.frame: cv2.typing.MatLike = None
         self.video_properties: VideoProperties = self._init_video_properties(video_filepath)
-        self.stride: int = max(reader_options.get('stride', 1), 1)
+        self.stride: int = max(options.get('stride', 1), 1)
 
-        self._current_captured_frame_index: int = -1
-        self._use_tqdm = reader_options.get('use_tqdm', False)
+        self._original_frame_index: int = -1
+        self._strided_frame_index: int = -1
+        self._use_tqdm = options.get('use_tqdm', False)
         self._init_video_capture()
 
     def _init_video_properties(self, video_filepath) -> VideoProperties:
@@ -71,21 +72,6 @@ class VideoReader:
                 self._progress = tqdm(range(self.video_properties.approximate_frames_number))
                 self._progress.update()
 
-    def frame_generator(self) -> Generator[cv2.typing.MatLike]:
-        """
-        Description:
-            Frames generator with skipping frames tqdm options.
-
-        :return: generator object
-        """
-        while self.success:
-            current_frame = self.read_frame()
-            if self._video_current_frame_index % self.stride == 0:
-                yield_frame = self.frame
-                self.frame = current_frame
-                self._current_captured_frame_index += 1
-                yield yield_frame
-
     def __iter__(self) -> Generator[cv2.typing.MatLike]:
         """
          Description:
@@ -95,10 +81,10 @@ class VideoReader:
         """
         while self.success:
             current_frame = self.read_frame()
-            if self._video_current_frame_index % self.stride == 0:
+            if self._original_frame_index % self.stride == 0:
                 yield_frame = self.frame
                 self.frame = current_frame
-                self._current_captured_frame_index += 1
+                self._strided_frame_index += 1
                 yield yield_frame
 
     def __del__(self):
@@ -113,7 +99,7 @@ class VideoReader:
         """
         self.success, frame = self.video_capture.read()
         if self.success:
-            self._video_current_frame_index += 1
+            self._original_frame_index += 1
         return frame
 
 
@@ -125,7 +111,7 @@ class VideoReader:
 
         :return: current frame index
         """
-        return self._video_current_frame_index
+        return self._strided_frame_index
 
     @staticmethod
     def imshow(frame: cv2.typing.MatLike, window_name: str = 'window') -> None:

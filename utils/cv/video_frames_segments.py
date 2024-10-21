@@ -15,23 +15,23 @@ class VideoFramesSegments:
     def __init__(self, segments: np.ndarray):
         self.segments = segments
 
-    def filter_by_time(self, video_fps: float, threshold: float) -> None:
+    def filter_by_time(self, time_threshold: float, video_fps: float, *args, **kwargs) -> None:
         """
         Description:
             Filter video segments by duration in place.
             If segment duration is less than time_period_threshold, it will be deleted.
 
         :param video_fps: FPS of the video
-        :param threshold: time threshold in seconds
+        :param time_threshold: time threshold in seconds
         """
         for segment_index, segment in enumerate(self.segments):
             segment_length = segment[1] - segment[0]
-            if (segment_length / video_fps) < threshold:
+            if (segment_length / video_fps) < time_threshold:
                 self.segments[segment_index] = np.array([-1, -1])
         mask = self.segments[:, 0] >= 0
         self.segments = self.segments[mask]
 
-    def complement(self, frames_number: int) -> Self:
+    def complement(self, frames_number: int, *args, **kwargs) -> Self:
         r"""
         Description:
             Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:

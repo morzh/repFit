@@ -65,8 +65,8 @@ class SteadyCameraCoarseFilter:
             Calculates factor for image resolution before using images registration. For computational reasons, all images fed to
             image registration procedure will have the same maximum resolution along some dimension.
         """
-        poc_scale_factor = self.poc_maximum_image_dimension / max(self.video_frames_batch.resolution)
-        original_resolution = self.video_frames_batch.resolution
+        poc_scale_factor = self.poc_maximum_image_dimension / max(self.video_frames_batch.video_properties.resolution)
+        original_resolution = self.video_frames_batch.video_properties.resolution
         poc_resolution = (int(original_resolution[0] * poc_scale_factor + 0.5), int(original_resolution[1] * poc_scale_factor + 0.5))
         self.poc_resolution = poc_resolution[0], poc_resolution[1]
 
@@ -134,7 +134,7 @@ class SteadyCameraCoarseFilter:
         mask = np.logical_and(shifts_norms_mask, confidence_mask)
 
         number_frames_to_average = self.video_frames_batch.batch_size
-        video_frames_number = self.video_frames_batch.video_reader.current_frame_index
+        video_frames_number = self.video_frames_batch.current_frame_index
         number_bins = mask.shape[0]
         base_segment_range = np.array([0, 2 * number_frames_to_average - 1])
         segments_bins = np.linspace(0, (number_bins - 1) * number_frames_to_average, number_bins, dtype=np.int32).reshape(-1, 1) + base_segment_range
@@ -142,12 +142,12 @@ class SteadyCameraCoarseFilter:
         segments_bins = segments_bins[mask]
         segments = self.unite_overlapping_ranges(segments_bins)
 
-        video_filename = os.path.basename(self.video_frames_batch.video_filepath)
+        video_filename = os.path.basename(self.video_frames_batch.video_properties.filepath)
         video_metadata = VideoProperties(video_filename,
-                                         self.video_frames_batch.width,
-                                         self.video_frames_batch.height,
-                                         self.video_frames_batch.video_reader.current_frame_index,
-                                         self.video_frames_batch.fps)
+                                         self.video_frames_batch.video_properties.width,
+                                         self.video_frames_batch.video_properties.height,
+                                         self.video_frames_batch.current_frame_index,
+                                         self.video_frames_batch.video_properties.fps)
         video_frames_segments  = VideoFramesSegments(segments)
         video_file_segments = VideoFileSegments(video_metadata, video_frames_segments)
 
@@ -186,7 +186,7 @@ class SteadyCameraCoarseFilter:
         pass
 
     @staticmethod
-    def _apply_mask(image: image_color | image_grayscale, mask: image_grayscale, sigma=7, mask_extend_threshold=0.1) -> image_color | image_grayscale:
+    def _apply_mask(image: cv2.typing.MatLike, mask: image_grayscale, sigma=7, mask_extend_threshold=0.1) -> cv2.typing.MatLike:
         """
         Description:
             Apply mask to the image. Given a mask it will be:
@@ -204,6 +204,7 @@ class SteadyCameraCoarseFilter:
         blurred_mask = cv2.GaussianBlur(blurred_mask, (sigma * 3, sigma * 3), sigma)
 
         image_channels = image.shape[2]
+        image_masked = None
         if image_channels == 1:
             image_masked = image * (1 - blurred_mask) + image.mean() * blurred_mask
         elif image_channels == 3:

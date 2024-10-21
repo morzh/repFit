@@ -65,7 +65,7 @@ def extract_stable_tracks(video_fpath: Path):
         tracks = tracker.extract_tracks(video_fpath)
         write_pickle(tracks, result_fpath)
 
-        min_track_length_frames = min_track_length_sec * tracker.video_reader.fps
+        min_track_length_frames = min_track_length_sec * tracker.video_reader.video_properties.fps
         stable_tracks = tracks_filter(tracks, min_track_length_frames)
 
         write_pickle(stable_tracks, filtered_fpath)
