@@ -37,15 +37,12 @@ class VideoReader:
             FileNotFoundError(f'Video file {video_filepath} does not exist')
 
         self.success: bool = False
-        self.frame = None
-        self._use_tqdm = reader_options.get('use_tqdm', False)
+        self.frame: cv2.typing.MatLike = None
+        self.video_properties: VideoProperties = self._init_video_properties(video_filepath)
+        self.stride: int = max(reader_options.get('stride', 1), 1)
 
-        self.video_properties = self._init_video_properties(video_filepath)
-        self._fps: float = 0.0
-        self._video_current_frame_index: int = -1
         self._current_captured_frame_index: int = -1
-        self.stride = max(reader_options.get('stride', 1), 1)
-
+        self._use_tqdm = reader_options.get('use_tqdm', False)
         self._init_video_capture()
 
     def _init_video_properties(self, video_filepath) -> VideoProperties:
@@ -60,8 +57,8 @@ class VideoReader:
         width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
-        approximate_frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        return VideoProperties(filepath=video_filepath, width=width, height=height, approximate_frames_number=approximate_frames_number, fps=fps)
+        frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        return VideoProperties(filepath=video_filepath, width=width, height=height, approximate_frames_number=frames_number, fps=fps)
 
     def _init_video_capture(self) -> None:
         """
@@ -69,15 +66,12 @@ class VideoReader:
             Initialize frames capturing process.
         """
         if self.video_capture.isOpened():
-            self._fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
-
             self.frame = self.read_frame()
-
             if self.success and self._use_tqdm:
                 self._progress = tqdm(range(self.video_properties.approximate_frames_number))
                 self._progress.update()
 
-    def frame_generator(self, skip_first_frames_number=0) -> Generator[cv2.typing.MatLike]:
+    def frame_generator(self) -> Generator[cv2.typing.MatLike]:
         """
         Description:
             Frames generator with skipping frames tqdm options.
