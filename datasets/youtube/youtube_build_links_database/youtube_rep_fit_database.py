@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 from loguru import logger
 
-from utils.youtube_links_database.add_data_to_database import (
+from core.utils.youtube.add_data_to_database import (
     add_channel_data,
     add_channel_video_data,
     add_video_chapters_data,

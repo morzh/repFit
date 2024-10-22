@@ -1,7 +1,7 @@
 from loguru import logger
 
-from utils.io.files_operations import read_yaml
-from filters.steady_camera.core.steady_camera_tools import process_videos_by_steady_camera_filter
+from core.utils.io.files_operations import read_yaml
+from core.filters.steady_camera.core.steady_camera_tools import process_videos_by_steady_camera_filter
 
 
 if __name__ == '__main__':

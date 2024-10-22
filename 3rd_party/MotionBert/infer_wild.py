@@ -59,7 +59,7 @@ testloader_params = {
 }
 
 sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
-from filters.video_filter.paths import (
+from core.filters.video_filter.paths import (
     JOINTS2d_TRACK_DPATH,
     VIDEO_WITH_2D_JOINTS,
     FINAL_VIDEOS_DPATH,

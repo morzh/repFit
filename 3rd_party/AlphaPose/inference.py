@@ -79,7 +79,7 @@ n_process = 5
 
 sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
 
-from filters.video_filter.paths import (
+from core.filters.video_filter.paths import (
     CRED_FILTERED_VIDEO_DPATH,
     JOINTS2d_TRACK_DPATH,
     JOINTS2d_EXTRA_INFO_DPATH,

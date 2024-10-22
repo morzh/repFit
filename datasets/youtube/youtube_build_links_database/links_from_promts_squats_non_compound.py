@@ -1,5 +1,5 @@
 import os
-from utils.youtube_links_database.database_promts import links_from_database_promts
+from core.utils.youtube.database_promts import links_from_database_promts
 
 
 if __name__ == '__main__':

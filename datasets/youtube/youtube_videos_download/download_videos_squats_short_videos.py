@@ -1,7 +1,7 @@
 import os
 
 from filters.steady_camera.steady_camera_video_segments import read_yaml
-from utils.youtube_links_database.videos_download import download_youtube_videos
+from core.utils.youtube.videos_download import download_youtube_videos
 
 
 if __name__ == '__main__':
