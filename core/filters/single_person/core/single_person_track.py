@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-from core.utils.cv.video_frames_segments import Segments
+from core.utils.cv.segments import Segments
 from core.utils.geometry.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 import core.utils.geometry.bounding_box_2d_dyadic as bbox_bin_op

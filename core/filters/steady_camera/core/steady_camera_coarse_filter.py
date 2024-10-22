@@ -12,8 +12,8 @@ from core.utils.cv.video_reader_frames_batch import VideoReaderFramesBatch
 from core.filters.steady_camera.core.image_registration.image_registration_poc import ImageSequenceRegistrationPoc
 from core.filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMaskBase
 from core.filters.steady_camera.core.ocr.ocr_base import OcrBase
-from core.filters.steady_camera.core.video_file_segments import VideoFileSegments
-from core.utils.cv.video_frames_segments import Segments
+from core.utils.cv.video_file_segments import VideoFileSegments
+from core.utils.cv.segments import Segments
 from core.utils.cv.video_properties import VideoProperties
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]

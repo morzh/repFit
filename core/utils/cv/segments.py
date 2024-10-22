@@ -3,13 +3,14 @@ import numpy as np
 import os
 
 from typing import Self
-from oauthlib.uri_validate import segment
 
 
 class Segments:
     """
     Description:
+        Data storage class for video segments information.
 
+    :ivar segments: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
     """
     __slots__ = ['segments']
     def __init__(self, segments: np.ndarray):
@@ -18,11 +19,9 @@ class Segments:
     def filter_by_length(self, threshold: int) -> None:
         """
         Description:
-            Filter segments by current_segment length  in place.
-            If current_segment length is less than time_period_threshold, it will be deleted.
+            Filter segments by their lengths in place. Segments with length less or equal than ``threshold`` will be deleted.
 
-        :param video_fps: FPS of the video
-        :param threshold: threshold
+        :param threshold: segment length threshold
         """
         for segment_index, current_segment in enumerate(self.segments):
             current_segment_length = current_segment[1] - current_segment[0]
@@ -30,7 +29,6 @@ class Segments:
                 self.segments[segment_index] = np.array([-1, -1])
         mask = self.segments[:, 0] >= 0
         self.segments = self.segments[mask]
-
 
 
     def complement(self, frames_number: int, *args, **kwargs) -> Self:

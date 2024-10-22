@@ -3,7 +3,7 @@ import os
 import time
 
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
-from core.filters.single_person.core.video_frames_segments_bounding_boxes import VideoSegmentsWithBoundingBoxes
+from core.filters.single_person.core.video_frames_segments_bounding_boxes import SegmentsWithBoundingBoxes
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
 from core.utils.io.files_operations import  check_filename_entry_in_folder
 from core.utils.cv.video_tools import video_resolution_check
@@ -88,7 +88,7 @@ def  extract_and_write_single_person_segments(video_source_filepath: os.PathLike
 
 
 
-def extract_single_persons_from_video(video_source_filepath, **parameters) -> VideoSegmentsWithBoundingBoxes:
+def extract_single_persons_from_video(video_source_filepath, **parameters) -> SegmentsWithBoundingBoxes:
     """
      Description:
     """

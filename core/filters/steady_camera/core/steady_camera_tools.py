@@ -7,7 +7,7 @@ import time
 import core.filters.steady_camera.core.ocr.ocr_factory as ocr_factory
 import core.filters.steady_camera.core.persons_mask.persons_mask_factory as persons_mask_factory
 from core.filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
-from core.filters.steady_camera.core.video_file_segments import VideoFileSegments
+from core.utils.cv.video_file_segments import VideoFileSegments
 from core.utils.cv.video_writer import VideoWriter
 from core.utils.parallel.multiprocess import run_pool_steady_camera_filter
 from core.utils.io.files_operations import  check_filename_entry_in_folder

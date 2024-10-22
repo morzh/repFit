@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 from numpy.typing import NDArray
 
 from core.utils.cv.video_reader import VideoReader
-from core.filters.steady_camera.core.video_file_segments import VideoFileSegments
+from core.utils.cv.video_file_segments import VideoFileSegments
 # from filters.single_person.core.multiple_persons_tracks import SinglePersonTrack
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]

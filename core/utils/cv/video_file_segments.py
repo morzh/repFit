@@ -1,9 +1,8 @@
 import copy
-
 import numpy as np
 
 from core.utils.cv.video_properties import VideoProperties
-from core.utils.cv.video_frames_segments import Segments
+from core.utils.cv.segments import Segments
 
 from typing import Self
 
@@ -13,7 +12,6 @@ class VideoFileSegments(Segments):
     Description:
         Data storage class for video segments information.
 
-    :ivar segments: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
     :ivar video_properties: video file properties;
     """
 

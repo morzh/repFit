@@ -1,11 +1,11 @@
 from attr import dataclass
 
-from core.utils.cv.video_frames_segments import Segments
+from core.utils.cv.segments import Segments
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
 @dataclass(slots=True)
-class VideoSegmentsWithBoundingBoxes:
+class SegmentsWithBoundingBoxes:
     """
 
     """

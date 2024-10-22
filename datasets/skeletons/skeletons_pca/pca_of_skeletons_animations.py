@@ -1,7 +1,7 @@
 import os.path
 import numpy as np
-from datasets.skeletons_processing.core.human36m_alignment_tools import Human36mAlignmentTools
-from datasets.skeletons_processing.core.human36m_pca import Human36mPca
+from core.skeletons.core.human36m_alignment_tools import Human36mAlignmentTools
+from core.skeletons.core.human36m_pca import Human36mPca
 
 
 def run_skeletons_pca(root_directory: str, save_intermediate_data: bool = False):
