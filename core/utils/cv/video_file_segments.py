@@ -19,7 +19,6 @@ class VideoFileSegments(Segments):
     def __init__(self, segments: np.ndarray, video_properties: VideoProperties):
         super().__init__(segments)
         self.video_properties: video_properties
-        # self.frames_segments = segments
 
     def filter_by_time(self, time_threshold: float) -> None:
         """
@@ -36,7 +35,7 @@ class VideoFileSegments(Segments):
         Description:
             Video segments complement set closure, where set is a  :math:`[0, number_frames - 1]` segment. Formula:
 
-        :return:  video file segments complement
+        :return: video file segments complement
         """
         video_file_segments = copy.copy(self)
         video_file_segments.segments = super().complement(self.video_properties.frames_number)

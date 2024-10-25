@@ -1,6 +1,7 @@
 import numpy as np
-from bounding_box_2d import  BoundingBox2D
-from geometry_typing import numeric, bbox2d
+
+from core.utils.geometry.bounding_box_2d import  BoundingBox2D
+from core.utils.geometry.geometry_typing import numeric, bbox2d
 
 
 def intersect(self: bbox2d, other: bbox2d) -> bbox2d:

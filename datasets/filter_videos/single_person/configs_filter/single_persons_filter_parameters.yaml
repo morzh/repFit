@@ -1,0 +1,10 @@
+video_input:
+  verbose_filename: true
+  minimal_resolution: 256
+
+
+bounding_boxes_segments_extraction:
+  yolo_weights_path: '/home/anton/work/fitMate/repFit/core/filters/single_person/weights'
+  yolo_model: 'yolov10x.pt'
+  frames_stride: 2
+  person_minimal_time: 3 # time in seconds

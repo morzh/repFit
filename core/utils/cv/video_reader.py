@@ -3,8 +3,6 @@ from pathlib import Path
 import os.path
 from tqdm import tqdm
 
-from typing import Generator
-
 from core.utils.cv.video_properties import VideoProperties
 
 
@@ -72,7 +70,7 @@ class VideoReader:
                 self._progress = tqdm(range(self.video_properties.approximate_frames_number))
                 self._progress.update()
 
-    def __iter__(self) -> Generator[cv2.typing.MatLike]:
+    def __iter__(self) -> cv2.typing.MatLike:
         """
          Description:
             Frames generator  without tqdm progress.

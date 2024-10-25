@@ -44,7 +44,7 @@ def read_yaml(yaml_filepath: str) -> dict:
         except yaml.YAMLError as e:
             print(e)
     if parameters is None:
-        raise ValueError('Something wrong with the YAML file')
+        raise ValueError('YAML file is empty')
 
     return parameters
 

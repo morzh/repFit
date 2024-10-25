@@ -1,6 +1,6 @@
 import numpy as np
 
-from bounding_box_mode import BoundingBoxMode
+from core.utils.geometry.bounding_box_mode import BoundingBoxMode
 from core.utils.geometry.bounding_box_2d import BoundingBox2D
 
 

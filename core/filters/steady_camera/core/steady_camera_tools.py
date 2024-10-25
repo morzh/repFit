@@ -119,7 +119,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
             video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
 
 
-def extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **options) -> None:
+def process_steady_camera_segments(video_source_filepath, videos_target_folder, **options) -> None:
     """
     Description:
         Convenient function for multiprocessing. It violates single responsibility principle, but who cares.
@@ -237,8 +237,8 @@ def process_videos_by_steady_camera_filter(config_io: dict, filter_parameters: d
     Description:
         Filter video by steady camera filter. Output of this filter is set of video segments at which camera is steady (within some threshold).
 
-    :param config_io:
-    :param filter_parameters:
+    :param config_io: parameters for input / output folders
+    :param filter_parameters: steady camera filter parameters
 
     :raises ValueError:
     """
@@ -269,14 +269,14 @@ def process_videos_by_steady_camera_filter(config_io: dict, filter_parameters: d
 
     time_start = time.time()
     if use_multiprocessing:
-        run_pool_steady_camera_filter(extract_and_write_steady_camera_segments,
+        run_pool_steady_camera_filter(process_steady_camera_segments,
                                       video_source_filepaths,
                                       videos_target_folder,
                                       number_processes=number_processes,
                                       **filter_parameters)
     else:
         for video_source_filepath in video_source_filepaths:
-            extract_and_write_steady_camera_segments(video_source_filepath, videos_target_folder, **filter_parameters)
+            process_steady_camera_segments(video_source_filepath, videos_target_folder, **filter_parameters)
     time_end = time.time()
 
     logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
