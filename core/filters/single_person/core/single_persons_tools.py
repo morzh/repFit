@@ -4,6 +4,7 @@ import time
 
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
 from core.utils.cv.segments_with_bounding_boxes import SegmentsWithBoundingBoxes
+from core.utils.cv.video_reader import VideoReader
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
 from core.utils.io.files_operations import  check_filename_entry_in_folder
 from core.utils.cv.video_tools import video_resolution_check
@@ -89,13 +90,15 @@ def extract_single_persons_from_video(video_source_filepath, **parameters) -> Se
     """
     yolo_weights_filepath = os.path.join(parameters['yolo_weights_path'], parameters['yolo_model'])
     persons_tracker = PersonsTracker(str(yolo_weights_filepath))
+
     persons_tracks = persons_tracker.track(video_source_filepath, parameters['frames_stride'])
     persons_tracks = persons_tracks.filter_by_area(parameters['person_area_ratio'])
+    persons_tracks = persons_tracks.bridge_gaps(parameters['person_gap_time'])
     persons_tracks = persons_tracks.filter_by_time(parameters['person_minimal_time'])
     return persons_tracks
 
 
-def write_video_bbox_segments(source_filepath, target_folder, video_bbox_segments, **parameters) -> None:
+def write_video_bbox_segments(source_filepath, target_folder, video_bbox_segments, cut_out_strategy, **parameters) -> None:
     """
         Description:
             Write video segments with bounding boxes
@@ -103,6 +106,7 @@ def write_video_bbox_segments(source_filepath, target_folder, video_bbox_segment
     :param source_filepath:
     :param target_folder:
     :param video_bbox_segments:
+    :param cut_out_strategy:
 
     :key key1: asdasdas
     """

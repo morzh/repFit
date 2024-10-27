@@ -7,13 +7,13 @@ from core.filters.single_person.core.single_person_track import SinglePersonTrac
 
 
 class MultiplePersonsTracks:
-    def __init__(self, video_metadata: VideoProperties):
+    def __init__(self, video_properties: VideoProperties):
         """
         Description:
 
         """
-        self.video_metadata = video_metadata
         self.persons: dict[int, SinglePersonTrack] = {}
+        self.video_properties = video_properties
 
     def update(self, data: torch.Tensor, frame_number: int):
         for index in range(data.shape[0]):
@@ -39,4 +39,4 @@ class MultiplePersonsTracks:
 
     def filter_by_time(self, duration=5.0):
         for person in self.persons.values():
-            person.filter_duration(self.video_metadata.fps, duration)
+            person.filter_duration(self.video_properties.fps, duration)

@@ -7,27 +7,66 @@ import time
 import core.filters.steady_camera.core.ocr.ocr_factory as ocr_factory
 import core.filters.steady_camera.core.persons_mask.persons_mask_factory as persons_mask_factory
 from core.filters.steady_camera.core.steady_camera_coarse_filter import SteadyCameraCoarseFilter
+
+from core.utils.parallel.multiprocess import run_pool_steady_camera_filter
+
 from core.utils.cv.video_file_segments import VideoFileSegments
 from core.utils.cv.video_writer import VideoWriter
-from core.utils.parallel.multiprocess import run_pool_steady_camera_filter
-from core.utils.io.files_operations import  check_filename_entry_in_folder
 from core.utils.cv.video_tools import video_resolution_check
 
+from core.utils.io.files_operations import  check_filename_entry_in_folder
 
-class PrintColors:
+
+@logger.catch
+def process_videos_by_steady_camera_filter(config_io: dict, filter_parameters: dict) -> None:
     """
     Description:
-        This class helps with colored text printing. Example of usage: print(f'{PrintColors.BOLD}some text{PrintColors.END}')
+        Filter video by steady camera filter. Output of this filter is set of video segments at which camera is steady (within some threshold).
+
+    :param config_io: parameters for input / output folders
+    :param filter_parameters: steady camera filter parameters
+
+    :raises ValueError:
     """
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    END = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+
+    videos_root_folder = str(config_io.get('videos_root_folder', None))
+    videos_source_subfolder = str(config_io.get('videos_source_subfolder', None))
+    videos_target_subfolder = str(config_io.get('videos_target_subfolder', None))
+
+    if videos_root_folder is None:
+        raise ValueError('config_io dictionary should contain videos_root_folder key argument')
+    if videos_source_subfolder is None:
+        raise ValueError('config_io dictionary should contain videos_source_subfolder key argument')
+    if videos_target_subfolder is None:
+        raise ValueError('config_io dictionary should contain videos_target_subfolder key argument')
+
+    videos_source_folder = str(os.path.join(videos_root_folder, videos_source_subfolder))
+    videos_target_folder = str(os.path.join(videos_root_folder, videos_target_subfolder))
+
+    videos_extensions = config_io.get('videos_extensions', ['.mp4', '.webm', '.mkv'])
+    use_multiprocessing = config_io.get('use_multiprocessing', False)
+    number_processes = config_io.get('number_processes', 2)
+    move_to_folders_strategy = config_io.get('move_to_folders_strategy', 'none')
+
+    video_source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
+                              if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
+    os.makedirs(videos_target_folder, exist_ok=True)
+
+
+    time_start = time.time()
+    if use_multiprocessing:
+        run_pool_steady_camera_filter(process_steady_camera_segments,
+                                      video_source_filepaths,
+                                      videos_target_folder,
+                                      number_processes=number_processes,
+                                      **filter_parameters)
+    else:
+        for video_source_filepath in video_source_filepaths:
+            process_steady_camera_segments(video_source_filepath, videos_target_folder, **filter_parameters)
+    time_end = time.time()
+
+    logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
+    sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)
 
 
 def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **options) -> VideoFileSegments:
@@ -65,7 +104,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **op
     steady_segments.filter_by_time(options['minimum_steady_camera_time_segment'])
 
     if options['combine_adjacent_segments']:
-        steady_segments.frames_segments.combine_adjacent_segments()
+        steady_segments.combine_adjacent_segments()
 
     if filter_parameters['poc_registration_verbose']:
         steady_camera_filter.log_registration_results()
@@ -106,7 +145,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
                                         fps=video_segments.video_properties.video_fps)
 
     video_segments_writer.write_segments(video_segments, filter_name='steady')
-    if options['save_steady_camera_segments_values'] and video_segments.frames_segments.size > 0:
+    if options['save_steady_camera_segments_values'] and video_segments.size > 0:
         video_segments_writer.write_segments_values(video_segments, filter_name='steady')
 
     if options['write_segments_complement']:
@@ -115,7 +154,7 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
         video_segments_complement.filter_by_length(time_threshold)
         video_segments_writer.write_segments(video_segments_complement, filter_name='nonsteady')
 
-        if options['save_non_steady_camera_segments_values'] and video_segments_complement.frames_segments.size > 0:
+        if options['save_non_steady_camera_segments_values'] and video_segments_complement.size > 0:
             video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
 
 
@@ -229,55 +268,3 @@ def move_steady_non_steady_videos_to_subfolders(videos_source_folder: str, stead
         elif steady_suffix in filename:
             target_filepath = str(os.path.join(videos_source_folder, steady_suffix, filename))
             shutil.move(source_filepath, target_filepath)
-
-
-@logger.catch
-def process_videos_by_steady_camera_filter(config_io: dict, filter_parameters: dict) -> None:
-    """
-    Description:
-        Filter video by steady camera filter. Output of this filter is set of video segments at which camera is steady (within some threshold).
-
-    :param config_io: parameters for input / output folders
-    :param filter_parameters: steady camera filter parameters
-
-    :raises ValueError:
-    """
-
-    videos_root_folder = str(config_io.get('videos_root_folder', None))
-    videos_source_subfolder = str(config_io.get('videos_source_subfolder', None))
-    videos_target_subfolder = str(config_io.get('videos_target_subfolder', None))
-
-    if videos_root_folder is None:
-        raise ValueError('config_io dictionary should contain videos_root_folder key argument')
-    if videos_source_subfolder is None:
-        raise ValueError('config_io dictionary should contain videos_source_subfolder key argument')
-    if videos_target_subfolder is None:
-        raise ValueError('config_io dictionary should contain videos_target_subfolder key argument')
-
-    videos_source_folder = str(os.path.join(videos_root_folder, videos_source_subfolder))
-    videos_target_folder = str(os.path.join(videos_root_folder, videos_target_subfolder))
-
-    videos_extensions = config_io.get('videos_extensions', ['.mp4', '.webm', '.mkv'])
-    use_multiprocessing = config_io.get('use_multiprocessing', False)
-    number_processes = config_io.get('number_processes', 2)
-    move_to_folders_strategy = config_io.get('move_to_folders_strategy', 'none')
-
-    video_source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
-                              if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
-    os.makedirs(videos_target_folder, exist_ok=True)
-
-
-    time_start = time.time()
-    if use_multiprocessing:
-        run_pool_steady_camera_filter(process_steady_camera_segments,
-                                      video_source_filepaths,
-                                      videos_target_folder,
-                                      number_processes=number_processes,
-                                      **filter_parameters)
-    else:
-        for video_source_filepath in video_source_filepaths:
-            process_steady_camera_segments(video_source_filepath, videos_target_folder, **filter_parameters)
-    time_end = time.time()
-
-    logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
-    sort_videos_by_criteria(move_to_folders_strategy, videos_source_folder, videos_target_folder)
