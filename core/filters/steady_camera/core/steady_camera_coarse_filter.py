@@ -133,8 +133,8 @@ class SteadyCameraCoarseFilter:
         confidence_mask = self.registration_confidence > self.poc_minimum_confidence
         mask = np.logical_and(shifts_norms_mask, confidence_mask)
 
-        number_frames_to_average = self.video_frames_batch.batch_size
-        video_frames_number = self.video_frames_batch.current_frame_index
+        number_frames_to_average = self.video_frames_batch._batch_size
+        video_frames_number = self.video_frames_batch.current_stride_frame_index
         number_bins = mask.shape[0]
         base_segment_range = np.array([0, 2 * number_frames_to_average - 1])
         segments_bins = np.linspace(0, (number_bins - 1) * number_frames_to_average, number_bins, dtype=np.int32).reshape(-1, 1) + base_segment_range
@@ -146,7 +146,7 @@ class SteadyCameraCoarseFilter:
         video_metadata = VideoProperties(video_filename,
                                          self.video_frames_batch.video_properties.width,
                                          self.video_frames_batch.video_properties.height,
-                                         self.video_frames_batch.current_frame_index,
+                                         self.video_frames_batch.current_stride_frame_index,
                                          self.video_frames_batch.video_properties.fps)
         video_frames_segments  = Segments(segments)
         video_file_segments = VideoFileSegments(video_metadata, video_frames_segments)

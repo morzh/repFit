@@ -9,34 +9,55 @@ class VideoReaderFramesBatch(VideoReader):
     Use this class when you need stack of video frames at every loop iteration.
     """
 
-    def __init__(self, video_filepath: str | Path, batch_size: int = 10, **options):
+    def __init__(self, video_filepath: str | Path, **options):
         """
         Description:
-            VideoFramesBatch class constructor
+            VideoFramesBatch class constructor.
 
         :param video_filepath: video filepath
-        :param batch_size: number of video frames in stack to return by generator
+
+        :key batch_size: number of video frames in frames batches.
+        :keyword use_tqdm: use console progress indicator.
         """
+        options['stride'] = 1  # In case of batch reader frame stride is always equal to one.
         super().__init__(video_filepath, **options)
-        # self.video_filepath: str = video_filepath
-        self.batch_size: int = batch_size
-        # self.video_reader = VideoReader(video_filepath, use_tqdm=False)
+        self._batch_size: int = options.get('batch_size', 10)
+        self._batch_frames_index_: int = -1
+
+    def __getattribute__(self, attribute):
+        """
+        Description:
+            Prevent accessing  super().current_stride_frame_index  property from the base ``VideoReader`` class.
+        """
+        if attribute == 'current_stride_frame_index':
+            raise AttributeError
+
+        return object.__getattribute__(self, attribute)
 
     def __iter__(self):
         index = 0
-        batch = None
-        batch_size, height, width = self.batch_size, self.video_properties.height, self.video_properties.width
-        while self.success:
-            if not index:
-                batch = np.empty((batch_size, height, width, 3))
-            current_frame = self.read_frame()
-            if self._original_frame_index % self.stride == 0:
-                batch[index] = current_frame
-                self._strided_frame_index += 1
-                index += 1
-                if index == self.batch_size:
-                    index = 0
-                    yield batch
+        batch_size, height, width = self._batch_size, self.video_properties.height, self.video_properties.width
+        batch = np.empty((batch_size, height, width, 3), dtype=np.uint8)
 
-            if index:
-                yield batch[:index]
+        for frame in super().__iter__():
+            batch[index] = frame
+            index += 1
+            if index == self._batch_size:
+                index = 0
+                self._batch_frames_index_ += 1
+                yield batch
+
+        last_batch_frames_number = self._current_source_frame_index % self._batch_size
+        yield batch[:last_batch_frames_number]
+
+    @property
+    def current_batch_frame_index(self) -> int:
+        return self._batch_frames_index_
+
+    @property
+    def batch_size(self) -> int:
+        return self._batch_size
+
+    @property
+    def batch_frame_index(self) -> int:
+        return self._batch_frames_index_

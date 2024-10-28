@@ -20,7 +20,7 @@ class PersonsTracker:
         for frame in video_reader:
             predictions = self.model.track(frame, classes=0, persist=True, save=True, show=True, verbose=False)
             detected_data = predictions[0].boxes.data
-            persons_video_segments.update(detected_data, video_reader.current_frame_index)
+            persons_video_segments.update(detected_data, video_reader.current_stride_frame_index)
             current_labeled_image_filepath = os.path.join(predictions[0].save_dir, predictions[0].path)
             current_labeled_image = cv2.imread(current_labeled_image_filepath)
             # video_writer.write(current_labeled_image)
