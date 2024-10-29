@@ -22,14 +22,15 @@ class VideoReaderFramesBatch(VideoReader):
         options['stride'] = 1  # In case of batch reader frame stride is always equal to one.
         super().__init__(video_filepath, **options)
         self._batch_size: int = options.get('batch_size', 10)
-        self._batch_frames_index_: int = -1
+        self._current_batch_index: int = -1
 
     def __getattribute__(self, attribute):
         """
         Description:
             Prevent accessing  super().current_stride_frame_index  property from the base ``VideoReader`` class.
         """
-        if attribute == 'current_stride_frame_index':
+        error_attributes = ['current_stride_frame_index', 'stride']
+        if attribute in error_attributes :
             raise AttributeError
 
         return object.__getattribute__(self, attribute)
@@ -44,20 +45,18 @@ class VideoReaderFramesBatch(VideoReader):
             index += 1
             if index == self._batch_size:
                 index = 0
-                self._batch_frames_index_ += 1
+                self._current_batch_index += 1
                 yield batch
 
         last_batch_frames_number = self._current_source_frame_index % self._batch_size
-        yield batch[:last_batch_frames_number]
+        if last_batch_frames_number:
+            self._current_batch_index += 1
+            yield batch[:last_batch_frames_number + 1]
 
     @property
-    def current_batch_frame_index(self) -> int:
-        return self._batch_frames_index_
+    def current_batch_index(self) -> int:
+        return self._current_batch_index
 
     @property
     def batch_size(self) -> int:
         return self._batch_size
-
-    @property
-    def batch_frame_index(self) -> int:
-        return self._batch_frames_index_

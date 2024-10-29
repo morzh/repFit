@@ -37,7 +37,7 @@ class VideoReader:
         self.success: bool = False
         self.frame: cv2.typing.MatLike = None
         self.video_properties: VideoProperties = self._init_video_properties(video_filepath)
-        self.stride: int = max(options.get('stride', 1), 1)
+        self._stride: int = max(options.get('stride', 1), 1)
 
         self._current_source_frame_index: int = -1
         self._current_stride_frame_index: int = -1
@@ -79,7 +79,7 @@ class VideoReader:
         """
         while self.success:
             current_frame = self.read_frame()
-            if self.current_source_frame_index % self.stride == 0:
+            if self.current_source_frame_index % self._stride == 0:
                 yield_frame = self.frame
                 self.frame = current_frame
                 self._current_stride_frame_index += 1
@@ -119,6 +119,16 @@ class VideoReader:
         :return: current stride frame index
         """
         return self._current_source_frame_index
+
+    @property
+    def stride(self) -> int:
+        """
+        Description:
+            Returns frames stride
+
+        :return: frames stride
+        """
+        return self._stride
 
     @staticmethod
     def imshow(frame: cv2.typing.MatLike, window_name: str = 'window') -> None:
