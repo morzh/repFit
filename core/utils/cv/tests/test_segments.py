@@ -56,26 +56,36 @@ class TestSegments(unittest.TestCase):
         number_checks = 3500
         for _ in range(number_checks):
             number_segments = np.random.randint(1, 1_500)
-            random_integers = np.random.random_integers(1, 12_000, (number_segments * 2,))
-            random_integers.sort()
-            consistent_segments = random_integers.reshape((-1, 2))
-            segments_are_consistent = Segments._check_consistency(consistent_segments)
-            self.assertTrue(segments_are_consistent)
 
-        for _ in range(number_checks):
-            number_segments = np.random.randint(1, 1_000)
-            random_integers = np.random.random_integers(1, 10_000, (number_segments * 2,))
-            # sometimes random numbers generator produces sorted sequence of numbers. If it is so, just permutate first and last elements.
-            random_integers_derivative = random_integers[1:] - random_integers[:-1]
-            if np.all(random_integers_derivative > 0):
-                random_integers[0], random_integers[-1] = random_integers[-1], random_integers[0]
+            consistent_segments = self.generate_consistent_segments(number_segments, low_value=1, high_value=12_000)
+            self.assertTrue(Segments._check_consistency(consistent_segments))
 
-            inconsistent_segments = random_integers.reshape((-1, 2))
-            segments_are_consistent = Segments._check_consistency(inconsistent_segments)
-            self.assertFalse(segments_are_consistent)
+            inconsistent_segments = self.generate_inconsistent_segments(number_segments, low_value=1, high_value=12_000)
+            self.assertFalse(Segments._check_consistency(inconsistent_segments))
 
 
     def test_lengths(self):
         """
 
         """
+
+    @staticmethod
+    def generate_consistent_segments(number_segments, low_value = 1, high_value = 12_000) -> np.ndarray:
+        random_integers = np.random.randint(low_value, high=high_value, size=(number_segments * 2,))
+        random_integers.sort()
+        consistent_segments = random_integers.reshape((-1, 2))
+        return consistent_segments
+
+
+    @staticmethod
+    def generate_inconsistent_segments(number_segments, low_value = 1, high_value = 12_000) -> np.ndarray:
+        random_integers = np.random.randint(low_value, high=high_value, size=(number_segments * 2,))
+        random_integers_derivative = random_integers[1:] - random_integers[:-1]
+        # sometimes random numbers generator produces sorted sequence of numbers. If it is so, just permutate first and last elements.
+        if np.all(random_integers_derivative > 0):
+            random_integers[0], random_integers[-1] = random_integers[-1], random_integers[0]
+
+        inconsistent_segments = random_integers.reshape((-1, 2))
+        return inconsistent_segments
+
+
