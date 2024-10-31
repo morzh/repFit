@@ -4,6 +4,7 @@ import unittest
 
 from core.utils.cv.video_reader_frames_batch import VideoReaderFramesBatch
 
+
 class TestVideoReaderFramesBatch(unittest.TestCase):
 
     def setUp(self):
@@ -13,6 +14,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
         self.test_video_filename = 'test_video_reader_frames_batch.mp4'
         self.maximum_mosaic_resolution = (1500, 2460)
         self.write_test_video()
+
 
     def test_attributes_exceptions(self):
         """
@@ -33,6 +35,10 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
 
 
     def test_attributes_values(self):
+        """
+        Description:
+            Tests current_source_frame_index, batch_size and current_batch_index properties of a VideoReaderFramesBatch class.
+        """
         print(f'Frames number is {self.frames_number}')
         number_checks = 150
         for _ in range(number_checks):
@@ -65,6 +71,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
                 cv2.waitKey(-1)
 
             cv2.destroyAllWindows()
+
 
     def images_grid_from_frames_batch(self, frames_batch) -> cv2.typing.MatLike:
         """
@@ -102,7 +109,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
         return mosaic_image
 
 
-    def write_test_video(self):
+    def write_test_video(self) -> None:
         """
         Description:
             Generates and saves small video with increasing per frames number sequence. In other words each frame depicts it's index.

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from core.utils.cv.segments import Segments
+from core.utils.cv.segments_with_bounding_boxes import SegmentsWithBoundingBoxes
 from core.utils.geometry.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 import core.utils.geometry.bounding_box_2d_dyadic as bbox_bin_op
@@ -31,6 +32,7 @@ class SinglePersonTrack:
         self.overall_bounding_box = BoundingBox2D()
         self.bounding_boxes = BoundingBoxes2DArray()
         self.frames_segments = Segments()
+        self.data = SegmentsWithBoundingBoxes()
         self.stride = stride
 
     def update(self, bounding_box: BoundingBox2D, frame_number: int) -> None:

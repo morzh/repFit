@@ -104,7 +104,7 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **op
     steady_segments.filter_by_time(options['minimum_steady_camera_time_segment'])
 
     if options['combine_adjacent_segments']:
-        steady_segments.combine_adjacent_segments()
+        steady_segments.combine_adjacent()
 
     if filter_parameters['poc_registration_verbose']:
         steady_camera_filter.log_registration_results()

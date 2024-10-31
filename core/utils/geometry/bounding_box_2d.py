@@ -22,7 +22,10 @@ class BoundingBox2D:
     XYXY = BoundingBoxMode.XYXY.value
 
     __slots__ = ['_x', '_y', '_width', '_height']
+    # def __init__(self, *args, **kwargs):
+        # if len(args) == 4:
     def __init__(self, x: numeric = 0, y: numeric = 0, w_x2: numeric = 0, h_y2: numeric = 0, mode: BoundingBoxMode = XYWH):
+
         if mode == BoundingBox2D.XYWH:
             self._x = x
             self._y = y

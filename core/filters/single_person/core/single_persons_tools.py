@@ -92,7 +92,7 @@ def extract_single_persons_from_video(video_source_filepath, **parameters) -> Se
     persons_tracker = PersonsTracker(str(yolo_weights_filepath))
 
     persons_tracks = persons_tracker.track(video_source_filepath, parameters['frames_stride'])
-    persons_tracks = persons_tracks.filter_by_area(parameters['person_area_ratio'])
+    persons_tracks = persons_tracks.filter_by_area_ratio(parameters['person_area_ratio'])
     persons_tracks = persons_tracks.bridge_gaps(parameters['person_gap_time'])
     persons_tracks = persons_tracks.filter_by_time(parameters['person_minimal_time'])
     return persons_tracks

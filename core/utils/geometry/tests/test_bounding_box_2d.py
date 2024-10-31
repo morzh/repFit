@@ -18,6 +18,3 @@ class TestBoundingBox(unittest.TestCase):
         bounding_box_2 = BoundingBox2D()
         self.bounding_box.circumscribe(bounding_box_2)
 
-
-if __name__ == '__main__':
-    unittest.main()
