@@ -5,6 +5,8 @@ import warnings
 
 from typing import Self
 
+from yt_dlp.utils import uppercase_escape
+
 
 class Segments:
     """
@@ -15,10 +17,11 @@ class Segments:
     """
     __slots__ = ['segments']
     def __init__(self, segments: np.ndarray | None = None):
-        if len(segments.shape) == 2 and segments.shape[1] == 2:
+        if segments is not None and len(segments.shape) == 2 and segments.shape[1] == 2:
             is_consistent = Segments._check_consistency(segments)
             self.segments = segments if is_consistent else np.empty((0, 2))
-            warnings.warn('Segments are not consistent. Resetting to empty shape.')
+            if not is_consistent:
+                warnings.warn('Segments are not consistent. Resetting to empty shape.')
         elif segments is None:
             self.segments = np.empty((0, 2))
         else:
@@ -30,17 +33,22 @@ class Segments:
         return self.segments[item]
 
 
-    def append_segment(self, segment: np.ndarray | tuple[int, int]) -> None:
+    def append_segment(self, segment: np.ndarray) -> None:
         """
         Description:
             Appends new segment.
 
         :param segment: segment to append
         """
-        if segment.size != 2:
+        if isinstance(segment, np.ndarray) and segment.size != 2 :
             raise ValueError('Segment size should be 2')
-        segment = np.array([segment[0], segment[1]])  # TODO: account different numpy shapes
-        self.segments = np.vstack((self.segments, segment))
+
+        segment_flatten = segment.flatten()
+        if segment_flatten[0] < self.segments[-1, -1]:
+            raise ValueError('Wrong segment values. Start new segment value should be greater or equal than last segment end value')
+
+        new_segment = np.array([segment_flatten[0], segment_flatten[1]])
+        self.segments = np.vstack((self.segments, new_segment))
 
 
     def filter_by_length(self, threshold: int) -> None:
@@ -50,15 +58,13 @@ class Segments:
 
         :param threshold: segment length threshold
         """
-        for segment_index, current_segment in enumerate(self.segments):
-            current_segment_length = current_segment[1] - current_segment[0]
-            if current_segment_length < threshold:
-                self.segments[segment_index] = np.array([-1, -1])
-        mask = self.segments[:, 0] >= 0
-        self.segments = self.segments[mask]
+
+        segments_lengths =  np.abs(self.segments[:, 1] - self.segments[:, 0])
+        segments_mask = segments_lengths <= threshold
+        self.segments = self.segments[segments_mask]
 
 
-    def complement(self, frames_number: int, *args, **kwargs) -> Self:
+    def complement(self, lower_bound: int, upper_bound: int, *args, **kwargs) -> Self:
         r"""
         Description:
             Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:
@@ -68,11 +74,24 @@ class Segments:
 
             where :math:`N_f` -- number of frames, :math:`N_s` -- number of segments, :math:`\{s_n\}` -- segments,
             :math:`\mathbf{C}` -- set closure.
+
+        :param lower_bound:
+        :param upper_bound:
+
+        :raises ValueError:
+
         :return:  video segments complement
         """
+
+        if lower_bound > self.segments[0, 0]:
+            raise ValueError('Lower bound is greater than the start of the first segment')
+
+        if upper_bound < self.segments[-1, -1]:
+            raise ValueError('Upper bound is less then the end of the last segment.')
+
         segments = self.segments.flatten()
-        segments = np.insert(segments, 0, 0)
-        segments = np.append(segments, frames_number - 1)
+        segments = np.insert(segments, 0, lower_bound)
+        segments = np.append(segments, upper_bound)
         segments = segments.reshape(-1, 2)
 
         if segments[0, 0] == segments[0, 1]:
@@ -177,4 +196,4 @@ class Segments:
 
         :return: segments lengths
         """
-        return np.linalg.norm(self.segments, axis=1)
+        return np.abs(self.segments[:, 1] - self.segments[:, 0])

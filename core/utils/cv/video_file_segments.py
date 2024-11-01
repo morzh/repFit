@@ -38,7 +38,7 @@ class VideoFileSegments(Segments):
         :return: video file segments complement
         """
         video_file_segments = copy.copy(self)
-        video_file_segments.segments = super().complement(self.video_properties.frames_number)
+        video_file_segments.segments = super().complement(0, self.video_properties.frames_number - 1)
         return video_file_segments
 
     def whole_video_segments_check(self) -> bool:
