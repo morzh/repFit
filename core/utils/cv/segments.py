@@ -125,21 +125,7 @@ class Segments:
     def combine_adjacent(self) -> None:
         """
         Description:
-            Combine in place adjacent segments. E.g. segments [0, 199] and [200, 599] will be combined to [0, 599] segment.
-        """
-        for index in range(1, len(self.segments)):
-            if self.segments[index - 1, 1] == self.segments[index, 0]:
-                self.segments[index, 0] = self.segments[index - 1, 0]
-                self.segments[index - 1] = -1
-
-        mask = self.segments[:, 0] >= 0
-        self.segments = self.segments[mask]
-
-
-    def combine_adjacent__(self) -> None:
-        """
-        Description:
-            Combine in place adjacent segments. E.g. segments [0, 199] and [200, 599] will be combined to [0, 599] segment.
+            Combine in place adjacent segments. E.g. segments [0, 200] and [200, 599] will be combined to [0, 599] segment.
         """
         self.bridge_gaps(0)
 

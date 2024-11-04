@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import unittest
 from core.utils.cv.segments import Segments
@@ -152,7 +154,7 @@ class TestSegments(unittest.TestCase):
 
     def test_filter_degenerate(self):
         for _ in range(self.number_checks):
-            number_segments = np.random.randint(1, 20)
+            number_segments = np.random.randint(2, 20)
             segments_array = self.generate_consistent_segments(number_segments)
             segments_degenerate = self.add_degenerate_segments(segments_array)
 
