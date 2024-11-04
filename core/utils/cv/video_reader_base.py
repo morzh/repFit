@@ -32,7 +32,6 @@ class VideoReaderBase:
 
         self._success: bool = False
         self._current_frame: cv2.typing.MatLike | None = None
-
         self._current_frame_index: int = -1
         self._init_video_capture()
 

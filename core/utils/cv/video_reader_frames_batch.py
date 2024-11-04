@@ -21,11 +21,9 @@ class VideoReaderFramesBatch(VideoReaderBase):
         :key batch_size: number of video frames in frames batches.
         :keyword use_tqdm: use console progress indicator.
         """
-        options['stride'] = 1  # In case of batch reader frame stride is always equal to one.
         super().__init__(video_filepath, **options)
         self._batch_size: int = options.get('batch_size', 10)
         self._current_batch_index: int = -1
-
 
 
     def __iter__(self) -> Iterator:

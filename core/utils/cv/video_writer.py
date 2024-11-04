@@ -66,10 +66,10 @@ class VideoWriter:
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
                 # logger.info(f'Video segments \n: {video_segments.segments}')
 
-            if current_segment_start <= index_frame <= current_segment_end:
+            if current_segment_start <= index_frame < current_segment_end:
                 current_video_writer.write(frame)
 
-            if index_frame == current_segment_end:
+            if index_frame == (current_segment_end - 1):
                 current_video_writer.release()
                 index_segment += 1
                 if index_segment == video_file_segments.frames_segments.shape[0]:

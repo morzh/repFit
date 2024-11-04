@@ -30,16 +30,14 @@ class VideoFileSegments(Segments):
         frames_threshold = round(time_threshold * self.video_properties.fps)
         super().filter_by_length(frames_threshold)
 
-    def complement(self, *args, **kwargs) -> Self:
+    def complement(self, *args, **kwargs) -> None:
         """
         Description:
             Video segments complement set closure, where set is a  :math:`[0, number_frames - 1]` segment. Formula:
 
         :return: video file segments complement
         """
-        video_file_segments = copy.copy(self)
-        video_file_segments.segments = super().complement(0, self.video_properties.frames_number - 1)
-        return video_file_segments
+        super().complement(0, self.video_properties.frames_number)
 
     def whole_video_segments_check(self) -> bool:
         """

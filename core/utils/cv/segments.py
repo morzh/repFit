@@ -60,11 +60,19 @@ class Segments:
         """
 
         segments_lengths =  np.abs(self.segments[:, 1] - self.segments[:, 0])
-        segments_mask = segments_lengths <= threshold
+        segments_mask = segments_lengths > threshold
         self.segments = self.segments[segments_mask]
 
 
-    def complement(self, lower_bound: int, upper_bound: int, *args, **kwargs) -> Self:
+    def filter_degenerate(self) -> None:
+        """
+        Description:
+            In some cases we may obtain segments with sero length, e.g. [x_0, x_0]. This function filters them out.
+        """
+        self.filter_by_length(0)
+
+
+    def complement(self, lower_bound: int, upper_bound: int, *args, **kwargs) -> None:
         r"""
         Description:
             Video segments complement set closure, where set is a  :math:`[0, N_{f} - 1]` segment. Formula:
@@ -85,45 +93,33 @@ class Segments:
 
         if lower_bound > self.segments[0, 0]:
             raise ValueError('Lower bound is greater than the start of the first segment')
-
-        if upper_bound < self.segments[-1, -1]:
+        elif upper_bound < self.segments[-1, -1]:
             raise ValueError('Upper bound is less then the end of the last segment.')
 
-        segments = self.segments.flatten()
-        segments = np.insert(segments, 0, lower_bound)
-        segments = np.append(segments, upper_bound)
-        segments = segments.reshape(-1, 2)
+        self.segments = self.segments.flatten()
+        self.segments = np.insert(self.segments, 0, lower_bound)
+        self.segments = np.append(self.segments, upper_bound)
+        self.segments = self.segments.reshape(-1, 2)
 
-        if segments[0, 0] == segments[0, 1]:
-            segments = np.delete(segments, 0, axis=0)
-        if segments[-1, 0] == segments[-1, 1]:
-            segments = np.delete(segments, -1, axis=0)
+        if self.segments[0, 0] == self.segments[0, 1]:
+            self.segments = np.delete(self.segments, 0, axis=0)
+        if self.segments[-1, 0] == self.segments[-1, 1]:
+            self.segments = np.delete(self.segments, -1, axis=0)
 
-        video_segments_complement = copy.copy(self)
-        video_segments_complement.segments = segments
-
-        return video_segments_complement
 
     def bridge_gaps(self, gap_length: int):
         """
         Description:
             Bridge gaps in place between segments if gaps itself less than ``gaps_length``.
 
-        :param gap_length: gap length
+        :param gap_length: maximum gap length
         """
-        segments_flatten = self.segments.flatten()
-        segments_gaps_flatten = segments_flatten[1:-1]
-        segments_gaps = segments_gaps_flatten.reshape((-1, 2))
+        low_bound = int(self.segments[0, 0])
+        high_bound = int(self.segments[-1, -1])
 
-        gaps_lengths = np.linalg.norm(segments_gaps, axis=0)
-        gaps_mask = gaps_lengths[gaps_lengths > gap_length]
-        filtered_gaps = segments_gaps[gaps_mask]
-
-        filtered_gaps_flatten = filtered_gaps.flatten()
-        segments_flatten = np.insert(filtered_gaps_flatten, 0, self.segments[0, 0])
-        segments_flatten = np.append(segments_flatten, self.segments[-1, -1])
-
-        self.segments = segments_flatten.reshape((-1, 2))
+        self.complement(low_bound, high_bound)
+        self.filter_by_length(gap_length)
+        self.complement(low_bound, high_bound)
 
 
     def combine_adjacent(self) -> None:
@@ -132,12 +128,20 @@ class Segments:
             Combine in place adjacent segments. E.g. segments [0, 199] and [200, 599] will be combined to [0, 599] segment.
         """
         for index in range(1, len(self.segments)):
-            if self.segments[index - 1, 1] + 1 == self.segments[index, 0]:
+            if self.segments[index - 1, 1] == self.segments[index, 0]:
                 self.segments[index, 0] = self.segments[index - 1, 0]
                 self.segments[index - 1] = -1
 
         mask = self.segments[:, 0] >= 0
         self.segments = self.segments[mask]
+
+
+    def combine_adjacent__(self) -> None:
+        """
+        Description:
+            Combine in place adjacent segments. E.g. segments [0, 199] and [200, 599] will be combined to [0, 599] segment.
+        """
+        self.bridge_gaps(0)
 
 
     def write(self, filepath: str) -> None:
@@ -152,6 +156,7 @@ class Segments:
             np.save(filepath, self.segments)
         else:
             raise OSError('Filepath directory does not exist.')
+
 
     @staticmethod
     def _check_consistency(segments: np.ndarray) -> bool:

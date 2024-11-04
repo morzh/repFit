@@ -150,12 +150,12 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
 
     if options['write_segments_complement']:
         time_threshold = options['minimum_non_steady_camera_time_segment']
-        video_segments_complement = video_segments.complement()
-        video_segments_complement.filter_by_length(time_threshold)
-        video_segments_writer.write_segments(video_segments_complement, filter_name='nonsteady')
+        video_segments.complement()
+        video_segments.filter_by_length(time_threshold)
+        video_segments_writer.write_segments(video_segments, filter_name='nonsteady')
 
-        if options['save_non_steady_camera_segments_values'] and video_segments_complement.size > 0:
-            video_segments_writer.write_segments_values(video_segments_complement, filter_name='nonsteady')
+        if options['save_non_steady_camera_segments_values'] and video_segments.size > 0:
+            video_segments_writer.write_segments_values(video_segments, filter_name='nonsteady')
 
 
 def process_steady_camera_segments(video_source_filepath, videos_target_folder, **options) -> None:
