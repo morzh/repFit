@@ -116,6 +116,13 @@ class TestSegments(unittest.TestCase):
     def test_complements(self):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(1, 1_500)
+            segments_array = self.generate_consistent_segments(number_segments)
+            segments = Segments(segments_array)
+
+            segments.complement(lower_bound=0, upper_bound=segments[-1, -1] + 10)
+            segments.complement(lower_bound=0, upper_bound=segments[-1, -1] + 10)
+
+            self.assertTrue(np.alltrue(segments_array == segments.segments))
 
 
     def test_bridge_gaps(self):
@@ -126,8 +133,8 @@ class TestSegments(unittest.TestCase):
     def test_combine_adjacent(self):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(2, 1_000)
-            segments_array = self.generate_consistent_segments(number_segments, 1, number_segments)
-            segments_array_adjacent = self.add_addjacent_segments(segments_array)
+            segments_array = self.generate_consistent_segments(number_segments, 2, 600)
+            segments_array_adjacent = self.insert_adjacent_segments(segments_array)
 
             segments = Segments(segments_array_adjacent)
             segments.combine_adjacent()
@@ -185,8 +192,8 @@ class TestSegments(unittest.TestCase):
 
 
     @staticmethod
-    def generate_consistent_segments_with_given_lengths(lengths, number_segments) -> np.ndarray:
-        apriori_gaps = np.random.randint(0, high=600, size=(number_segments,))
+    def generate_consistent_segments_with_given_lengths(lengths, number_segments, low_value=0, high_value=600) -> np.ndarray:
+        apriori_gaps = np.random.randint(low_value, high=high_value, size=(number_segments,))
 
         pre_segments = np.empty((number_segments, 2), dtype=np.int64)
         pre_segments[:, 0] = apriori_gaps
@@ -197,10 +204,10 @@ class TestSegments(unittest.TestCase):
         return segments
 
     @staticmethod
-    def generate_consistent_segments(number_segments, low_value = 1, high_value = 12_000) -> np.ndarray:
+    def generate_consistent_segments(number_segments, low_value = 1, high_value = 1_000) -> np.ndarray:
         random_integers = np.random.randint(low_value, high=high_value, size=(number_segments * 2,))
-        random_integers.sort()
-        consistent_segments = random_integers.reshape((-1, 2))
+        time_points = np.cumsum(random_integers)
+        consistent_segments = time_points.reshape((-1, 2))
         return consistent_segments
 
 
@@ -217,5 +224,17 @@ class TestSegments(unittest.TestCase):
 
 
     @staticmethod
-    def add_adjacent_segments(segments) -> np.ndarray:
-        ...
+    def insert_adjacent_segments(segments) -> np.ndarray:
+        adjacent_segments = np.empty((0, 2), dtype=np.int64)
+        for index in range(segments.shape[0]):
+            insert_choice = np.random.choice(a=[False, True], size=(1,))[0]
+            if insert_choice and segments[index, 1] - segments[index, 0] >= 3:
+                center_value = int(0.5 * (segments[index, 1] + segments[index, 0]))
+                first_segment = np.array([segments[index, 0], center_value])
+                second_segment = np.array([center_value + 1, segments[index, 1]])
+                adjacent_segments = np.vstack((adjacent_segments, first_segment))
+                adjacent_segments = np.vstack((adjacent_segments, second_segment))
+            else:
+                adjacent_segments = np.vstack((adjacent_segments, segments[index]))
+
+        return  adjacent_segments

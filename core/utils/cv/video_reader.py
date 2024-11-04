@@ -1,22 +1,16 @@
 import cv2
 from pathlib import Path
-import os.path
-from tqdm import tqdm
+from typing import Iterator
 
-from core.utils.cv.video_properties import VideoProperties
+from core.utils.cv.video_reader_base import VideoReaderBase
 
 
-class VideoReader:
+class VideoReader(VideoReaderBase):
     """
     Description:
-        Read frames from video with frame_generator() or __iter__.
-
-    Usage example:
-        video_reader = VideoReader(video_fpath)
-        frame_generator = video_reader.frame_generator()
-        for frame in frame_generator:
-            pass
+        Read frames from video file.
     """
+
     def __init__(self, video_filepath: str | Path, **options):
         """
         Description:
@@ -24,81 +18,30 @@ class VideoReader:
 
         :param video_filepath: video file path
 
-        :keyword use_tqdm: use console progress indicator
-        :keyword stride: frames stride. If stride equals one ......
+        :keyword stride: frames stride or read frames with frame gaps. If stride equals one frames iteration will be as usual.
+        If greater than one, ....
 
         :raises FileNotFoundError: If video file is not presented at given ``video_filepath``.
         """
-        if os.path.exists(str(video_filepath)):
-            self.video_capture = cv2.VideoCapture(str(video_filepath))
-        else:
-            FileNotFoundError(f'Video file {video_filepath} does not exist')
+        super().__init__(video_filepath, **options)
 
-        self.success: bool = False
-        self.frame: cv2.typing.MatLike = None
-        self.video_properties: VideoProperties = self._init_video_properties(video_filepath)
         self._stride: int = max(options.get('stride', 1), 1)
-
-        self._current_source_frame_index: int = -1
         self._current_stride_frame_index: int = -1
-        self._use_tqdm = options.get('use_tqdm', False)
-        self._init_video_capture()
 
-    def _init_video_properties(self, video_filepath) -> VideoProperties:
-        """
-            Description:
-                Initialize VideoProperties class
-
-        :param video_filepath: video filepath
-
-        :return: VideoProperties class instance
-        """
-        width = int(self.video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(self.video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(self.video_capture.get(cv2.CAP_PROP_FPS))
-        frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        return VideoProperties(filepath=video_filepath, width=width, height=height, approximate_frames_number=frames_number, fps=fps)
-
-    def _init_video_capture(self) -> None:
-        """
-        Description:
-            Initialize frames capturing process.
-        """
-        if self.video_capture.isOpened():
-            self.frame = self.read_frame()
-            if self.success and self._use_tqdm:
-                self._progress = tqdm(range(self.video_properties.approximate_frames_number))
-                self._progress.update()
-
-    def __iter__(self):
+    def __iter__(self) -> Iterator[cv2.typing.MatLike]:
         """
          Description:
-            Frames generator  without tqdm progress.
+            Frames generator without tqdm progress.
 
-        :return: generator object
+        :rtype: video frame
         """
-        while self.success:
-            current_frame = self.read_frame()
-            if self.current_source_frame_index % self._stride == 0:
-                yield_frame = self.frame
-                self.frame = current_frame
+        while self._success:
+            current_frame = self._read_frame()
+            if self.current_frame_index % self._stride == 0:
+                yield_frame = self._current_frame
+                self._current_frame = current_frame
                 self._current_stride_frame_index += 1
                 yield yield_frame
-
-    def __del__(self):
-        self.video_capture.release()
-
-    def read_frame(self) -> cv2.typing.MatLike:
-        """
-        Description:
-            Read frame from video capture frame generator
-
-        :return: video frame
-        """
-        self.success, frame = self.video_capture.read()
-        if self.success:
-            self._current_source_frame_index += 1
-        return frame
 
     @property
     def current_stride_frame_index(self) -> int:
@@ -111,16 +54,6 @@ class VideoReader:
         return self._current_stride_frame_index
 
     @property
-    def current_source_frame_index(self) -> int:
-        """
-        Description:
-            Returns current video frame index, taking stride into account
-
-        :return: current stride frame index
-        """
-        return self._current_source_frame_index
-
-    @property
     def stride(self) -> int:
         """
         Description:
@@ -129,27 +62,3 @@ class VideoReader:
         :return: frames stride
         """
         return self._stride
-
-    @staticmethod
-    def imshow(frame: cv2.typing.MatLike, window_name: str = 'window') -> None:
-        """
-        Description:
-            Shows image.
-
-        :param frame: video frame
-        :param window_name:  image window title
-        """
-        cv2.imshow(window_name, frame)
-        key = cv2.waitKey(1)
-        if key == 27:  # if ESC is pressed, exit loop
-            cv2.destroyAllWindows()
-            exit(1)
-
-    @property
-    def progress(self) -> any:
-        """
-        Description:
-            Update progress for tqdm progress indicator.
-
-        """
-        return self._progress.n

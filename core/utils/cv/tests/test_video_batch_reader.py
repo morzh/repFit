@@ -13,25 +13,8 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
         self.text_origin_point = (10, 150)
         self.test_video_filename = 'test_video_reader_frames_batch.mp4'
         self.maximum_mosaic_resolution = (1500, 2460)
+        self.number_checks = 150
         self.write_test_video()
-
-
-    def test_attributes_exceptions(self):
-        """
-        Description:
-            VideoReaderFramesBatch class derived from VideoReader, but in VideoReaderFramesBatch we do not need
-            current_stride_frame_index and stride attributes to be presented.
-        """
-        print(f'Frames number is {self.frames_number}')
-        batch_size = np.random.randint(3, 18)
-        video_reader_frames_batch = VideoReaderFramesBatch(self.test_video_filename, batch_size=batch_size)
-
-        for _ in video_reader_frames_batch:
-            ...
-
-        with self.assertRaises(AttributeError):
-            _ = video_reader_frames_batch.current_stride_frame_index
-            _ = video_reader_frames_batch.stride
 
 
     def test_attributes_values(self):
@@ -40,8 +23,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
             Tests current_source_frame_index, batch_size and current_batch_index properties of a VideoReaderFramesBatch class.
         """
         print(f'Frames number is {self.frames_number}')
-        number_checks = 150
-        for _ in range(number_checks):
+        for _ in range(self.number_checks):
             current_batch_size = np.random.randint(3, 18)
             current_number_batches = self.frames_number // current_batch_size + min((self.frames_number - 1) % current_batch_size, 1)  - 1
             video_reader_frames_batch = VideoReaderFramesBatch(self.test_video_filename, batch_size=current_batch_size)
@@ -49,7 +31,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
             for _ in video_reader_frames_batch:
                 ...
 
-            self.assertEqual(self.frames_number - 1, video_reader_frames_batch.current_source_frame_index)
+            self.assertEqual(self.frames_number - 1, video_reader_frames_batch.current_frame_index)
             self.assertEqual(current_batch_size, video_reader_frames_batch.batch_size)
             self.assertEqual(current_number_batches, video_reader_frames_batch.current_batch_index)
 
@@ -57,7 +39,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
     def test_batches_visually(self):
         """
         Description:
-            Check frames, presented in each frames batch visually
+            Check frames, presented in each frame batch visually
         """
         number_checks = 5
         for check_index in range(number_checks):
@@ -75,13 +57,14 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
 
     def images_grid_from_frames_batch(self, frames_batch) -> cv2.typing.MatLike:
         """
-        Description:
+        Description:s
             Makes big image which is grid of images from ``frames_batch``. For visualization purposes.
 
         :return: grid image
         """
+        frames_batch_aspect_ratio = self.maximum_mosaic_resolution[1] / self.maximum_mosaic_resolution[0]
         batch_size = frames_batch.shape[0]
-        mosaic_width_cells = int(np.ceil(np.sqrt(frames_batch.shape[0])))
+        mosaic_width_cells = int(np.floor(np.sqrt(frames_batch.shape[0]) * frames_batch_aspect_ratio))
         mosaic_height_cells = int(np.ceil(frames_batch.shape[0] / mosaic_width_cells))
         mosaic_number_channels = frames_batch.shape[-1] if len(frames_batch.shape) == 4 else 1
 
