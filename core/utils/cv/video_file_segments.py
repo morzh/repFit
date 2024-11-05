@@ -12,6 +12,7 @@ class VideoFileSegments(Segments):
     Description:
         Data storage class for video segments information.
 
+    :ivar segments: video segments;
     :ivar video_properties: video file properties;
     """
 

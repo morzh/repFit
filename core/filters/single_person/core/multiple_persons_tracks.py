@@ -29,7 +29,7 @@ class MultiplePersonsTracks:
     def filter_by_area_ratio(self, ratio: float = 4.0):
         """
         Description:
-            Filter persons track which mean bounding box area is less than the the biggest bounding box mean area .
+            Filter persons track which mean bounding box area is less than the biggest bounding box mean area .
 
         :param ratio: areas ratio
         """

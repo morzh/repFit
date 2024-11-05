@@ -39,8 +39,7 @@ class VideoWriter:
         :param video_file_segments: video segments
         :param filter_name: name of the filter (prefix to frames range)
         """
-
-        if video_file_segments.frames_segments.size == 0:
+        if video_file_segments.size == 0:
             return
 
         if video_file_segments.whole_video_segments_check():
@@ -52,9 +51,9 @@ class VideoWriter:
 
         # logger.info(f'Video segments: \n {video_segments.segments}')
         video_reader = VideoReader(self.input_filepath, use_tqdm=False)
-        resolution = (video_file_segments.metadata.video_width, video_file_segments.metadata.video_height)
+        resolution = (video_file_segments.video_properties.video_width, video_file_segments.video_properties.video_height)
         index_segment = 0
-        current_segment = video_file_segments.frames_segments.segments[index_segment]
+        current_segment = video_file_segments.segments[index_segment]
         current_segment_start = current_segment[0]
         current_segment_end = current_segment[1]
 
@@ -72,9 +71,9 @@ class VideoWriter:
             if index_frame == (current_segment_end - 1):
                 current_video_writer.release()
                 index_segment += 1
-                if index_segment == video_file_segments.frames_segments.shape[0]:
+                if index_segment == video_file_segments.shape[0]:
                     return
-                current_segment = video_file_segments.frames_segments.segments[index_segment]
+                current_segment = video_file_segments.segments[index_segment]
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 
@@ -96,6 +95,7 @@ class VideoWriter:
 
         :param segment: video segment (just start and end frame)
         :param frames_range_prefix: frames range prefix
+
         :return: filename
         """
         video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
@@ -112,10 +112,9 @@ class VideoWriter:
 
         :param video_segments: video segments
         :param filter_name: filter name (e.g. steady or non-steady)
-        :return: None
         """
         video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
         segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
         segments_values_filepath = os.path.join(self.output_folder, segments_values_filename)
 
-        video_segments.frames_segments.write(segments_values_filepath)
+        video_segments.write(segments_values_filepath)

@@ -15,10 +15,11 @@ class SinglePersonTrack:
     Description:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
-    :ivar overall_bounding_box: Bounding box containing tracked person with certain id across all frames
-    :ivar bounding_boxes: areas of tracked person's bounding boxes at each frame person was detected.
-    :ivar frames_segments: frame segments at which person with certain ID was tracked
+    :ivar id:
+    :ivar data:
+    :ivar stride: frames stride
     :ivar stride: frames track stride value
+    :ivar __previous_frame_number: previous frame index
     """
 
     def __init__(self, person_id, stride=1):
@@ -29,13 +30,11 @@ class SinglePersonTrack:
         :param person_id: person's id (from person tracking algorithm)
         """
         self.id: int = person_id
-        self.overall_bounding_box = BoundingBox2D()
-        self.bounding_boxes = BoundingBoxes2DArray()
-        self.frames_segments = Segments()
         self.data = SegmentsWithBoundingBoxes()
         self.stride = stride
+        self.__previous_frame_number: int = -1
 
-    def update(self, bounding_box: BoundingBox2D, frame_number: int) -> None:
+    def update(self, bounding_box: np.ndarray[], frame_number: int) -> None:
         """
         Description:
             Update information about video segments at which person is considered to be presented.
@@ -43,15 +42,11 @@ class SinglePersonTrack:
         :param bounding_box: tracked bounding box of a person at frame_number
         :param frame_number: frame number
         """
-        self.overall_bounding_box = bbox_bin_op.circumscribe(self.overall_bounding_box, bounding_box)
-        self.bounding_boxes.append(bounding_box)
-
-        if self.frames_segments.shape[0] == 0:
-            self.frames_segments = np.vstack((self.frames_segments, np.array([frame_number, frame_number])))
-        elif self.frames_segments[-1, 1] == (frame_number - 1):
-            self.frames_segments[-1, 1] = frame_number
+        if (frame_number - self.__previous_frame_number) == self.stride:
+            self.data.append(frame_number, bounding_box, interpolate=True)
         else:
-            self.frames_segments = np.vstack((self.frames_segments, np.array([frame_number, frame_number])))
+            self.data.append(frame_number, bounding_box, interpolate=False)
+
 
     def filter_duration(self, fps: float, time_threshold: float = 5) -> None:
         """
@@ -62,7 +57,7 @@ class SinglePersonTrack:
         :param time_threshold: time threshold in seconds, if segment's  duration is less the threshold it will be deleted
         :return: None
         """
-        for segment_index, segment in enumerate(self.frames_segments.segments):
+        for segment_index, segment in enumerate(self.data.segments):
             segment_length = segment[1] - segment[0]
             if (segment_length / fps) < time_threshold:
                 self.frames_segments[segment_index] = np.array([-1, -1])
@@ -94,4 +89,4 @@ class SinglePersonTrack:
 
         :return: mean area of all person's bounding boxes.
         """
-        return np.mean(self.bounding_boxes.areas())
+        return np.mean(self.data.bounding_boxes.areas())

@@ -50,6 +50,11 @@ class Segments:
         new_segment = np.array([segment_flatten[0], segment_flatten[1]])
         self.segments = np.vstack((self.segments, new_segment))
 
+    def extend_segment(self):
+        """
+
+        """
+
 
     def filter_by_length(self, threshold: int) -> None:
         """

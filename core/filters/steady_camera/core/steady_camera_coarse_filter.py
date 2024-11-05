@@ -140,20 +140,12 @@ class SteadyCameraCoarseFilter:
         number_bins = mask.shape[0]
         base_segment_range = np.array([0, 2 * number_frames_to_average - 1])
         segments_bins = np.linspace(0, (number_bins - 1) * number_frames_to_average, number_bins, dtype=np.int32).reshape(-1, 1) + base_segment_range
-        segments_bins[:, 1] += 1
         segments_bins[-1, 1] = video_frames_number
         segments_bins = segments_bins[mask]
+
         segments = self.unite_overlapping_ranges(segments_bins)
-
-        # video_filename = os.path.basename(self.video_frames_batch.video_properties.filepath)
-        # video_metadata = VideoProperties(video_filename,
-        #                                  self.video_frames_batch.video_properties.width,
-        #                                  self.video_frames_batch.video_properties.height,
-        #                                  self.video_frames_batch.current_stride_frame_index,
-        #                                  self.video_frames_batch.video_properties.fps)
-        # video_frames_segments  = Segments(segments)
+        segments[:, 1] += 1
         video_file_segments = VideoFileSegments(segments, self.video_frames_batch.video_properties)
-
         return video_file_segments
 
 
