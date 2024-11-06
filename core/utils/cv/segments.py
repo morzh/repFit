@@ -112,18 +112,18 @@ class Segments:
             self.segments = np.delete(self.segments, -1, axis=0)
 
 
-    def bridge_gaps(self, gap_length: int):
+    def bridge_gaps(self, gap_threshold: int):
         """
         Description:
             Bridge gaps in place between segments if gaps itself less than ``gaps_length``.
 
-        :param gap_length: maximum gap length
+        :param gap_threshold: maximum gap length
         """
         low_bound = int(self.segments[0, 0])
         high_bound = int(self.segments[-1, -1])
 
         self.complement(low_bound, high_bound)
-        self.filter_by_length(gap_length)
+        self.filter_by_length(gap_threshold)
         self.complement(low_bound, high_bound)
 
 

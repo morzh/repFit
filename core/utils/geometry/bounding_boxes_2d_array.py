@@ -5,6 +5,10 @@ from core.utils.geometry.bounding_box_2d import BoundingBox2D
 
 
 class BoundingBoxes2DArray:
+    """
+    Description:
+
+    """
 
     XYWH = BoundingBoxMode.XYWH.value
     XYXY = BoundingBoxMode.XYXY.value
@@ -14,72 +18,126 @@ class BoundingBoxes2DArray:
         self.bounding_boxes: np.ndarray = np.empty((0, 4))
 
 
-    def append(self, bounding_box: np.ndarray, interpolation_steps = 1, mode=XYWH):
+    def append(self, bounding_box: np.ndarray, mode=XYWH):
         """
         Description:
-            Append new bounding box.
+            Append new bounding box to an existing array.
 
         :param bounding_box:
-        :param interpolation_steps:
         :param mode:
         """
         if bounding_box.size != 4:
             raise ValueError('Input bounding_box size should be 4')
-        if interpolation_steps < 1:
-            raise ValueError('interpolation_steps should be greater or equal to one.')
-
+        if (mode == BoundingBoxes2DArray.XYWH) and (bounding_box[2] < 0 or bounding_box[3] < 0):
+            raise ValueError('Input bounding_box[2:4] components should be greater or equal zero.')
         if mode == BoundingBoxes2DArray.XYXY:
-            x = bounding_box[0]
-            y = bounding_box[1]
-            w = bounding_box[2] - bounding_box[0]
-            h = bounding_box[3] - bounding_box[1]
-            bounding_box = np.array([x, y, w, h])
+            bounding_box = BoundingBoxes2DArray.xyxy_to_xywh(bounding_box)
 
-        if interpolation_steps > 1:
-            boxes_difference = bounding_box - self.bounding_boxes[-1]
-            interpolation_step_value = boxes_difference / interpolation_steps
-            new_bounding_boxes = np.empty((0, 4))
-            for index in range(interpolation_steps):
-                current_bounding_box = self.bounding_boxes[-1] + index * interpolation_step_value
-                new_bounding_boxes = np.vstack((new_bounding_boxes, current_bounding_box))
-        else:
-            new_bounding_boxes = bounding_box.reshape((1, 4))
+        bounding_box = bounding_box.reshape((1, 4))
+        self.bounding_boxes = np.vstack((self.bounding_boxes, bounding_box))
 
-        self.bounding_boxes = np.vstack((self.bounding_boxes, new_bounding_boxes))
 
-    def circumscribe(self) -> BoundingBox2D:
+    def extend(self, bounding_boxes: np.ndarray, mode=XYWH):
+        """
+        Description:
+            Add new bounding boxes to an existing array.
+
+        :param bounding_boxes:
+        :param mode:
+        """
+        if bounding_boxes.shape[1] != 4 or len(bounding_boxes.shape) != 2:
+            raise ValueError('Input bounding_box(es) should have size [N, 4].')
+        if (mode == BoundingBoxes2DArray.XYWH) and (np.any(bounding_boxes[:, 2] < 0) or np.any(bounding_boxes[3] < 0)):
+            raise ValueError('Input bounding_boxes[:, 2:4] components should be greater or equal zero.')
+        if mode == BoundingBoxes2DArray.XYXY:
+            bounding_boxes = BoundingBoxes2DArray.xyxy_to_xywh(bounding_boxes)
+
+        self.bounding_boxes = np.vstack((self.bounding_boxes, bounding_boxes))
+
+
+    def circumscribe(self, indices: np.ndarray | None = None) -> BoundingBox2D:
         """
         Description:
             Circumscribe all bounding boxes. Result is also a bounding box.
 
         :return: bounding box
         """
-        top_lefts_minimum = np.min(self.bounding_boxes[:, :2], axis=0)
-        right_bottoms = self.bounding_boxes[:, :2] + self.bounding_boxes[:, 2:]
+        selected_boxes = self.__selected_bounding_boxes(indices)
+        top_lefts_minimum = np.min(selected_boxes[:, :2], axis=0)
+        right_bottoms = selected_boxes[:, :2] + selected_boxes[:, 2:]
         right_bottoms_maximum = np.max(right_bottoms, axis=0)
 
         return BoundingBox2D(top_lefts_minimum[0], top_lefts_minimum[1], right_bottoms_maximum[0], right_bottoms_maximum[1], mode=self.XYXY)
 
-    def areas(self) -> np.ndarray:
+
+    def areas(self, indices: np.ndarray | None = None) -> np.ndarray:
         """
         Description:
             Calculates areas of all bounding boxes.
 
         :return: array of areas
         """
-        return self.bounding_boxes[:, 2] * self.bounding_boxes[:, 3]
+        selected_boxes = self.__selected_bounding_boxes(indices)
+        return selected_boxes[:, 2] * selected_boxes[:, 3]
 
 
-    def mean_area(self) -> float:
-        areas = self.areas()
+    def mean_area(self, indices: np.ndarray | None = None) -> float:
+        """
+        Description:
+            Mean area of bounding boxes with given ``indices``.
+
+        :param indices: indices of bounding boxes;
+
+        :return: mean area of selected bounding boxes
+        """
+        areas = self.areas(indices)
         return np.mean(areas)
 
 
-    def perimeters(self) -> np.ndarray:
+    def perimeters(self, indices) -> np.ndarray:
         """
         Description:
             Calculates perimeters of all bounding boxes.
 
+        :param indices: indices of bounding boxes;
+
         :return: perimeters of bounding boxes
         """
-        return 2 * self.bounding_boxes[:, 2] + self.bounding_boxes[:, 3]
+        selected_boxes = self.__selected_bounding_boxes(indices)
+        return selected_boxes[:, 2] + selected_boxes[:, 3]
+
+
+    def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:
+        if indices is None:
+            selected_boxes = self.bounding_boxes
+        elif len(indices.shape) != 1:
+            raise ValueError('Indices should be an 1D array.')
+        else:
+            selected_boxes = self.bounding_boxes[indices]
+
+        return selected_boxes
+
+
+    @staticmethod
+    def xyxy_to_xywh(bounding_box_xyxy: np.ndarray) -> np.ndarray:
+        """
+        Description:
+            Converts XYXY (top-left, bottom-right) bounding box representation to XYWH (top-left, width height) representation.
+        """
+
+        xyxy = bounding_box_xyxy.reshape((-1, 2, 2))
+        xy_top_left = np.min(xyxy, axis=2)
+        xy_bottom_right = np.max(xyxy, axis=0)
+        xywh_bounding_box = np.hstack((xy_top_left, xy_bottom_right - xy_top_left))
+
+        return xywh_bounding_box.reshape((-1, 4))
+
+
+    @staticmethod
+    def xywh_to_xyxy(bbox_xywh: np.ndarray) -> np.ndarray:
+        """
+        Description:
+            Converts XYXY (top-left, bottom-right) bounding box representation to XYWH (top-left, width height) representation.
+        """
+        xyxy =  np.array([bbox_xywh[:, 0], bbox_xywh[:, 1], bbox_xywh[:, 0] + bbox_xywh[:, 2], bbox_xywh[:, 1] + bbox_xywh[:, 3]])
+        return xyxy

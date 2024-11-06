@@ -475,11 +475,11 @@ class BoundingBox2D:
         return np.array([self._x + 0.5 * self._width, self._y  + 0.5 * self._height])
 
     @property
-    def corners(self) -> np.ndarray:
+    def vertices(self) -> np.ndarray:
         """
         Description:
-            Returns corners coordinates as [4, 2] numpy array. Order is left top, right top, right bottom, left bottm
+            Returns corners coordinates as [4, 2] numpy array. Order is left top, right top, right bottom, left bottom
 
-        :return: corners coordinates array
+        :return: vertices coordinates array
         """
         return np.vstack((self.left_top, self.right_top, self.right_bottom, self.left_bottom))
