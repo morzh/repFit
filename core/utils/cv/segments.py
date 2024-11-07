@@ -15,22 +15,22 @@ class Segments:
 
     :ivar segments: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
     """
-    __slots__ = ['segments']
+    __slots__ = ['values']
     def __init__(self, segments: np.ndarray | None = None):
         if segments is not None and len(segments.shape) == 2 and segments.shape[1] == 2:
             is_consistent = Segments._check_consistency(segments)
-            self.segments = segments if is_consistent else np.empty((0, 2))
+            self.values = segments if is_consistent else np.empty((0, 2))
             if not is_consistent:
                 warnings.warn('Segments are not consistent. Resetting to empty shape.')
         elif segments is None:
-            self.segments = np.empty((0, 2))
+            self.values = np.empty((0, 2))
         else:
-            self.segments = np.empty((0, 2))
+            self.values = np.empty((0, 2))
             warnings.warn('Segments argument should be None or numpy array with 2-dimensional shape. Resetting to empty shape.')
 
 
     def __getitem__(self, item):
-        return self.segments[item]
+        return self.values[item]
 
 
     def append_segment(self, segment: np.ndarray) -> None:
@@ -44,11 +44,11 @@ class Segments:
             raise ValueError('Segment size should be 2')
 
         segment_flatten = segment.flatten()
-        if segment_flatten[0] < self.segments[-1, -1]:
+        if segment_flatten[0] < self.values[-1, -1]:
             raise ValueError('Wrong segment values. Start new segment value should be greater or equal than last segment end value')
 
         new_segment = np.array([segment_flatten[0], segment_flatten[1]])
-        self.segments = np.vstack((self.segments, new_segment))
+        self.values = np.vstack((self.values, new_segment))
 
     def extend_segment(self):
         """
@@ -64,9 +64,9 @@ class Segments:
         :param threshold: segment length threshold
         """
 
-        segments_lengths =  np.abs(self.segments[:, 1] - self.segments[:, 0])
+        segments_lengths =  np.abs(self.values[:, 1] - self.values[:, 0])
         segments_mask = segments_lengths > threshold
-        self.segments = self.segments[segments_mask]
+        self.values = self.values[segments_mask]
 
 
     def filter_degenerate(self) -> None:
@@ -96,20 +96,20 @@ class Segments:
         :return:  video segments complement
         """
 
-        if lower_bound > self.segments[0, 0]:
+        if lower_bound > self.values[0, 0]:
             raise ValueError('Lower bound is greater than the start of the first segment')
-        elif upper_bound < self.segments[-1, -1]:
+        elif upper_bound < self.values[-1, -1]:
             raise ValueError('Upper bound is less then the end of the last segment.')
 
-        self.segments = self.segments.flatten()
-        self.segments = np.insert(self.segments, 0, lower_bound)
-        self.segments = np.append(self.segments, upper_bound)
-        self.segments = self.segments.reshape(-1, 2)
+        self.values = self.values.flatten()
+        self.values = np.insert(self.values, 0, lower_bound)
+        self.values = np.append(self.values, upper_bound)
+        self.values = self.values.reshape(-1, 2)
 
-        if self.segments[0, 0] == self.segments[0, 1]:
-            self.segments = np.delete(self.segments, 0, axis=0)
-        if self.segments[-1, 0] == self.segments[-1, 1]:
-            self.segments = np.delete(self.segments, -1, axis=0)
+        if self.values[0, 0] == self.values[0, 1]:
+            self.values = np.delete(self.values, 0, axis=0)
+        if self.values[-1, 0] == self.values[-1, 1]:
+            self.values = np.delete(self.values, -1, axis=0)
 
 
     def bridge_gaps(self, gap_threshold: int):
@@ -119,8 +119,8 @@ class Segments:
 
         :param gap_threshold: maximum gap length
         """
-        low_bound = int(self.segments[0, 0])
-        high_bound = int(self.segments[-1, -1])
+        low_bound = int(self.values[0, 0])
+        high_bound = int(self.values[-1, -1])
 
         self.complement(low_bound, high_bound)
         self.filter_by_length(gap_threshold)
@@ -144,7 +144,7 @@ class Segments:
         """
         directory_name = os.path.dirname(filepath)
         if os.path.exists(directory_name):
-            np.save(filepath, self.segments)
+            np.save(filepath, self.values)
         else:
             raise OSError('Filepath directory does not exist.')
 
@@ -172,7 +172,7 @@ class Segments:
 
         :return: segments size
         """
-        return self.segments.size
+        return self.values.size
 
     @property
     def shape(self) -> tuple:
@@ -182,7 +182,7 @@ class Segments:
 
         :return: segments shape
         """
-        return self.segments.shape
+        return self.values.shape
 
     @property
     def lengths(self) -> np.ndarray:
@@ -192,7 +192,7 @@ class Segments:
 
         :return: segments lengths
         """
-        return np.abs(self.segments[:, 1] - self.segments[:, 0])
+        return np.abs(self.values[:, 1] - self.values[:, 0])
 
     def indices(self) -> np.ndarray:
         pass

@@ -53,7 +53,7 @@ class VideoWriter:
         video_reader = VideoReader(self.input_filepath, use_tqdm=False)
         resolution = (video_file_segments.video_properties.video_width, video_file_segments.video_properties.video_height)
         index_segment = 0
-        current_segment = video_file_segments.segments[index_segment]
+        current_segment = video_file_segments.values[index_segment]
         current_segment_start = current_segment[0]
         current_segment_end = current_segment[1]
 
@@ -73,7 +73,7 @@ class VideoWriter:
                 index_segment += 1
                 if index_segment == video_file_segments.shape[0]:
                     return
-                current_segment = video_file_segments.segments[index_segment]
+                current_segment = video_file_segments.values[index_segment]
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 

@@ -47,7 +47,7 @@ class VideoFileSegments(Segments):
 
         :return: True if there is only one whole range video segment, False otherwise
         """
-        shape_check = self.segments.shape[0] == 1
-        zero_frame_check = self.segments[0, 0] == 0
-        number_frames_check = self.segments[-1, -1] == self.video_properties.frames_number - 1
+        shape_check = self.values.shape[0] == 1
+        zero_frame_check = self.values[0, 0] == 0
+        number_frames_check = self.values[-1, -1] == self.video_properties.frames_number - 1
         return shape_check and zero_frame_check and number_frames_check

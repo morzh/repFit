@@ -22,7 +22,7 @@ class TestSegments(unittest.TestCase):
             number_segments = np.random.randint(2, 1_000)
             consistent_segments = self.generate_consistent_segments(number_segments)
             test_segments = Segments(consistent_segments)
-            self.assertTrue(test_segments.segments.shape == consistent_segments.shape)
+            self.assertTrue(test_segments.values.shape == consistent_segments.shape)
 
 
     def test_init_inconsistent(self):
@@ -33,7 +33,7 @@ class TestSegments(unittest.TestCase):
             with self.assertWarns(UserWarning) as _:
                 test_segments = Segments(inconsistent_segments)
 
-            self.assertTrue(test_segments.segments.shape == (0, 2))
+            self.assertTrue(test_segments.values.shape == (0, 2))
 
 
     def test_getitem(self):
@@ -53,7 +53,7 @@ class TestSegments(unittest.TestCase):
         for _ in range(self.number_checks):
             new_segment_length = np.random.randint(0, 600)
             new_segment_gap = np.random.randint(0, 600)
-            new_segment_start =  int(segments.segments[-1, -1]) + new_segment_gap
+            new_segment_start = int(segments.values[-1, -1]) + new_segment_gap
             new_segment = np.array([new_segment_start, new_segment_start + new_segment_length])
             segments.append_segment(new_segment)
 
@@ -121,7 +121,7 @@ class TestSegments(unittest.TestCase):
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
 
-            self.assertTrue(np.alltrue(segments_array == segments.segments))
+            self.assertTrue(np.alltrue(segments_array == segments.values))
 
 
     def test_complements_equal_endpoints(self):
@@ -136,7 +136,7 @@ class TestSegments(unittest.TestCase):
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
 
-            self.assertTrue(np.alltrue(segments_equal_endpoints == segments.segments))
+            self.assertTrue(np.alltrue(segments_equal_endpoints == segments.values))
 
     def test_compliment_incorrect_bounds(self):
         for _ in range(self.number_checks):
@@ -160,7 +160,7 @@ class TestSegments(unittest.TestCase):
             segments.filter_degenerate()
             segments.combine_adjacent()
 
-            self.assertTrue(np.alltrue(segments_array == segments.segments))
+            self.assertTrue(np.alltrue(segments_array == segments.values))
 
 
     def test_bridge_gaps(self):
@@ -175,7 +175,7 @@ class TestSegments(unittest.TestCase):
             segments = Segments(segments_array_gaps)
             segments.bridge_gaps(maximum_gap)
 
-            self.assertTrue(np.alltrue(segments_array == segments.segments))
+            self.assertTrue(np.alltrue(segments_array == segments.values))
 
 
     def test_combine_adjacent(self):
@@ -187,7 +187,7 @@ class TestSegments(unittest.TestCase):
             segments = Segments(segments_array_adjacent)
             segments.combine_adjacent()
 
-            self.assertTrue(np.alltrue(segments_array == segments.segments))
+            self.assertTrue(np.alltrue(segments_array == segments.values))
 
 
     def test_check_consistency(self):
