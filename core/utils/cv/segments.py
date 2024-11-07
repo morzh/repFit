@@ -193,3 +193,6 @@ class Segments:
         :return: segments lengths
         """
         return np.abs(self.segments[:, 1] - self.segments[:, 0])
+
+    def indices(self) -> np.ndarray:
+        pass

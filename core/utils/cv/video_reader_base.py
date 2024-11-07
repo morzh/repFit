@@ -35,9 +35,10 @@ class VideoReaderBase:
         self._current_frame_index: int = -1
         self._init_video_capture()
 
+
     @abstractmethod
     def __iter__(self):
-        ...
+        raise NotImplementedError
 
 
     def __del__(self):

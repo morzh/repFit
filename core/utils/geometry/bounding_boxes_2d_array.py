@@ -17,8 +17,11 @@ class BoundingBoxes2DArray:
     def __init__(self, bounding_boxes: np.ndarray | None = None):
         self.bounding_boxes: np.ndarray = np.empty((0, 4))
 
+    def __getitem__(self, item):
+        return self.bounding_boxes[item]
 
-    def append(self, bounding_box: np.ndarray, mode=XYWH):
+
+    def append(self, bounding_box: np.ndarray, mode=XYWH) -> None:
         """
         Description:
             Append new bounding box to an existing array.
@@ -105,6 +108,24 @@ class BoundingBoxes2DArray:
         """
         selected_boxes = self.__selected_bounding_boxes(indices)
         return selected_boxes[:, 2] + selected_boxes[:, 3]
+
+
+    @property
+    def shape(self) -> tuple:
+        return self.bounding_boxes.shape
+
+    @property
+    def size(self) -> int:
+        return self.bounding_boxes.size
+
+
+    def is_consistent(self):
+        """
+        Description:
+            Checks if 2nd and 3rd components are greater than zero.
+        """
+        columns_number = self.bounding_boxes.shape[1]
+        return np.alltrue(self.bounding_boxes[:, 2:] > 0) and columns_number == 4
 
 
     def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:
