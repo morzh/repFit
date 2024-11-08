@@ -60,7 +60,7 @@ class PersonTrackingData:
 
         :return: frame segments
         """
-        segments_bins = np.hstack((self._frames_indices.reshape(-1, 1), self._frames_indices.reshape(-1, 1) + stride))
+        segments_bins = np.hstack((self._frames_indices.values.reshape(-1, 1), self._frames_indices.values.reshape(-1, 1) + stride))
 
         for index in range(segments_bins.shape[0] - 1):
             if segments_bins[index, 1] == segments_bins[index + 1, 0]:
@@ -75,3 +75,18 @@ class PersonTrackingData:
 
     def _is_consistent(self) -> bool:
         return self._frames_indices.is_consistent() and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
+
+
+    @property
+    def bounding_boxes(self) -> BoundingBoxes2DArray:
+        return self._bounding_boxes
+
+
+    @property
+    def frames_indices(self) -> StrictlyIncreasingSequence:
+        return self._frames_indices
+
+
+    @property
+    def confidences(self) -> np.ndarray:
+        return self._confidences

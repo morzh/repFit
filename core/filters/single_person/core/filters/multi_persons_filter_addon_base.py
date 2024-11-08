@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 
 
-class MultiPersonsFilterBase(ABC):
+class MultiPersonsFilterAddonBase(ABC):
     """
     Description:
         Base abstract filter class  MultiplePersonsTracks processing.

@@ -1,6 +1,8 @@
+import os
+
 import torch
 
-from core.filters.single_person.core.filters.multi_persons_filter_base import MultiPersonsFilterBase
+from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
 
@@ -15,7 +17,7 @@ class MultiplePersonsTracks:
         self.video_properties = video_properties
 
 
-    def update(self, data: torch.Tensor, frame_number: int):
+    def update(self, data: torch.Tensor, frame_number: int) -> None:
         """
         Description:
         """
@@ -28,7 +30,7 @@ class MultiplePersonsTracks:
             self.persons[current_person_id].append(bounding_box, frame_number, confidence=current_confidence)
 
 
-    def apply_filter(self, filter_visitor: MultiPersonsFilterBase) -> None:
+    def apply_filter(self, filter_visitor: MultiPersonsFilterAddonBase) -> None:
         """
         Description:
             Apply ``filter_visitor`` filter in place.
@@ -36,3 +38,7 @@ class MultiplePersonsTracks:
         :param filter_visitor: filter class instance.
         """
         filter_visitor.process(self)
+
+    def serialize(self, filepath: os.PathLike) -> None:
+        ...
+

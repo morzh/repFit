@@ -1,10 +1,10 @@
 import numpy as np
 
-from core.filters.single_person.core.filters.multi_persons_filter_base import MultiPersonsFilterBase
+from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 
 
-class AreaFilter(MultiPersonsFilterBase):
+class AreaFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Filter person by mean area in pixels.

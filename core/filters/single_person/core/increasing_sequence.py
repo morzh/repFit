@@ -43,5 +43,9 @@ class StrictlyIncreasingSequence:
             return True
         return False
 
+    @property
+    def values(self):
+        return self._values
+
 
 

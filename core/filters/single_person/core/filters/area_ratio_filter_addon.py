@@ -1,10 +1,10 @@
 import numpy as np
 
-from core.filters.single_person.core.filters.multi_persons_filter_base import MultiPersonsFilterBase
+from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 
 
-class AreaRatioFilter(MultiPersonsFilterBase):
+class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Filter persons track which mean bounding box area is less than the biggest bounding box mean area .
