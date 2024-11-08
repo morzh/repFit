@@ -1,4 +1,5 @@
 import numpy as np
+from sqlalchemy.testing.plugin.plugin_base import warnings
 
 from core.utils.geometry.bounding_box_mode import BoundingBoxMode
 from core.utils.geometry.bounding_box_2d import BoundingBox2D
@@ -125,6 +126,7 @@ class BoundingBoxes2DArray:
     def shape(self) -> tuple:
         return self.values.shape
 
+
     @property
     def size(self) -> int:
         return self.values.size
@@ -141,13 +143,19 @@ class BoundingBoxes2DArray:
 
     def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:
         if indices is None:
-            selected_boxes = self.values
+            return self.values
+
+        if not np.issubdtype(indices, np.int32):
+            raise ValueError('Indices should be an array of integers.')
         elif len(indices.shape) != 1:
             raise ValueError('Indices should be an 1D array.')
-        else:
-            selected_boxes = self.values[indices]
 
-        return selected_boxes
+        if indices.size > self.values.shape[0]:
+            warnings.warn('Indices size bigger than the nu,ber of bounding boxes.')
+            boxes_number = self.values.shape[0]
+            indices = indices[:boxes_number]
+
+        return self.values[indices]
 
 
     @staticmethod
@@ -156,7 +164,7 @@ class BoundingBoxes2DArray:
         Description:
             Converts XYXY (top-left, bottom-right) bounding box representation to XYWH (top-left, width height) representation.
         """
-        # TODO: process degenerate cases
+        # TODO: think about degenerate cases
         xyxy = bounding_box_xyxy.reshape((-1, 2, 2))
         xy_top_left = np.min(xyxy, axis=1)
         xy_bottom_right = np.max(xyxy, axis=1)

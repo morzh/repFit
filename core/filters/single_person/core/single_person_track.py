@@ -5,7 +5,7 @@ from core.utils.cv.segments import Segments
 from core.utils.geometry.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 import core.utils.geometry.bounding_box_2d_dyadic as bbox_bin_op
-from core.utils.geometry.indexed_bounding_boxes import IndexedBoundingBoxes
+from core.utils.geometry.person_tracking_data import PersonTrackingData
 
 
 class SinglePersonTrack:
@@ -25,19 +25,20 @@ class SinglePersonTrack:
         :param person_id: person's id (from person tracking algorithm)
         """
         # self.id: int = person_id
-        self.data = IndexedBoundingBoxes()
+        self.data = PersonTrackingData()
         self.frame_segments = Segments()
 
 
-    def update(self, bounding_box: np.ndarray, frame_index: int) -> None:
+    def update(self, bounding_box: np.ndarray, frame_index: int, confidence: float) -> None:
         """
         Description:
             Update information about video segments at which person is considered to be presented.
 
         :param bounding_box: tracked bounding box of a person at frame_number
         :param frame_index: frame number
+        :param confidence: bounding box confidence
         """
-        self.data.append(bounding_box, frame_index)
+        self.data.append(bounding_box, frame_index, confidence)
 
 
     def filter_by_time(self, fps: float, time_threshold: float = 5) -> None:
@@ -78,7 +79,7 @@ class SinglePersonTrack:
 
         :return: mean area of all person's bounding boxes.
         """
-        return self.data.mean_area()
+        return self.data.bounding_boxes.mean_area()
 
 
     def mean_area_per_segment(self):

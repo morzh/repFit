@@ -1,5 +1,5 @@
 import unittest
-from core.utils.geometry.indexed_bounding_boxes import IndexedBoundingBoxes
+from core.utils.geometry.person_tracking_data import PersonTrackingData
 
 
 class TestIndexedBoundingBoxes(unittest.TestCase):
