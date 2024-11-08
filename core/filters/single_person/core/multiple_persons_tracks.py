@@ -21,11 +21,11 @@ class MultiplePersonsTracks:
         """
         for index in range(data.shape[0]):
             current_person_id = int(data[index, 4])
+            current_confidence = float(data[index, 5])
             if current_person_id not in self.persons:
-                # current_confidence = data[index, 5]
-                self.persons[current_person_id] = SinglePersonTrack(current_person_id)
+                self.persons[current_person_id] = SinglePersonTrack()
             bounding_box = data[index].numpy()
-            self.persons[current_person_id].update(bounding_box, frame_number)
+            self.persons[current_person_id].append(bounding_box, frame_number, confidence=current_confidence)
 
 
     def apply_filter(self, filter_visitor: MultiPersonsFilterBase) -> None:

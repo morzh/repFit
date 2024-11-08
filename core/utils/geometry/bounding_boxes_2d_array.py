@@ -41,7 +41,7 @@ class BoundingBoxes2DArray:
         if bounding_box.size != 4:
             raise ValueError('Input bounding_box size should be 4')
         bounding_box_flatten = bounding_box.flatten()
-        if (mode == BoundingBoxes2DArray.XYWH) and (bounding_box_flatten[2] < 0 or bounding_box_flatten[3] < 0):
+        if (mode == BoundingBoxes2DArray.XYWH) and not np.alltrue(bounding_box_flatten[2:] > 0):
             raise ValueError('Input bounding_box[2:4] components should be greater or equal zero.')
         if mode == BoundingBoxes2DArray.XYXY:
             bounding_box = BoundingBoxes2DArray.xyxy_to_xywh(bounding_box)
@@ -142,6 +142,15 @@ class BoundingBoxes2DArray:
 
 
     def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:
+        """
+        Description:
+
+        :param indices:
+
+        :return: selected by indices bounding boxes array.
+
+        :raises ValueError:
+        """
         if indices is None:
             return self.values
 
