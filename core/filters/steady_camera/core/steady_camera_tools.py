@@ -12,7 +12,7 @@ from core.utils.parallel.multiprocess import run_pool_steady_camera_filter
 
 from core.utils.cv.video_file_segments import VideoFileSegments
 from core.utils.cv.video_writer import VideoWriter
-from core.utils.cv.video_tools import video_resolution_check
+from core.utils.cv.video_tools import video_resolution_check, write_segments_values
 
 from core.utils.io.files_operations import  check_filename_entry_in_folder
 
@@ -140,22 +140,22 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
         video_filename = os.path.basename(video_filepath)
         logger.info(f'{video_filename} :: writing video segment(s).')
 
-    video_segments_writer = VideoWriter(input_filepath=video_filepath,
-                                        output_folder=output_folder,
-                                        fps=video_segments.video_properties.video_fps)
+    video_writer = VideoWriter(input_filepath=video_filepath,
+                               output_folder=output_folder,
+                               fps=video_segments.video_properties.video_fps)
 
-    video_segments_writer.write_segments(video_segments, filter_name='steady')
+    video_writer.write_segments(video_segments, filter_name='steady')
     if options['save_steady_camera_segments_values'] and video_segments.size > 0:
-        video_segments_writer.write_segments_values(video_segments, filter_name='steady')
+        write_segments_values(video_segments, video_writer.input_filepath, video_writer.output_folder, filter_name='steady')
 
     if options['write_segments_complement']:
         time_threshold = options['minimum_non_steady_camera_time_segment']
         video_segments.complement()
         video_segments.filter_by_length(time_threshold)
-        video_segments_writer.write_segments(video_segments, filter_name='nonsteady')
+        video_writer.write_segments(video_segments, filter_name='nonsteady')
 
         if options['save_non_steady_camera_segments_values'] and video_segments.size > 0:
-            video_segments_writer.write_segments_values(video_segments, filter_name='nonsteady')
+            write_segments_values(video_segments, video_writer.input_filepath, video_writer.output_folder, filter_name='steady')
 
 
 def process_steady_camera_segments(video_source_filepath, videos_target_folder, **options) -> None:

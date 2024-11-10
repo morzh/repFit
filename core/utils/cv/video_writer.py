@@ -18,7 +18,7 @@ class VideoWriter:
     """
     Class for writing video segments to a different video files to a given output folder.
     """
-    def __init__(self, input_filepath: str | Path, output_folder: str | Path, fps: float):
+    def __init__(self, input_filepath: os.PathLike, output_folder: os.PathLike, fps: float):
         """
         Description:
             VideoWriter class constructor.
@@ -27,9 +27,9 @@ class VideoWriter:
         :param output_folder: folder for output videos
         :param fps: FPS for output videos
         """
-        self.input_filepath = input_filepath
-        self.output_folder = output_folder
-        self.fps = fps
+        self._input_filepath = input_filepath
+        self._output_folder = output_folder
+        self._fps = fps
 
     def write_segments(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
         """
@@ -43,14 +43,14 @@ class VideoWriter:
             return
 
         if video_file_segments.whole_video_segments_check():
-            video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
+            video_filename_base, _ = self.extract_extension_from_filepath(self._input_filepath)
             video_filename = f'{video_filename_base}__{filter_name}__.mp4'
-            output_filepath = os.path.join(self.output_folder, video_filename)
-            shutil.copy(self.input_filepath, output_filepath)
+            output_filepath = os.path.join(self._output_folder, video_filename)
+            shutil.copy(self._input_filepath, output_filepath)
             return
 
         # logger.info(f'Video segments: \n {video_segments.segments}')
-        video_reader = VideoStrideReader(self.input_filepath, use_tqdm=False)
+        video_reader = VideoStrideReader(self._input_filepath, use_tqdm=False)
         resolution = (video_file_segments.video_properties.video_width, video_file_segments.video_properties.video_height)
         index_segment = 0
         current_segment = video_file_segments.values[index_segment]
@@ -61,7 +61,7 @@ class VideoWriter:
             current_video_writer = None
             if index_frame == current_segment_start:
                 current_output_filepath = self.current_filepath_segment(current_segment, filter_name)
-                current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self.fps, resolution)
+                current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, resolution)
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
                 # logger.info(f'Video segments \n: {video_segments.segments}')
 
@@ -77,6 +77,11 @@ class VideoWriter:
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 
+    def write_segments_with_bounding_boxes(self):
+        """
+
+        """
+
     @staticmethod
     def extract_extension_from_filepath(input_filepath) -> tuple[str, str]:
         """
@@ -88,6 +93,7 @@ class VideoWriter:
         video_filename = os.path.basename(input_filepath)
         return os.path.splitext(video_filename)
 
+
     def current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
         """
         Description:
@@ -98,23 +104,20 @@ class VideoWriter:
 
         :return: filename
         """
-        video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
+        video_filename_base, _ = VideoWriter.extract_extension_from_filepath(self._input_filepath)
         start_frame = str(segment[0]).zfill(5)
         end_frame = str(segment[1]).zfill(5)
         video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
-        output_filepath = os.path.join(self.output_folder, video_filename)
+        output_filepath = os.path.join(self._output_folder, video_filename)
         return output_filepath
 
-    def write_segments_values(self, video_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
-        """
-        Description:
-            Write segments values. This feature is for debug purposes
 
-        :param video_segments: video segments
-        :param filter_name: filter name (e.g. steady or non-steady)
-        """
-        video_filename_base, _ = self.extract_extension_from_filepath(self.input_filepath)
-        segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
-        segments_values_filepath = os.path.join(self.output_folder, segments_values_filename)
+    @property
+    def input_filepath(self) -> os.PathLike:
+        return self._input_filepath
 
-        video_segments.write(segments_values_filepath)
+
+    @property
+    def output_folder(self) -> os.PathLike:
+        return self._output_folder
+

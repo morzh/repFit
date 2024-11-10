@@ -1,6 +1,11 @@
+import os
+
 import cv2
 import numpy as np
 import ffmpeg
+
+from core.utils.cv.video_file_segments import VideoFileSegments
+from core.utils.cv.video_writer import VideoWriter
 
 
 def cut_by_bbox(image: np.ndarray, bbox: np.ndarray, w, h) -> np.ndarray:
@@ -49,3 +54,19 @@ def video_resolution_check(video_filepath: str, minimum_dimension_size: int = 36
 
     return False
 
+
+def write_segments_values(video_segments: VideoFileSegments, input_filepath: os.PathLike, output_folder: os.PathLike, filter_name: str = 'steady') -> None:
+    """
+    Description:
+        Write segments values. This feature is for debug purposes
+
+    :param video_segments: video segments
+    :param input_filepath:
+    :param output_folder:
+    :param filter_name: filter name (e.g. steady or non-steady)
+    """
+    video_filename_base, _ = VideoWriter.extract_extension_from_filepath(input_filepath)
+    segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
+    segments_values_filepath = os.path.join(output_folder, segments_values_filename)
+
+    video_segments.write(segments_values_filepath)
