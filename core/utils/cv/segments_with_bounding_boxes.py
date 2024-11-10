@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.utils.cv.segments import Segments
+from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
@@ -13,7 +13,7 @@ class SegmentsWithBoundingBoxes:  # (Segments):
     __slots__ = ['segments', 'bounding_boxes']
 
     def __init__(self):
-        self.segments = Segments()
+        self.segments = FramesSegments()
         self.bounding_boxes: list[BoundingBoxes2DArray] = []
 
     def append(self, frame_index: int, bounding_box: np.ndarray, interpolate=False):

@@ -2,10 +2,10 @@ import numpy as np
 from pathlib import Path
 from typing import Iterator
 
-from core.utils.cv.video_reader_base import VideoReaderBase
+from core.utils.cv.video_reader import VideoReader
 
 
-class VideoReaderFramesBatch(VideoReaderBase):
+class VideoReaderFramesBatch(VideoReader):
     """
     Use this class when you need stack of video frames at every loop iteration.
     Violates Liskov substitution principle (__iter()__ returns [N, w, h, 3] array instead of [w, h, 3]).
@@ -25,7 +25,7 @@ class VideoReaderFramesBatch(VideoReaderBase):
         self._batch_size: int = options.get('batch_size', 10)
         self._current_batch_index: int = -1
 
-
+    '''
     def __iter__(self) -> Iterator:
         """
          Description:
@@ -70,7 +70,6 @@ class VideoReaderFramesBatch(VideoReaderBase):
         if last_batch_frames_number:
             self._current_batch_index += 1
             yield batch[:last_batch_frames_number + 1]
-    '''
 
     @property
     def current_batch_index(self) -> int:

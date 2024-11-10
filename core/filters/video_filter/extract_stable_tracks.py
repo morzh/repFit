@@ -3,7 +3,7 @@ from ultralytics import YOLO
 from paths import YOLO_BBOXES_DPATH, VIDEO_DPATH, STABLE_FILTER_DPATH
 from pathlib import Path
 from constants import min_track_length_sec, min_occurrence_rate
-from core.utils.cv.video_reader import VideoReader
+from core.utils.cv.video_stride_reader import VideoStrideReader
 from core.utils.io.files_operations import write_pickle
 
 
@@ -25,7 +25,7 @@ class HumanTracker:
         if not os.path.isfile(video_fpath):
             raise Exception(f"Video {video_fpath} was not found")
 
-        self.video_reader = VideoReader(video_fpath)
+        self.video_reader = VideoStrideReader(video_fpath)
         tracks = {}
         for frame in self.video_reader.frame_generator():
             results = self.detector_model.track(frame, **self.detector_params)[0]

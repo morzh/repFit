@@ -7,7 +7,7 @@ import numpy as np
 from typing import Annotated, Literal
 from numpy.typing import NDArray
 
-from core.utils.cv.video_reader import VideoReader
+from core.utils.cv.video_stride_reader import VideoStrideReader
 from core.utils.cv.video_file_segments import VideoFileSegments
 # from filters.single_person.core.multiple_persons_tracks import SinglePersonTrack
 
@@ -50,7 +50,7 @@ class VideoWriter:
             return
 
         # logger.info(f'Video segments: \n {video_segments.segments}')
-        video_reader = VideoReader(self.input_filepath, use_tqdm=False)
+        video_reader = VideoStrideReader(self.input_filepath, use_tqdm=False)
         resolution = (video_file_segments.video_properties.video_width, video_file_segments.video_properties.video_height)
         index_segment = 0
         current_segment = video_file_segments.values[index_segment]

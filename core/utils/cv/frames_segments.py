@@ -1,24 +1,21 @@
-import copy
 import numpy as np
 import os
 import warnings
 
-from typing import Self
 
-from yt_dlp.utils import uppercase_escape
-
-
-class Segments:
+class FramesSegments:
     """
     Description:
         Data storage class for video segments information. Video segments are ordered, means  each next segment value is greater or equal current value.
 
-    :ivar segments: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
+    :ivar values: array of frames segments [[segment1_frame_start, segment1_frame_end], [segment2_frame_start, segment2_frame_end], ...]
     """
+
     __slots__ = ['values']
+
     def __init__(self, segments: np.ndarray | None = None):
         if segments is not None and len(segments.shape) == 2 and segments.shape[1] == 2:
-            is_consistent = Segments._check_consistency(segments)
+            is_consistent = FramesSegments._check_consistency(segments)
             self.values = segments if is_consistent else np.empty((0, 2))
             if not is_consistent:
                 warnings.warn('Segments are not consistent. Resetting to empty shape.')
@@ -50,11 +47,6 @@ class Segments:
         new_segment = np.array([segment_flatten[0], segment_flatten[1]])
         self.values = np.vstack((self.values, new_segment))
 
-    def extend_segment(self):
-        """
-
-        """
-
 
     def filter_by_length(self, threshold: int) -> None:
         """
@@ -63,7 +55,6 @@ class Segments:
 
         :param threshold: segment length threshold
         """
-
         segments_lengths =  np.abs(self.values[:, 1] - self.values[:, 0])
         segments_mask = segments_lengths > threshold
         self.values = self.values[segments_mask]
@@ -95,7 +86,6 @@ class Segments:
 
         :return:  video segments complement
         """
-
         if lower_bound > self.values[0, 0]:
             raise ValueError('Lower bound is greater than the start of the first segment')
         elif upper_bound < self.values[-1, -1]:

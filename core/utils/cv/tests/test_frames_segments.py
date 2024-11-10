@@ -1,18 +1,18 @@
 import numpy as np
 import unittest
-from core.utils.cv.segments import Segments
+from core.utils.cv.frames_segments import FramesSegments
 
 
-class TestSegments(unittest.TestCase):
+class TestFramesSegments(unittest.TestCase):
 
     def setUp(self):
         self.number_checks = 1_500
 
 
     def test_init_no_arguments(self):
-        test_segments = Segments(None)
+        test_segments = FramesSegments(None)
         self.assertTrue(test_segments.shape == (0, 2))
-        test_segments = Segments()
+        test_segments = FramesSegments()
         self.assertTrue(test_segments.shape == (0, 2))
 
 
@@ -21,7 +21,7 @@ class TestSegments(unittest.TestCase):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(2, 1_000)
             consistent_segments = self.generate_consistent_segments(number_segments)
-            test_segments = Segments(consistent_segments)
+            test_segments = FramesSegments(consistent_segments)
             self.assertTrue(test_segments.values.shape == consistent_segments.shape)
 
 
@@ -31,7 +31,7 @@ class TestSegments(unittest.TestCase):
             inconsistent_segments = self.generate_inconsistent_segments(number_segments)
 
             with self.assertWarns(UserWarning) as _:
-                test_segments = Segments(inconsistent_segments)
+                test_segments = FramesSegments(inconsistent_segments)
 
             self.assertTrue(test_segments.values.shape == (0, 2))
 
@@ -40,7 +40,7 @@ class TestSegments(unittest.TestCase):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(2, 1_000)
             segments_array = self.generate_consistent_segments(number_segments, 1, number_segments)
-            segments = Segments(segments_array)
+            segments = FramesSegments(segments_array)
 
             segment_index = np.random.randint(1, number_segments)
             self.assertTrue(np.alltrue(segments_array[segment_index] == segments[segment_index]))
@@ -49,7 +49,7 @@ class TestSegments(unittest.TestCase):
 
 
     def test_append_segment_consistent(self):
-        segments = Segments(np.array([[0, 1]]))
+        segments = FramesSegments(np.array([[0, 1]]))
         for _ in range(self.number_checks):
             new_segment_length = np.random.randint(0, 600)
             new_segment_gap = np.random.randint(0, 600)
@@ -59,7 +59,7 @@ class TestSegments(unittest.TestCase):
 
 
     def test_append_segment_inconsistent(self):
-        segments = Segments(np.array([[0, 1000]]))
+        segments = FramesSegments(np.array([[0, 1000]]))
         for _ in range(self.number_checks):
             new_segment_length = np.random.randint(0, 600)
             new_segment_start = np.random.randint(0, 600)
@@ -76,7 +76,7 @@ class TestSegments(unittest.TestCase):
             length_threshold = np.random.randint(1, 600)
 
             segments = self.generate_consistent_segments_with_upper_length(length_threshold, number_segments)
-            segments_ = Segments(segments)
+            segments_ = FramesSegments(segments)
             segments_.filter_by_length(length_threshold)
 
             self.assertEqual(segments_.size, 0)
@@ -88,7 +88,7 @@ class TestSegments(unittest.TestCase):
             length_threshold = np.random.randint(1, 600)
 
             segments_values = self.generate_consistent_segments_with_lower_length(length_threshold + 1, number_segments)
-            segments = Segments(segments_values)
+            segments = FramesSegments(segments_values)
             segments.filter_by_length(length_threshold)
 
             self.assertEqual(segments.size, segments_values.size)
@@ -104,7 +104,7 @@ class TestSegments(unittest.TestCase):
             segments_upper_threshold += segments_lower_threshold[-1, -1]
 
             segments_values = np.vstack((segments_lower_threshold, segments_upper_threshold))
-            segments = Segments(segments_values)
+            segments = FramesSegments(segments_values)
             segments.filter_by_length(length_threshold)
 
             self.assertEqual(segments.size, segments_values.size / 2)
@@ -114,7 +114,7 @@ class TestSegments(unittest.TestCase):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(1, 1_500)
             segments_array = self.generate_consistent_segments(number_segments)
-            segments = Segments(segments_array)
+            segments = FramesSegments(segments_array)
             high_bound = segments[-1, -1] + np.random.randint(0, 50)
             low_bound = segments[0, 0] - np.random.randint(0, 50)
 
@@ -128,7 +128,7 @@ class TestSegments(unittest.TestCase):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(2, 10)
             segments_equal_endpoints = self.generate_segments_equal_endpoints(number_segments)
-            segments = Segments(segments_equal_endpoints)
+            segments = FramesSegments(segments_equal_endpoints)
 
             low_bound = int(segments_equal_endpoints[0, 0])
             high_bound = int(segments_equal_endpoints[-1, -1])
@@ -138,11 +138,12 @@ class TestSegments(unittest.TestCase):
 
             self.assertTrue(np.alltrue(segments_equal_endpoints == segments.values))
 
+
     def test_compliment_incorrect_bounds(self):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(1, 1_500)
             segments_array = self.generate_consistent_segments(number_segments)
-            segments = Segments(segments_array)
+            segments = FramesSegments(segments_array)
             high_bound = segments[-1, -1] - np.random.randint(1, 50)
             low_bound = segments[0, 0] + np.random.randint(1, 50)
 
@@ -156,7 +157,7 @@ class TestSegments(unittest.TestCase):
             segments_array = self.generate_consistent_segments(number_segments)
             segments_degenerate = self.add_degenerate_segments(segments_array)
 
-            segments = Segments(segments_degenerate)
+            segments = FramesSegments(segments_degenerate)
             segments.filter_degenerate()
             segments.combine_adjacent()
 
@@ -172,7 +173,7 @@ class TestSegments(unittest.TestCase):
             if maximum_gap == 0: continue
             segments_array_gaps = self.add_gaps(segments_array, maximum_gap)
 
-            segments = Segments(segments_array_gaps)
+            segments = FramesSegments(segments_array_gaps)
             segments.bridge_gaps(maximum_gap)
 
             self.assertTrue(np.alltrue(segments_array == segments.values))
@@ -184,7 +185,7 @@ class TestSegments(unittest.TestCase):
             segments_array = self.generate_consistent_segments(number_segments, 2, 600)
             segments_array_adjacent = self.insert_adjacent_segments(segments_array)
 
-            segments = Segments(segments_array_adjacent)
+            segments = FramesSegments(segments_array_adjacent)
             segments.combine_adjacent()
 
             self.assertTrue(np.alltrue(segments_array == segments.values))
@@ -197,8 +198,8 @@ class TestSegments(unittest.TestCase):
             consistent_segments = self.generate_consistent_segments(number_segments, low_value=1, high_value=12_000)
             inconsistent_segments = self.generate_inconsistent_segments(number_segments, low_value=1, high_value=12_000)
 
-            self.assertTrue(Segments._check_consistency(consistent_segments))
-            self.assertFalse(Segments._check_consistency(inconsistent_segments))
+            self.assertTrue(FramesSegments._check_consistency(consistent_segments))
+            self.assertFalse(FramesSegments._check_consistency(inconsistent_segments))
 
 
     def test_lengths(self):
@@ -207,7 +208,7 @@ class TestSegments(unittest.TestCase):
             apriori_lengths = np.random.randint(0, high=3000, size=(number_segments,))
 
             segments_values = self.generate_consistent_segments_with_given_lengths(apriori_lengths, number_segments)
-            segments = Segments(segments_values)
+            segments = FramesSegments(segments_values)
 
             self.assertTrue(np.alltrue(apriori_lengths == segments.lengths))
 

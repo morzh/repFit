@@ -2,7 +2,7 @@ from pathlib import Path
 import numpy as np
 
 from paths import JOINTS_MP_DPATH
-from core.utils.cv.video_reader import VideoReader
+from core.utils.cv.video_stride_reader import VideoStrideReader
 from core.utils.io.files_operations import write_json
 from constants import model_complexity
 
@@ -20,7 +20,7 @@ def make_mp_joints(video_fpath: Path):
     if save_joints_fpath.is_file():
         print(f"Skip processed video {str(save_joints_fpath)}")
         return
-    video_reader = VideoReader(video_fpath)
+    video_reader = VideoStrideReader(video_fpath)
     mp_joints = []
     frames_with_joints = []
     with mp_pose.Pose(static_image_mode=False, model_complexity=model_complexity) as pose:

@@ -5,7 +5,7 @@ import numpy as np
 
 from paths import YOLO_BBOXES_DPATH, STEADY_VIDEO_DPATH, RESULTS_ROOT, STABLE_FILTER_DPATH, FILTERED_VIDEO_DPATH
 from core.utils.io.files_operations import read_pickle
-from core.utils.cv.video_reader import VideoReader
+from core.utils.cv.video_stride_reader import VideoStrideReader
 from constants import min_fragment_n_frames
 
 camera_steady = read_pickle(RESULTS_ROOT/"camera_steady_segments.pickle")
@@ -37,7 +37,7 @@ def cut_video_by_yolo_boxes(video_fpath: Path):
 
         bbox_min_h, bbox_max_h, bbox_min_w, bbox_max_w = found_bbox_boarders(bbox_array)
         for seg_n, seg in enumerate(fragment_with_bboxes):
-            video_reader = VideoReader(video_fpath)
+            video_reader = VideoStrideReader(video_fpath)
 
             fragment_fname = video_fname[-11:] + f"_{track_row_n}_{seg_n}.mp4"
             cut_video_fpath = STEADY_VIDEO_DPATH / fragment_fname
@@ -73,7 +73,7 @@ def cut_videos_by_filters(videos: List[Path], filter_result: dict):
             bbox_array = {i: frame_data['bbox'] for i, frame_data in track.items()}
             bbox_min_h, bbox_max_h, bbox_min_w, bbox_max_w = found_bbox_boarders(bbox_array)
             frames_with_bbox = list(bbox_array.keys())
-            video_reader = VideoReader(video_fpath)
+            video_reader = VideoStrideReader(video_fpath)
             video_writer = cv2.VideoWriter(
                 str(cut_video_fpath),
                 cv2.VideoWriter_fourcc(*'MP4V'),

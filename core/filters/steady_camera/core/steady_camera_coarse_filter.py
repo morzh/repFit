@@ -13,7 +13,7 @@ from core.filters.steady_camera.core.image_registration.image_registration_poc i
 from core.filters.steady_camera.core.persons_mask.persons_mask_base import PersonsMaskBase
 from core.filters.steady_camera.core.ocr.ocr_base import OcrBase
 from core.utils.cv.video_file_segments import VideoFileSegments
-from core.utils.cv.segments import Segments
+from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 
 image_grayscale = Annotated[NDArray[np.uint8], Literal["N", "M"]]

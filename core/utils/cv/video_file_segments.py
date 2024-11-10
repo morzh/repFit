@@ -2,12 +2,12 @@ import copy
 import numpy as np
 
 from core.utils.cv.video_properties import VideoProperties
-from core.utils.cv.segments import Segments
+from core.utils.cv.frames_segments import FramesSegments
 
 from typing import Self
 
 
-class VideoFileSegments(Segments):
+class VideoFileSegments(FramesSegments):
     """
     Description:
         Data storage class for video segments information.

@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.utils.cv.segments import Segments
+from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.increasing_sequence import StrictlyIncreasingSequence
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
@@ -52,7 +52,7 @@ class PersonTrackingData:
             return 0.5 * (self._bounding_boxes[index_occurrence - 1] + self._bounding_boxes[index_occurrence])
 
 
-    def calculate_segments(self, stride=1) -> Segments:
+    def calculate_segments(self, stride=1) -> FramesSegments:
         """
         Description:
 
@@ -70,23 +70,38 @@ class PersonTrackingData:
         mask = segments_bins[:, 0] != np.nan
         segments = segments_bins[mask]
         segments[:, 1] += 1
-        return Segments(segments)
+        return FramesSegments(segments)
 
 
     def _is_consistent(self) -> bool:
+        """
+
+        """
         return self._frames_indices.is_consistent() and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
 
 
     @property
     def bounding_boxes(self) -> BoundingBoxes2DArray:
+        """
+        Description:
+
+        """
         return self._bounding_boxes
 
 
     @property
     def frames_indices(self) -> StrictlyIncreasingSequence:
+        """
+        Description:
+
+        """
         return self._frames_indices
 
 
     @property
     def confidences(self) -> np.ndarray:
+        """
+        Description:
+
+        """
         return self._confidences

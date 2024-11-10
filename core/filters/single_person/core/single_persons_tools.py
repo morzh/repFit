@@ -4,7 +4,7 @@ import time
 
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
 from core.utils.cv.segments_with_bounding_boxes import SegmentsWithBoundingBoxes
-from core.utils.cv.video_reader import VideoReader
+from core.utils.cv.video_stride_reader import VideoStrideReader
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
 from core.utils.io.files_operations import  check_filename_entry_in_folder
 from core.utils.cv.video_tools import video_resolution_check

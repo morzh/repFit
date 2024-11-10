@@ -1,6 +1,6 @@
 import numpy as np
 
-from core.utils.cv.segments import Segments
+from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
 
 
@@ -19,7 +19,7 @@ class SinglePersonTrack:
             SinglePersonTrack class constructor.
         """
         self.data = PersonTrackingData()
-        self.frame_segments = Segments()
+        self.frame_segments = FramesSegments()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float) -> None:

@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import torch
 
@@ -40,5 +41,5 @@ class MultiplePersonsTracks:
         filter_visitor.process(self)
 
     def serialize(self, filepath: os.PathLike) -> None:
-        ...
-
+        with open(filepath, mode='wb') as file:
+            pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)

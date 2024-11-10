@@ -3,7 +3,7 @@ import cv2
 from ultralytics import YOLO
 
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-from core.utils.cv.video_reader import VideoReader
+from core.utils.cv.video_stride_reader import VideoStrideReader
 
 
 class PersonsTracker:
@@ -14,7 +14,7 @@ class PersonsTracker:
         if not os.path.isfile(source_video_filepath):
             raise Exception(f"Video {source_video_filepath} was not found")
 
-        video_reader = VideoReader(source_video_filepath, stride=stride, use_tqdm=False)
+        video_reader = VideoStrideReader(source_video_filepath, stride=stride, use_tqdm=False)
         persons_video_segments = MultiplePersonsTracks(video_properties=video_reader.video_properties)
 
         for frame in video_reader:
