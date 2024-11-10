@@ -2,7 +2,12 @@ from loguru import logger
 import os
 import time
 
+from core.filters.single_person.core.filters.area_filter_addon import AreaFilterAddon
+from core.filters.single_person.core.filters.area_ratio_filter_addon import AreaRatioFilterAddon
+from core.filters.single_person.core.filters.beidge_gaps_filter_addon import BridgeGapsFilterAddon
+from core.filters.single_person.core.filters.segments_duration_filter_addon import SegmentsDurationFilterAddon
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
+from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 from core.utils.cv.segments_with_bounding_boxes import SegmentsWithBoundingBoxes
 from core.utils.cv.video_stride_reader import VideoStrideReader
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
@@ -84,17 +89,25 @@ def  process_single_persons(video_source_filepath: os.PathLike | str, videos_tar
                 f'video duration is {(video_bbox_segments.video_properties.approximate_frames_number / video_bbox_segments.video_properties.fps):.2f} seconds.')
 
 
-def extract_single_persons_from_video(video_source_filepath, **parameters) -> SegmentsWithBoundingBoxes:
+def extract_single_persons_from_video(video_source_filepath, **parameters) -> MultiplePersonsTracks:
     """
      Description:
     """
     yolo_weights_filepath = os.path.join(parameters['yolo_weights_path'], parameters['yolo_model'])
     persons_tracker = PersonsTracker(str(yolo_weights_filepath))
 
-    persons_tracks = persons_tracker.track(video_source_filepath, parameters['frames_stride'])
-    persons_tracks = persons_tracks.filter_by_area_ratio(parameters['person_area_ratio'])
-    persons_tracks = persons_tracks.bridge_gaps(parameters['person_gap_time'])
-    persons_tracks = persons_tracks.filter_by_time(parameters['person_minimal_time'])
+    persons_tracks = persons_tracker.track(video_source_filepath, **parameters['frames_stride'])
+
+    area_filter_addon = AreaFilterAddon(**parameters['person_minimum_area'])
+    area_ratio_filter_addon = AreaRatioFilterAddon(**parameters['person_area_ratio'])
+    duration_filter_addon = SegmentsDurationFilterAddon(**parameters['person_minimal_time'])
+    bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['maximum_gap_time'])
+
+    persons_tracks.apply_filter(area_filter_addon)
+    persons_tracks.apply_filter(area_ratio_filter_addon)
+    persons_tracks.apply_filter(duration_filter_addon)
+    persons_tracks.apply_filter(bridge_gaps_filter_addon)
+
     return persons_tracks
 
 
