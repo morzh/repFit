@@ -6,6 +6,7 @@ import ffmpeg
 
 from core.utils.cv.video_file_segments import VideoFileSegments
 from core.utils.cv.video_writer import VideoWriter
+from core.utils.io.files_operations import extract_extension_from_filepath
 
 
 def cut_by_bbox(image: np.ndarray, bbox: np.ndarray, w, h) -> np.ndarray:
@@ -65,7 +66,7 @@ def write_segments_values(video_segments: VideoFileSegments, input_filepath: os.
     :param output_folder:
     :param filter_name: filter name (e.g. steady or non-steady)
     """
-    video_filename_base, _ = VideoWriter.extract_extension_from_filepath(input_filepath)
+    video_filename_base, _ = extract_extension_from_filepath(input_filepath)
     segments_values_filename = f'{video_filename_base}__{filter_name}__.npy'
     segments_values_filepath = os.path.join(output_folder, segments_values_filename)
 

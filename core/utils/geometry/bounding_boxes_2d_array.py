@@ -26,8 +26,13 @@ class BoundingBoxes2DArray:
         else:
             self.values = np.empty((0, 4))
 
+
     def __getitem__(self, item):
         return self.values[item]
+    
+    
+    def __len__(self) -> int:
+        return self.values.shape[0]
 
 
     def append(self, bounding_box: np.ndarray, mode=XYWH) -> None:
@@ -35,8 +40,8 @@ class BoundingBoxes2DArray:
         Description:
             Append new bounding box to an existing array.
 
-        :param bounding_box:
-        :param mode:
+        :param bounding_box: bounding box to append;
+        :param mode: bounding box format.
         """
         if bounding_box.size != 4:
             raise ValueError('Input bounding_box size should be 4')

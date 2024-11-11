@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from core.filters.single_person.core.increasing_sequence import StrictlyIncreasingSequence
+from core.filters.single_person.core.strictly_increasing_sequence import StrictlyIncreasingSequence
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
 

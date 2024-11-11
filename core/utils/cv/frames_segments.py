@@ -30,6 +30,15 @@ class FramesSegments:
         return self.values[item]
 
 
+    def __iter__(self):
+        for index in range(self.values.shape[0]):
+            yield self.values[index]
+
+
+    def __len__(self) -> int:
+        return self.values.shape[0]
+
+
     def append_segment(self, segment: np.ndarray) -> None:
         """
         Description:

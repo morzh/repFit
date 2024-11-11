@@ -1,6 +1,6 @@
 import os
 import shutil
-from pathlib import Path
+import ffmpeg
 import cv2
 import numpy as np
 
@@ -9,6 +9,8 @@ from numpy.typing import NDArray
 
 from core.utils.cv.video_stride_reader import VideoStrideReader
 from core.utils.cv.video_file_segments import VideoFileSegments
+from core.utils.io.files_operations import extract_extension_from_filepath
+
 # from filters.single_person.core.multiple_persons_tracks import SinglePersonTrack
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
@@ -31,7 +33,26 @@ class VideoWriter:
         self._output_folder = output_folder
         self._fps = fps
 
-    def write_segments(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
+    def write_segments(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady', method='cv2'):
+        """
+        Description:
+            Write video segments as separate video files.
+
+        :param video_file_segments: video segments
+        :param filter_name: name of the filter (prefix to frames range)
+        :param method: write method (cv2 or ffmpeg )
+
+        :raise ValueError: if ``method`` is different from cv2 or ffmpeg.
+        """
+        if method == 'cv2':
+            self.write_segments_cv2(video_file_segments, filter_name)
+        elif method == 'ffmpeg':
+            self.write_segments_ffmpeg(video_file_segments, filter_name)
+        else:
+            raise ValueError('Method could be only cv2 or ffmpeg')
+
+
+    def write_segments_cv2(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
         """
         Description:
             Write video segments as separate video files.
@@ -43,7 +64,7 @@ class VideoWriter:
             return
 
         if video_file_segments.whole_video_segments_check():
-            video_filename_base, _ = self.extract_extension_from_filepath(self._input_filepath)
+            video_filename_base, _ = extract_extension_from_filepath(self._input_filepath)
             video_filename = f'{video_filename_base}__{filter_name}__.mp4'
             output_filepath = os.path.join(self._output_folder, video_filename)
             shutil.copy(self._input_filepath, output_filepath)
@@ -60,7 +81,7 @@ class VideoWriter:
         for index_frame, frame in enumerate(video_reader):
             current_video_writer = None
             if index_frame == current_segment_start:
-                current_output_filepath = self.current_filepath_segment(current_segment, filter_name)
+                current_output_filepath = self._current_filepath_segment(current_segment, filter_name)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, resolution)
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
                 # logger.info(f'Video segments \n: {video_segments.segments}')
@@ -77,24 +98,24 @@ class VideoWriter:
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 
-    def write_segments_with_bounding_boxes(self):
+
+
+    def write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady'):
+        pts = 'PTS-STARTPTS'
+        for segment in video_file_segments:
+            current_output_filepath = self._current_filepath_segment(segment, filter_name)
+            input_stream = ffmpeg.input(self._input_filepath)
+            video_cut = input_stream.trim(start=segment[0], end=segment[1]).setpts(pts)
+            output_video = ffmpeg.output(video_cut, current_output_filepath, format='mp4')
+            output_video.run()
+
+
+    def write_person_track(self):
         """
 
         """
 
-    @staticmethod
-    def extract_extension_from_filepath(input_filepath) -> tuple[str, str]:
-        """
-        Description:
-            Extract file name without extension and file extension from file pathname.
-
-        :return: file name and file extension
-        """
-        video_filename = os.path.basename(input_filepath)
-        return os.path.splitext(video_filename)
-
-
-    def current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
+    def _current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
         """
         Description:
             Get video file name for a given segment
@@ -104,7 +125,7 @@ class VideoWriter:
 
         :return: filename
         """
-        video_filename_base, _ = VideoWriter.extract_extension_from_filepath(self._input_filepath)
+        video_filename_base, _ = extract_extension_from_filepath(self._input_filepath)
         start_frame = str(segment[0]).zfill(5)
         end_frame = str(segment[1]).zfill(5)
         video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
@@ -121,3 +142,7 @@ class VideoWriter:
     def output_folder(self) -> os.PathLike:
         return self._output_folder
 
+
+    @property
+    def fps(self) -> float:
+        return self._fps

@@ -63,3 +63,14 @@ def check_filename_entry_in_folder(folder, filename_entry) -> bool:
             return True
 
     return False
+
+
+def extract_extension_from_filepath(input_filepath) -> tuple[str, str]:
+    """
+    Description:
+        Extract file name without extension and file extension from file pathname.
+
+    :return: file name and file extension
+    """
+    video_filename = os.path.basename(input_filepath)
+    return os.path.splitext(video_filename)

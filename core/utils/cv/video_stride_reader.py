@@ -1,3 +1,5 @@
+import os
+
 import cv2
 from pathlib import Path
 from typing import Iterator
@@ -11,7 +13,7 @@ class VideoStrideReader(VideoReader):
         Read frames from video file.
     """
 
-    def __init__(self, video_filepath: str | Path, **options):
+    def __init__(self, video_filepath: os.PathLike, **options):
         """
         Description:
             VideoReader class constructor.

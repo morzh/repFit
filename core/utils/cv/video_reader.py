@@ -1,5 +1,4 @@
 import cv2
-from pathlib import Path
 import os.path
 from typing import Iterator
 
@@ -12,7 +11,7 @@ class VideoReader:
         Base class for frames reading. Frames generator should be implemented in derived class.
     """
 
-    def __init__(self, video_filepath: str | Path, *args, **kwargs):
+    def __init__(self, video_filepath: os.PathLike, *args, **kwargs):
         """
         Description:
             VideoReaderBase class constructor.
