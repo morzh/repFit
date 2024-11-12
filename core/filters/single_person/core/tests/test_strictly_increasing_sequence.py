@@ -11,13 +11,12 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
         self.maximum_sequence_length = 500
 
 
-    def test_init_correct(self):
+    def test_init(self):
+        # correct input sequence case
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(1, self.maximum_sequence_length)
             _ = StrictlyIncreasingSequence(correct_sequence)
-
-
-    def test_init_incorrect(self):
+        # incorrect input sequence case
         for _ in range(self.number_checks):
             incorrect_sequence = self.incorrect_sequence(4, self.maximum_sequence_length)
             with self.assertRaises(ValueError):

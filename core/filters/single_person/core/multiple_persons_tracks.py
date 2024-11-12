@@ -1,6 +1,5 @@
 import os
 import pickle
-
 import torch
 
 from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
@@ -9,11 +8,14 @@ from core.filters.single_person.core.single_person_track import SinglePersonTrac
 
 
 class MultiplePersonsTracks:
-    def __init__(self, video_properties: VideoProperties):
-        """
-        Description:
+    """
+    Description:
+        Persons data storage class.
 
-        """
+    :ivar persons: person_id -> person data mapping
+    :ivar video_properties:  video properties data
+    """
+    def __init__(self, video_properties: VideoProperties):
         self.persons: dict[int, SinglePersonTrack] = {}
         self.video_properties = video_properties
 
@@ -21,6 +23,10 @@ class MultiplePersonsTracks:
     def update(self, data: torch.Tensor, frame_number: int) -> None:
         """
         Description:
+            Update persons tracks data.
+
+        :param data: person's data, obtained from AI model;
+        :param frame_number: frame number.
         """
         for index in range(data.shape[0]):
             current_person_id = int(data[index, 4])
@@ -41,5 +47,11 @@ class MultiplePersonsTracks:
         filter_visitor.process(self)
 
     def serialize(self, filepath: os.PathLike) -> None:
+        """
+        Description:
+            Serialize class instance.
+
+        :param filepath: filepath to write class instance to.
+        """
         with open(filepath, mode='wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)

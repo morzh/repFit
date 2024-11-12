@@ -15,7 +15,6 @@ class VideoFileSegments(FramesSegments):
     :ivar segments: video segments;
     :ivar video_properties: video file properties;
     """
-
     __slots__ = ['video_properties']
     def __init__(self, segments: np.ndarray, video_properties: VideoProperties):
         super().__init__(segments)

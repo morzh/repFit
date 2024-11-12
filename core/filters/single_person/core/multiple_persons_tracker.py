@@ -7,14 +7,30 @@ from core.utils.cv.video_stride_reader import VideoStrideReader
 
 
 class PersonsTracker:
+    """
+    Description:
+        Tracker of person's data (idm bounding boxes, confidences) within given video.
+
+    :ivar model: AI model for person(s) detection.
+    """
     def __init__(self, weights_pathname: str = 'yolov10x.pt'):
         self.model = YOLO(weights_pathname)
 
-    def track(self, source_video_filepath: str, stride=2) -> MultiplePersonsTracks:
-        if not os.path.isfile(source_video_filepath):
-            raise Exception(f"Video {source_video_filepath} was not found")
+    def track(self, video_filepath: os.PathLike, stride=2) -> MultiplePersonsTracks:
+        """
+        Description:
+            Track persons, their ids, bounding boxes and their confidences in given video.
+            Data will be stored in ``MultiplePersonsTracks`` class instance.
 
-        video_reader = VideoStrideReader(source_video_filepath, stride=stride, use_tqdm=False)
+        :param video_filepath:  filepath of the input video;
+        :param stride: video frames stride.
+
+        :return: multiple persons tracks data.
+        """
+        if not os.path.isfile(video_filepath):
+            raise Exception(f"Video {video_filepath} was not found")
+
+        video_reader = VideoStrideReader(video_filepath, stride=stride, use_tqdm=False)
         persons_video_segments = MultiplePersonsTracks(video_properties=video_reader.video_properties)
 
         for frame in video_reader:

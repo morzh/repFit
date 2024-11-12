@@ -8,7 +8,11 @@ from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 class PersonTrackingData:
     """
     Description:
+        Class for storing  data, obtained from person's tracker (neural network actually).
 
+    :ivar _bounding_boxes: person's bounding boxes;
+    :ivar _frames_indices: frame indices at which person was tracked;
+    :ivar _confidences: tracking confidences.
     """
     __slots__ = ['_bounding_boxes', '_frames_indices', '_confidences']
 
@@ -18,38 +22,46 @@ class PersonTrackingData:
         self._confidences: np.ndarray = np.empty(0, )
 
 
-    def append(self, bounding_box: np.ndarray, frame_index:int, confidence: float, bounding_box_mode=BoundingBoxes2DArray.XYWH) -> None:
+    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, bounding_box_mode=BoundingBoxes2DArray.XYWH) -> None:
         """
         Description:
+            Append new tracked data.
 
-        :param bounding_box:
-        :param frame_index:
-        :param confidence:
-        :param bounding_box_mode:
+        :param bounding_box: bounding box to append
+        :param frame_index: frame index to append
+        :param confidence: confidence to append
+        :param bounding_box_mode: bounding box mode (XYWH or XYXY)
 
-        :raise ValueError:
+        :raise ValueError: if one of ``bounding_box`` or ``frame_index`` or ``confidence`` values is incorrect.
         """
         self._bounding_boxes.append(bounding_box, mode=bounding_box_mode)
         self._frames_indices.append(frame_index)
-        self._confidences = np.append(self._confidences, confidence)
+
+        if confidence >= 0:
+            self._confidences = np.append(self._confidences, confidence)
+        else:
+            raise ValueError('Confidence should be greater or equal zero')
 
 
-    def bounding_box(self, index) -> np.ndarray:
+    def bounding_box(self, frame_index) -> np.ndarray:
         """
         Description:
+            Calculates bounding box at ``frame_index``. If ``frame_index`` presented in data, corresponding bounding box will be returned.
+            In other case, bounding box will be interpolated.
 
-        :param index:
+        :param frame_index: frame index
 
         :return: bounding box, represented by numpy array
         """
-        index_occurrence = np.argmax(self._frames_indices == index)
-        if index_occurrence is None:
-            index_occurrence = np.argmax(self._frames_indices > index)
+        index_high_bound_occurrence = np.argmax(self._frames_indices >= frame_index)
 
-        if index_occurrence == 0:
-            return self._bounding_boxes[0]
+        if self._frames_indices[index_high_bound_occurrence] == frame_index:
+            return self._bounding_boxes[index_high_bound_occurrence]
         else:
-            return 0.5 * (self._bounding_boxes[index_occurrence - 1] + self._bounding_boxes[index_occurrence])
+            segment_start = self._frames_indices[index_high_bound_occurrence - 1]
+            segment_end = self._frames_indices[index_high_bound_occurrence]
+            factor = (frame_index - segment_start) / (segment_end - segment_start)
+            return self._bounding_boxes[index_high_bound_occurrence - 1] + factor * (self._bounding_boxes[index_high_bound_occurrence] - self._bounding_boxes[index_high_bound_occurrence - 1])
 
 
     def calculate_segments(self, stride=1) -> FramesSegments:
@@ -75,16 +87,19 @@ class PersonTrackingData:
 
     def _is_consistent(self) -> bool:
         """
+        Description:
+            Checks if data is consistent
 
+        :return: True if consistent, False otherwise.
         """
-        return self._frames_indices.is_consistent() and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
+        return StrictlyIncreasingSequence.is_consistent(self._frames_indices) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
 
 
     @property
     def bounding_boxes(self) -> BoundingBoxes2DArray:
         """
         Description:
-
+            Get bounding boxes data.
         """
         return self._bounding_boxes
 
@@ -93,7 +108,7 @@ class PersonTrackingData:
     def frames_indices(self) -> StrictlyIncreasingSequence:
         """
         Description:
-
+            Get frames indices data.
         """
         return self._frames_indices
 
@@ -102,6 +117,6 @@ class PersonTrackingData:
     def confidences(self) -> np.ndarray:
         """
         Description:
-
+            Get  confidences data.
         """
         return self._confidences

@@ -165,9 +165,13 @@ class BoundingBoxes2DArray:
             raise ValueError('Indices should be an 1D array.')
 
         if indices.size > self.values.shape[0]:
-            warnings.warn('Indices size bigger than the nu,ber of bounding boxes.')
+            warnings.warn('Indices size bigger than the number of bounding boxes.')
             boxes_number = self.values.shape[0]
             indices = indices[:boxes_number]
+
+        indices = indices.sort()
+        if indices[-1] > (self.values.shape[0] - 1):
+            raise ValueError('Indices are not correct.')
 
         return self.values[indices]
 

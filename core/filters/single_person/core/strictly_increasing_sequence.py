@@ -4,7 +4,9 @@ import numpy as np
 class StrictlyIncreasingSequence:
     """
     Description:
-        Increasing integer sequence class.
+        Class storage for strictly increasing sequence of integers.
+
+    :ivar _values: sequence values
     """
     __slots__ = ['_values']
 
@@ -31,26 +33,34 @@ class StrictlyIncreasingSequence:
         return self._values.shape[0]
 
 
-    def append(self, index: int):
+    def append(self, element: int):
         """
         Description:
+            Append new element to sequence.
 
-        :param index:
+        :param element: element to append.
         """
         if self._values.size == 0:
-            self._values = np.array([index])
-        elif self._values.shape[0] > 0 and index > self._values[-1]:
-            self._values = np.append(self._values, index)
+            self._values = np.array([element])
+        elif self._values.shape[0] > 0 and element > self._values[-1]:
+            self._values = np.append(self._values, element)
         else:
             raise ValueError('New frame index should be greater, than the previous one.')
 
+
     @staticmethod
-    def is_consistent(indices):
+    def is_consistent(indices) -> bool:
         """
         Description:
+            Checks if indices 1D array is strictly increasing.
 
-        :param indices:
+        :param indices: indices values
+
+        :return: True in ``indices`` strictly increasing sequence, False otherwise.
         """
+        if indices.size != indices.flatten().shape[0]:
+            raise ValueError('Indices should be a 1D array.')
+
         if indices.shape[0] == 1:
             return True
 
@@ -61,10 +71,12 @@ class StrictlyIncreasingSequence:
         return False
 
     @property
-    def values(self):
+    def values(self) -> np.ndarray:
         """
         Description:
+            Indices values getter
 
+        :return: indices array.
         """
         return self._values
 

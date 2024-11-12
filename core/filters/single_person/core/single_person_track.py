@@ -72,7 +72,7 @@ class SinglePersonTrack:
 
         :return: mean area of all person's bounding boxes.
         """
-        return self.data._bounding_boxes.mean_area()
+        return self.data.bounding_boxes.mean_area()
 
 
     def mean_area_per_segment(self):
@@ -83,6 +83,6 @@ class SinglePersonTrack:
         if self.frame_segments.size == 0:
             self.frame_segments = self.data.calculate_segments()
 
-        indices_array = self.frame_segments.indices()
+        indices_array = self.frame_segments.as_frames_indices()
 
 

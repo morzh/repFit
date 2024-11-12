@@ -193,5 +193,8 @@ class FramesSegments:
         """
         return np.abs(self.values[:, 1] - self.values[:, 0])
 
-    def indices(self) -> np.ndarray:
-        pass
+    def as_frames_indices(self) -> np.ndarray:
+        """
+        Description:
+            Calculates ....
+        """

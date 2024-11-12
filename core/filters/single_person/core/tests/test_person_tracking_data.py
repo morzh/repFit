@@ -55,10 +55,46 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     def test_bounding_box(self):
-        ...
+        for _ in range(self.number_checks):
+            x_min =  np.random.randint(-500, 500)
+            y_min =  np.random.randint(-500, 500)
+
+            x_max =  x_min + np.random.randint(0, 500)
+            y_max =  y_min + np.random.randint(0, 500)
+
+            width_1 = np.random.randint(1, 500)
+            width_2 = np.random.randint(1, 500)
+
+            height_1 = np.random.randint(1, 500)
+            height_2 = np.random.randint(1, 500)
+
+            number_steps = np.random.randint(3, 20)
+
+            frame_1 = np.random.randint(0, 500)
+            frame_2 = frame_1 + number_steps
+
+            xs = np.linspace(x_min, x_max, number_steps + 1).reshape((-1, 1))
+            ys = np.linspace(y_min, y_max, number_steps + 1).reshape((-1, 1))
+            widths = np.linspace(width_1, width_2, number_steps + 1).reshape((-1, 1))
+            heights = np.linspace(height_1, height_2, number_steps + 1).reshape((-1, 1))
+
+            bounding_boxes_interpolated = np.hstack((xs, ys, widths, heights))
+            frames = np.linspace(frame_1, frame_2, number_steps + 1).astype(int)
+            confidences = np.random.rand(number_steps)
+
+            tracking_data = PersonTrackingData()
+            tracking_data.append(bounding_boxes_interpolated[0], int(frames[0]), float(confidences[0]))
+            tracking_data.append(bounding_boxes_interpolated[-1], int(frames[-1]), float(confidences[-1]))
+
+            for index in range(frames.shape[0]):
+                frame_index = frames[index]
+                interpolated_bounding_box = tracking_data.bounding_box(frame_index)
+                self.assertTrue(np.alltrue(np.isclose(interpolated_bounding_box, bounding_boxes_interpolated[index], atol=1e-18)))
+
 
     def test_calculate_segments(self):
         ...
+
 
     @staticmethod
     def fill_data() -> PersonTrackingData:
@@ -70,8 +106,8 @@ class TestPersonTrackingData(unittest.TestCase):
 
         bounding_boxes = np.hstack((top_lefts, width_heights))
         confidences = np.random.random((number_occurrences,))
-        indices = np.random.randint(0, number_frames, (number_occurrences,))
-        indices.sort()
+        indices = np.random.randint(1, 15, (number_occurrences,))
+        indices  = np.cumsum(indices)
 
         bounding_boxes_2d_array = BoundingBoxes2DArray(bounding_boxes)
         frames_indices = StrictlyIncreasingSequence(indices)
