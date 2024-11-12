@@ -4,9 +4,9 @@ import numpy as np
 class StrictlyIncreasingSequence:
     """
     Description:
-        Class storage for strictly increasing sequence of integers.
+        Class storage for strictly increasing sequence of numbers.
 
-    :ivar _values: sequence values
+    :ivar _values: sequence values.
     """
     __slots__ = ['_values']
 
@@ -33,10 +33,10 @@ class StrictlyIncreasingSequence:
         return self._values.shape[0]
 
 
-    def append(self, element: int):
+    def append(self, element: int) -> None:
         """
         Description:
-            Append new element to sequence.
+            Appends new element to sequence.
 
         :param element: element to append.
         """
@@ -56,7 +56,7 @@ class StrictlyIncreasingSequence:
 
         :param indices: indices values
 
-        :return: True in ``indices`` strictly increasing sequence, False otherwise.
+        :return: True if ``indices`` is strictly increasing sequence, False otherwise.
         """
         if indices.size != indices.flatten().shape[0]:
             raise ValueError('Indices should be a 1D array.')

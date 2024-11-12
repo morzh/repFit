@@ -88,7 +88,7 @@ class PersonTrackingData:
     def _is_consistent(self) -> bool:
         """
         Description:
-            Checks if data is consistent
+            Checks if class instance data is consistent.
 
         :return: True if consistent, False otherwise.
         """
@@ -99,7 +99,9 @@ class PersonTrackingData:
     def bounding_boxes(self) -> BoundingBoxes2DArray:
         """
         Description:
-            Get bounding boxes data.
+            Bounding boxes getter.
+
+        :return: bounding boxes
         """
         return self._bounding_boxes
 
@@ -108,7 +110,9 @@ class PersonTrackingData:
     def frames_indices(self) -> StrictlyIncreasingSequence:
         """
         Description:
-            Get frames indices data.
+            Frames indices data getter.
+
+        :return: frames indices sequence.
         """
         return self._frames_indices
 
@@ -117,6 +121,8 @@ class PersonTrackingData:
     def confidences(self) -> np.ndarray:
         """
         Description:
-            Get  confidences data.
+            Confidences data getter.
+
+        :return: confidences values.
         """
         return self._confidences

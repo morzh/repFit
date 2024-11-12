@@ -10,6 +10,8 @@ class BoundingBoxes2DArray:
     Description:
         Class for storing and operating on bounding boxes array.
         Array of bounding boxes, represented by [top, left, width, height] format in image coordinates.
+
+    :ivar values: bounding boxes values
     """
 
     XYWH = BoundingBoxMode.XYWH.value
@@ -55,13 +57,13 @@ class BoundingBoxes2DArray:
         self.values = np.vstack((self.values, bounding_box))
 
 
-    def extend(self, bounding_boxes: np.ndarray, mode=XYWH):
+    def extend(self, bounding_boxes: np.ndarray, mode=XYWH) -> None:
         """
         Description:
             Add new bounding boxes to an existing array.
 
-        :param bounding_boxes:
-        :param mode:
+        :param bounding_boxes: bounding boxes to append (as numpy array);
+        :param mode: bounding boxes format.
         """
         if bounding_boxes.shape[1] != 4 or len(bounding_boxes.shape) != 2:
             raise ValueError('Input bounding_box(es) should have size [N, 4].')
@@ -129,18 +131,32 @@ class BoundingBoxes2DArray:
 
     @property
     def shape(self) -> tuple:
+        """
+        Description:
+            Bounding boxes array shape.
+
+        :return: boxes array shape
+        """
         return self.values.shape
 
 
     @property
     def size(self) -> int:
+        """
+        Description:
+            Bounding boxes array size.
+
+        :return: boxes array size
+        """
         return self.values.size
 
     @staticmethod
-    def is_consistent(bounding_boxes: np.ndarray):
+    def is_consistent(bounding_boxes: np.ndarray) -> bool:
         """
         Description:
-            Checks if 2nd and 3rd components are greater than zero.
+            Checks if 2nd and 3rd components of bounding boxes array are greater than zero.
+
+        :return: True if consistent, False otherwise.
         """
         columns_number = bounding_boxes.shape[1]
         return np.alltrue(bounding_boxes[:, 2:] > 0) and columns_number == 4
@@ -177,28 +193,35 @@ class BoundingBoxes2DArray:
 
 
     @staticmethod
-    def xyxy_to_xywh(bounding_box_xyxy: np.ndarray) -> np.ndarray:
+    def xyxy_to_xywh(bboxes_xyxy: np.ndarray) -> np.ndarray:
         """
         Description:
             Converts XYXY (top-left, bottom-right) bounding box representation to XYWH (top-left, width height) representation.
+
+        :param bboxes_xyxy: bounding boxes numpy array in XYXY format.
+
+        :return: bounding boxes numpy array in XYWH format.
         """
         # TODO: think about degenerate cases
-        xyxy = bounding_box_xyxy.reshape((-1, 2, 2))
+        xyxy = bboxes_xyxy.reshape((-1, 2, 2))
         xy_top_left = np.min(xyxy, axis=1)
         xy_bottom_right = np.max(xyxy, axis=1)
         xywh_boxes = np.hstack((xy_top_left, xy_bottom_right - xy_top_left))
-
         return xywh_boxes.reshape((-1, 4))
 
 
     @staticmethod
-    def xywh_to_xyxy(bbox_xywh: np.ndarray) -> np.ndarray:
+    def xywh_to_xyxy(bboxes_xywh: np.ndarray) -> np.ndarray:
         """
         Description:
             Converts XYXY (top-left, bottom-right) bounding box representation to XYWH (top-left, width height) representation.
+
+        :param bboxes_xywh: bounding boxes numpy array in XYWH format.
+
+        :return: bounding boxes numpy array in XYXY format.
         """
-        xyxy_boxes =  np.hstack([bbox_xywh[:, 0].reshape(-1, 1),
-                                 bbox_xywh[:, 1].reshape(-1, 1),
-                                (bbox_xywh[:, 0] + bbox_xywh[:, 2]).reshape(-1, 1),
-                                (bbox_xywh[:, 1] + bbox_xywh[:, 3]).reshape(-1, 1)])
+        xyxy_boxes =  np.hstack([bboxes_xywh[:, 0].reshape(-1, 1),
+                                 bboxes_xywh[:, 1].reshape(-1, 1),
+                                 (bboxes_xywh[:, 0] + bboxes_xywh[:, 2]).reshape(-1, 1),
+                                 (bboxes_xywh[:, 1] + bboxes_xywh[:, 3]).reshape(-1, 1)])
         return xyxy_boxes

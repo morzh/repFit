@@ -1,3 +1,4 @@
+import copy
 import unittest
 import numpy as np
 
@@ -27,7 +28,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(1, self.maximum_sequence_length)
             sequence = StrictlyIncreasingSequence(correct_sequence)
-            last_element = sequence.values[-1]
+            last_element = int(sequence.values[-1])
             addon = np.random.randint(1, 50)
             sequence.append(last_element + addon)
 
@@ -36,7 +37,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(1, self.maximum_sequence_length)
             sequence = StrictlyIncreasingSequence(correct_sequence)
-            last_element = sequence.values[-1]
+            last_element = int(sequence.values[-1])
             addon = np.random.randint(-10, 0)
             with self.assertRaises(ValueError):
                 sequence.append(last_element + addon)
@@ -60,8 +61,8 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
 
     def test_is_consistent(self):
         for _ in range(self.number_checks):
-            incorrect_sequence = self.incorrect_sequence(4, self.maximum_sequence_length)
             correct_sequence = self.correct_sequence(4, self.maximum_sequence_length)
+            incorrect_sequence = self.incorrect_sequence(4, self.maximum_sequence_length)
 
             is_consistent_false = StrictlyIncreasingSequence.is_consistent(incorrect_sequence)
             is_consistent_true = StrictlyIncreasingSequence.is_consistent(correct_sequence)
@@ -74,8 +75,12 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
     def incorrect_sequence(low, high) -> np.ndarray:
         sequence_length = np.random.randint(low, high)
         sequence = np.random.randint(1, 50, (sequence_length,))
-        incorrect_sequence = np.cumsum(sequence)
+        correct_sequence = np.cumsum(sequence)
+        incorrect_sequence = copy.deepcopy(correct_sequence)
         np.random.shuffle(incorrect_sequence)
+        # sometimes np.random.shuffle leaves input array unchanged. Following check prevents this.
+        if np.alltrue(correct_sequence == incorrect_sequence):
+            incorrect_sequence[0] = correct_sequence[-1]
         return incorrect_sequence
 
     @staticmethod
