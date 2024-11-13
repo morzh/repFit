@@ -67,8 +67,9 @@ class PersonTrackingData:
     def calculate_segments(self, stride=1) -> FramesSegments:
         """
         Description:
+            Calculate frames segments from stored data.
 
-        :param stride:
+        :param stride: frames stride
 
         :return: frame segments
         """
@@ -110,7 +111,7 @@ class PersonTrackingData:
     def frames_indices(self) -> StrictlyIncreasingSequence:
         """
         Description:
-            Frames indices data getter.
+            Frames indices getter.
 
         :return: frames indices sequence.
         """
@@ -121,7 +122,7 @@ class PersonTrackingData:
     def confidences(self) -> np.ndarray:
         """
         Description:
-            Confidences data getter.
+            Confidences getter.
 
         :return: confidences values.
         """

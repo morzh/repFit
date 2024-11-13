@@ -111,7 +111,7 @@ class FramesSegments:
             self.values = np.delete(self.values, -1, axis=0)
 
 
-    def bridge_gaps(self, gap_threshold: int):
+    def bridge_gaps(self, gap_threshold: int) -> None:
         """
         Description:
             Bridge gaps in place between segments if gaps itself less than ``gaps_length``.
@@ -163,6 +163,7 @@ class FramesSegments:
             return True
         return False
 
+
     @property
     def size(self) -> int:
         """
@@ -172,6 +173,7 @@ class FramesSegments:
         :return: segments size
         """
         return self.values.size
+
 
     @property
     def shape(self) -> tuple:
@@ -183,18 +185,22 @@ class FramesSegments:
         """
         return self.values.shape
 
+
     @property
     def lengths(self) -> np.ndarray:
         """
         Description:
             Returns segments lengths.
 
-        :return: segments lengths
+        :return: segments lengths.
         """
         return np.abs(self.values[:, 1] - self.values[:, 0])
+
 
     def as_frames_indices(self) -> np.ndarray:
         """
         Description:
-            Calculates ....
+            Calculates frames indices. If [f_start, f_end] is a frame segment, frames indices will be [f_start, f_start + 1, ..., f_end - 1]
+
+        :return: frames indices
         """
