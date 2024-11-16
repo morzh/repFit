@@ -3,7 +3,7 @@ from typing import Union, Any
 from pathlib import Path
 import pickle
 import json
-
+import numpy as np
 import yaml
 
 
@@ -18,11 +18,16 @@ def read_pickle(fpath: Union[str, Path]) -> Any:
     return result
 
 
-def write_json(obj, fpath: Union[str, Path]):
-    with open(fpath, 'w', encoding='utf8') as file:
+def write_json(obj: any, filepath: os.PathLike | Path) -> None:
+    """
+    Description:
+        Write object to JSON file.
+
+    :param obj: object to write
+    :param filepath: output file path
+    """
+    with open(filepath, 'w', encoding='utf8') as file:
         json.dump(obj, file, ensure_ascii=True)
-
-
 
 
 def read_yaml(yaml_filepath: str) -> dict:
@@ -74,3 +79,30 @@ def extract_extension_from_filepath(input_filepath) -> tuple[str, str]:
     """
     video_filename = os.path.basename(input_filepath)
     return os.path.splitext(video_filename)
+
+
+def filter_filepath_segment(input_filepath: os.PathLike, output_folder: os.PathLike, segment: np.ndarray, suffix='steady') -> os.PathLike | str:
+    """
+    Description:
+        For filtering purposes get video file name for a given segment
+
+    :param input_filepath: input (video) filepath
+    :param output_folder: output (video) folder
+    :param segment: video segment (just start and end frame)
+    :param suffix: frames range prefix
+
+    :return: filename
+    """
+    video_filename_base, _ = extract_extension_from_filepath(input_filepath)
+    start_frame = str(segment[0]).zfill(5)
+    end_frame = str(segment[1]).zfill(5)
+    video_filename = f'{video_filename_base}__{suffix}_{start_frame}-{end_frame}__.mp4'
+    output_filepath = os.path.join(output_folder, video_filename)
+    return output_filepath
+
+
+def filepath_person_segment(input_filepath: os.PathLike, output_folder: os.PathLike, person_id: int, segment: np.ndarray, suffix='steady') -> os.PathLike:
+    """
+
+    """
+

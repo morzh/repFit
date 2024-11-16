@@ -9,12 +9,10 @@ from numpy.typing import NDArray
 from sqlalchemy.testing.plugin.plugin_base import warnings
 
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
-from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_stride_reader import VideoReader
 from core.utils.cv.video_file_segments import VideoFileSegments
-from core.utils.io.files_operations import extract_extension_from_filepath
+from core.utils.io.files_operations import extract_extension_from_filepath, filter_filepath_segment
 
-# from filters.single_person.core.multiple_persons_tracks import SinglePersonTrack
 
 segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
 
@@ -67,7 +65,7 @@ class VideoWriter:
             raise ValueError('Method could be only cv2 or ffmpeg')
 
 
-    def write_person_track(self, track: SinglePersonTrack, suffix_person='', suffix_segment='') -> None:
+    def write_person_track(self, track: SinglePersonTrack, person_id: int, suffix_person='ch', suffix_segment='fr') -> None:
         """
         Description:
             Write person's track to a wet of video files.
@@ -75,9 +73,11 @@ class VideoWriter:
         :param track: person's track
         """
         for segment in track.frame_segments:
-            current_video_filename = ''
+            source_video_filename = os.path.basename(self._input_filepath)
+            source_video_filename_base = os.path.split(source_video_filename, '.')[0]
+            current_video_filename = f'{source_video_filename_base}__{suffix_person}{person_id}_fr{suffix_segment[0]}-{suffix_segment[1]}__.mp4'
             video_filepath = os.path.join(self._output_folder, current_video_filename)
-            self._write_single_segment_ffmpeg(segment, suffix='')
+            self._write_single_segment_ffmpeg(segment, video_filepath)
 
 
     def _write_segments_cv2(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
@@ -99,7 +99,7 @@ class VideoWriter:
         for index_frame, frame in enumerate(video_reader):
             current_video_writer = None
             if index_frame == current_segment_start:
-                current_output_filepath = self._current_filepath_segment(current_segment, filter_name)
+                current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, current_segment, filter_name)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, resolution)
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
 
@@ -118,7 +118,7 @@ class VideoWriter:
 
     def _write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, postfix: str = 'steady') -> None:
         for segment in video_file_segments:
-            current_output_filepath = self._current_filepath_segment(segment, postfix)
+            current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, segment, postfix)
             self._write_single_segment_ffmpeg(segment, current_output_filepath)
 
 
@@ -136,23 +136,6 @@ class VideoWriter:
         output_video = ffmpeg.output(video_cut, output_filepath, format='mp4')
         output_video.run()
 
-
-    def _current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
-        """
-        Description:
-            Get video file name for a given segment
-
-        :param segment: video segment (just start and end frame)
-        :param frames_range_prefix: frames range prefix
-
-        :return: filename
-        """
-        video_filename_base, _ = extract_extension_from_filepath(self._input_filepath)
-        start_frame = str(segment[0]).zfill(5)
-        end_frame = str(segment[1]).zfill(5)
-        video_filename = f'{video_filename_base}__{frames_range_prefix}_{start_frame}-{end_frame}__.mp4'
-        output_filepath = os.path.join(self._output_folder, video_filename)
-        return output_filepath
 
 
     @property
