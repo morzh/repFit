@@ -15,5 +15,5 @@ class AreaFilterAddon(MultiPersonsFilterAddonBase):
     def __init__(self, area):
         self.area = area
 
-    def process(self, multi_persons_track: MultiplePersonsTracks):
+    def process(self, tracks: MultiplePersonsTracks):
         pass

@@ -9,5 +9,5 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
     def __init__(self, maximum_gap_time=5.0):
         ...
 
-    def process(self, multi_persons_track: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         pass

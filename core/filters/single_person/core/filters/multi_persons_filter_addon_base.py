@@ -9,8 +9,10 @@ class MultiPersonsFilterAddonBase(ABC):
         Base abstract filter class  MultiplePersonsTracks processing.
     """
     @abstractmethod
-    def process(self, multi_persons_track: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
-            Abstract filter method
+            Abstract ``MultiplePersonsTracks`` filter method
+            
+        :param tracks: instance of ``MultiplePersonsTracks`` class.
         """

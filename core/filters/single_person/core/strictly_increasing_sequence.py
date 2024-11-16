@@ -36,7 +36,7 @@ class StrictlyIncreasingSequence:
     def append(self, element: int) -> None:
         """
         Description:
-            Appends new element to sequence.
+            Appends new element to an existing sequence.
 
         :param element: element to append.
         """
@@ -49,7 +49,7 @@ class StrictlyIncreasingSequence:
 
 
     @staticmethod
-    def is_consistent(indices) -> bool:
+    def is_consistent(indices: np.ndarray) -> bool:
         """
         Description:
             Checks if indices 1D array is strictly increasing.

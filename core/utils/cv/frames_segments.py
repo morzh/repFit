@@ -197,10 +197,22 @@ class FramesSegments:
         return np.abs(self.values[:, 1] - self.values[:, 0])
 
 
-    def as_frames_indices(self) -> np.ndarray:
+    def as_frames_indices(self, stride=1) -> list:
         """
         Description:
             Calculates frames indices. If [f_start, f_end] is a frame segment, frames indices will be [f_start, f_start + 1, ..., f_end - 1]
 
         :return: frames indices
         """
+        if stride != 1:
+            raise NotImplementedError('Stride value, other than 1 is not implemented')
+
+        number_segments = self.values.shape[0]
+        frames_indices = [np.ndarray] * number_segments
+
+        for index in range(number_segments):
+            current_segment = self.values[index]
+            elements_number = current_segment[1] - current_segment[0]
+            frames_indices[index] = np.linspace(current_segment[0], current_segment[1], elements_number, endpoint=False).astype(np.int64)
+
+        return frames_indices

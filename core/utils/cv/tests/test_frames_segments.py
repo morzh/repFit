@@ -1,5 +1,8 @@
 import numpy as np
 import unittest
+
+from rich.segment import Segments
+
 from core.utils.cv.frames_segments import FramesSegments
 
 
@@ -211,6 +214,19 @@ class TestFramesSegments(unittest.TestCase):
             segments = FramesSegments(segments_values)
 
             self.assertTrue(np.alltrue(apriori_lengths == segments.lengths))
+
+
+    def test_as_frame_indices(self):
+        for _ in range(self.number_checks):
+            number_segments = np.random.randint(1, 1_500)
+            current_segments = FramesSegments(self.generate_consistent_segments(number_segments, low_value=1, high_value=10))
+            current_segments_frames_indices = current_segments.as_frames_indices()
+
+            for segments_index, segment_endpoints in enumerate(current_segments_frames_indices):
+                current_check_difference = segment_endpoints[1:] - segment_endpoints[:-1]
+                self.assertTrue(np.alltrue(current_check_difference == 1))
+                self.assertEqual(current_segments_frames_indices[segments_index][0], segment_endpoints[0])
+                self.assertEqual(current_segments_frames_indices[segments_index][-1], current_segments[segments_index, 1] - 1)
 
 
     @staticmethod

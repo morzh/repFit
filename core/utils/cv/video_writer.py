@@ -6,8 +6,11 @@ import numpy as np
 
 from typing import Annotated, Literal
 from numpy.typing import NDArray
+from sqlalchemy.testing.plugin.plugin_base import warnings
 
-from core.utils.cv.video_stride_reader import VideoStrideReader
+from core.filters.single_person.core.single_person_track import SinglePersonTrack
+from core.utils.cv.frames_segments import FramesSegments
+from core.utils.cv.video_stride_reader import VideoReader
 from core.utils.cv.video_file_segments import VideoFileSegments
 from core.utils.io.files_operations import extract_extension_from_filepath
 
@@ -33,6 +36,7 @@ class VideoWriter:
         self._output_folder = output_folder
         self._fps = fps
 
+
     def write_segments(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady', method='cv2'):
         """
         Description:
@@ -44,23 +48,8 @@ class VideoWriter:
 
         :raise ValueError: if ``method`` is different from cv2 or ffmpeg.
         """
-        if method == 'cv2':
-            self.write_segments_cv2(video_file_segments, filter_name)
-        elif method == 'ffmpeg':
-            self.write_segments_ffmpeg(video_file_segments, filter_name)
-        else:
-            raise ValueError('Method could be only cv2 or ffmpeg')
-
-
-    def write_segments_cv2(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
-        """
-        Description:
-            Write video segments as separate video files.
-
-        :param video_file_segments: video segments
-        :param filter_name: name of the filter (prefix to frames range)
-        """
         if video_file_segments.size == 0:
+            warnings.warn('Segments are empty. No video will bw written.')
             return
 
         if video_file_segments.whole_video_segments_check():
@@ -70,8 +59,37 @@ class VideoWriter:
             shutil.copy(self._input_filepath, output_filepath)
             return
 
+        if method == 'cv2':
+            self._write_segments_cv2(video_file_segments, filter_name)
+        elif method == 'ffmpeg':
+            self._write_segments_ffmpeg(video_file_segments, filter_name)
+        else:
+            raise ValueError('Method could be only cv2 or ffmpeg')
+
+
+    def write_person_track(self, track: SinglePersonTrack, suffix_person='', suffix_segment='') -> None:
+        """
+        Description:
+            Write person's track to a wet of video files.
+
+        :param track: person's track
+        """
+        for segment in track.frame_segments:
+            current_video_filename = ''
+            video_filepath = os.path.join(self._output_folder, current_video_filename)
+            self._write_single_segment_ffmpeg(segment, suffix='')
+
+
+    def _write_segments_cv2(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
+        """
+        Description:
+            Write video segments as separate video files.
+
+        :param video_file_segments: video segments
+        :param filter_name: name of the filter (prefix to frames range)
+        """
         # logger.info(f'Video segments: \n {video_segments.segments}')
-        video_reader = VideoStrideReader(self._input_filepath, use_tqdm=False)
+        video_reader = VideoReader(self._input_filepath)
         resolution = (video_file_segments.video_properties.video_width, video_file_segments.video_properties.video_height)
         index_segment = 0
         current_segment = video_file_segments.values[index_segment]
@@ -84,7 +102,6 @@ class VideoWriter:
                 current_output_filepath = self._current_filepath_segment(current_segment, filter_name)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, resolution)
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
-                # logger.info(f'Video segments \n: {video_segments.segments}')
 
             if current_segment_start <= index_frame < current_segment_end:
                 current_video_writer.write(frame)
@@ -99,21 +116,26 @@ class VideoWriter:
                 current_segment_end = current_segment[1]
 
 
-
-    def write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady'):
-        pts = 'PTS-STARTPTS'
+    def _write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, postfix: str = 'steady') -> None:
         for segment in video_file_segments:
-            current_output_filepath = self._current_filepath_segment(segment, filter_name)
-            input_stream = ffmpeg.input(self._input_filepath)
-            video_cut = input_stream.trim(start=segment[0], end=segment[1]).setpts(pts)
-            output_video = ffmpeg.output(video_cut, current_output_filepath, format='mp4')
-            output_video.run()
+            current_output_filepath = self._current_filepath_segment(segment, postfix)
+            self._write_single_segment_ffmpeg(segment, current_output_filepath)
 
 
-    def write_person_track(self):
+    def _write_single_segment_ffmpeg(self, segment: np.ndarray, output_filepath: str) -> None:
         """
+        Description:
+            Write video segment to video file. In other words trim video  from start to end video frame.
 
+        :param segment: input segment  (numpy array of size 2)
+        :param output_filepath: output video filepath.
         """
+        pts = 'PTS-STARTPTS'
+        input_stream = ffmpeg.input(self._input_filepath)
+        video_cut = input_stream.trim(start=segment[0], end=segment[1]).setpts(pts)
+        output_video = ffmpeg.output(video_cut, output_filepath, format='mp4')
+        output_video.run()
+
 
     def _current_filepath_segment(self, segment: np.ndarray, frames_range_prefix='steady') -> str:
         """

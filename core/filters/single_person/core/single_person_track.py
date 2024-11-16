@@ -75,14 +75,19 @@ class SinglePersonTrack:
         return self.data.bounding_boxes.mean_area()
 
 
-    def mean_area_per_segment(self):
+    def mean_area_per_segment(self) -> np.ndarray:
         """
         Description:
+            Calculates mean of bounding boxes areas of a person per frame segment.
 
+        :return: mean bounding boxes area per fame segment
         """
         if self.frame_segments.size == 0:
             self.frame_segments = self.data.calculate_segments()
 
         indices_array = self.frame_segments.as_frames_indices()
+        mean_areas = np.empty(len(indices_array))
+        for index, indices in enumerate(indices_array):
+            mean_areas[index] = self.data.bounding_boxes.mean_area(indices)
 
-
+        return mean_areas

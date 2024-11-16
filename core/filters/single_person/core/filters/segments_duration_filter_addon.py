@@ -7,6 +7,6 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
     def __init__(self, duration=1):
         self.duration = duration
 
-    def process(self, multi_persons_track: MultiplePersonsTracks):
-        for person in multi_persons_track.persons.values():
-            person.filter_by_time(multi_persons_track.video_properties.fps, self.duration)
+    def process(self, tracks: MultiplePersonsTracks) -> None:
+        for person_track in tracks.persons.values():
+            person_track.filter_by_time(tracks.video_properties.fps, self.duration)
