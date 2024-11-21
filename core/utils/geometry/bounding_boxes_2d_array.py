@@ -94,7 +94,6 @@ class BoundingBoxes2DArray:
 
         circumscribed_box = np.array([*top_lefts_minimum, *right_bottoms_maximum])
         return self.xyxy_to_xywh(circumscribed_box)
-        # return BoundingBox2D(top_lefts_minimum[0], top_lefts_minimum[1], right_bottoms_maximum[0], right_bottoms_maximum[1], mode=self.XYXY)
 
 
     def areas(self, indices: np.ndarray | None = None) -> np.ndarray:
@@ -140,7 +139,7 @@ class BoundingBoxes2DArray:
         Description:
             Bounding boxes array shape.
 
-        :return: boxes array shape
+        :return: bounding boxes array shape
         """
         return self.values.shape
 
@@ -151,9 +150,10 @@ class BoundingBoxes2DArray:
         Description:
             Bounding boxes array size.
 
-        :return: boxes array size
+        :return: bounding boxes array size
         """
         return self.values.size
+
 
     @staticmethod
     def is_consistent(bounding_boxes: np.ndarray) -> bool:
@@ -168,14 +168,30 @@ class BoundingBoxes2DArray:
 
 
     @staticmethod
-    def intersect(boxes_1, boxes_2):
+    def clamp_size(boxes, clamp_box):
         """
         Description:
+            all ``boxes`` are inside ``clamp_box``.
 
+        :param boxes: bounding boxes to clamp
+        :param clamp_box: bounding box
+
+        :return: clamped bounding boxes.
+
+        :raises ValueError: If input arguments shape or size is incorrect.
         """
-        # TODO: implement it
-        boxes = BoundingBoxes2DArray()
-        return boxes
+        clamp_box = clamp_box.flatten()
+        if not (len(boxes.shape) == 2 and boxes.shape[1] == 4) or not (clamp_box.shape[0] == 4):
+            raise ValueError('Boxes argument should have (N, 4) shape and clamp_box should have size of 4.')
+
+        boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes)
+        clamp_box_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamp_box)
+
+        top_lefts = np.maximum(boxes_xyxy[:, :2], clamp_box_xyxy[:, :2], axis=1)
+        bottom_rights = np.minimum(boxes_xyxy[:, 2:], clamp_box_xyxy[:, 2:], axis=1)
+
+        clamped_boxes_xyxy = np.hstack((top_lefts, bottom_rights))
+        return BoundingBoxes2DArray.xyxy_to_xywh(clamped_boxes_xyxy)
 
 
     def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:
