@@ -41,6 +41,8 @@ class BoundingBoxes2DArray:
         for index in range(self.values.shape[0]):
             yield self.values[index]
 
+    def reshape(self, new_shape):
+        return self.values.reshape(new_shape)
 
     def append(self, bounding_box: np.ndarray, mode=XYWH) -> None:
         """
@@ -72,8 +74,9 @@ class BoundingBoxes2DArray:
         """
         if bounding_boxes.shape[1] != 4 or len(bounding_boxes.shape) != 2:
             raise ValueError('Input bounding_box(es) should have size [N, 4].')
-        if (mode == BoundingBoxes2DArray.XYWH) and np.any(bounding_boxes[:, 2:] < 0):
+        elif (mode == BoundingBoxes2DArray.XYWH) and np.any(bounding_boxes[:, 2:] < 0):
             raise ValueError('Input bounding_boxes[:, 2:4] components should be greater or equal zero.')
+
         if mode == BoundingBoxes2DArray.XYXY:
             bounding_boxes = BoundingBoxes2DArray.xyxy_to_xywh(bounding_boxes)
 
@@ -172,7 +175,7 @@ class BoundingBoxes2DArray:
 
 
     @staticmethod
-    def clamp_size(boxes, clamp_box):
+    def clamp(boxes, clamp_box):
         """
         Description:
             all ``boxes`` are inside ``clamp_box``.
@@ -184,17 +187,24 @@ class BoundingBoxes2DArray:
 
         :raises ValueError: If input arguments shape or size is incorrect.
         """
-        clamp_box = clamp_box.flatten()
-        if not (len(boxes.shape) == 2 and boxes.shape[1] == 4) or not (clamp_box.shape[0] == 4):
+
+        if not (len(boxes.shape) == 2 and boxes.shape[1] == 4) or not (clamp_box.size == 4):
             raise ValueError('Boxes argument should have (N, 4) shape and clamp_box should have size of 4.')
 
+        clamp_box = clamp_box.reshape(1, 4)
         boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes)
-        clamp_box_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamp_box)
+        clamp_box_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamp_box).astype(np.int64)
 
-        top_lefts = np.maximum(boxes_xyxy[:, :2], clamp_box_xyxy[:, :2], axis=1)
-        bottom_rights = np.minimum(boxes_xyxy[:, 2:], clamp_box_xyxy[:, 2:], axis=1)
+        number_boxes = len(boxes)
+        clamp_box_xyxy = np.repeat(clamp_box_xyxy, number_boxes, axis=0)
+        top_lefts_clamped = np.clip(boxes_xyxy[:, :2], clamp_box_xyxy[:, :2], clamp_box_xyxy[:, 2:])
+        bottom_rights_clamped = np.clip(boxes_xyxy[:, 2:], clamp_box_xyxy[:, :2], clamp_box_xyxy[:, 2:])
 
-        clamped_boxes_xyxy = np.hstack((top_lefts, bottom_rights))
+        clamped_boxes_xyxy = np.hstack((top_lefts_clamped, bottom_rights_clamped))
+
+        if not (np.alltrue(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2])):
+            print('!!!')
+
         return BoundingBoxes2DArray.xyxy_to_xywh(clamped_boxes_xyxy)
 
 
@@ -256,8 +266,11 @@ class BoundingBoxes2DArray:
 
         :return: bounding boxes numpy array in XYXY format.
         """
-        xyxy_boxes =  np.hstack([bboxes_xywh[:, 0].reshape(-1, 1),
+        if bboxes_xywh.size == 4:
+            bboxes_xywh = bboxes_xywh.reshape((1, 4))
+
+        xyxy_boxes =  np.hstack((bboxes_xywh[:, 0].reshape(-1, 1),
                                  bboxes_xywh[:, 1].reshape(-1, 1),
                                  (bboxes_xywh[:, 0] + bboxes_xywh[:, 2]).reshape(-1, 1),
-                                 (bboxes_xywh[:, 1] + bboxes_xywh[:, 3]).reshape(-1, 1)])
+                                 (bboxes_xywh[:, 1] + bboxes_xywh[:, 3]).reshape(-1, 1)))
         return xyxy_boxes

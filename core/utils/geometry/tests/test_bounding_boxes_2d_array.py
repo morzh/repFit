@@ -34,15 +34,16 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
             bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
 
-            bounding_box_1 = np.random.randint(0, 500, (4,))
-            bounding_box_2 = np.random.randint(0, 500, (1, 4))
-            bounding_box_3 = np.random.randint(0, 500, (4, 1))
+            bounding_box = np.array([*np.random.randint(self.top_left_range[0], self.top_left_range[1], (2,)), *np.random.randint(1, 500, (2,))])
+            bounding_box_1 = bounding_box.reshape(4,)
+            bounding_box_2 = bounding_box.reshape((4, 1))
+            bounding_box_3 = bounding_box.reshape((1, 4))
 
             bounding_boxes_2d.append(bounding_box_1)
             bounding_boxes_2d.append(bounding_box_2)
             bounding_boxes_2d.append(bounding_box_3)
 
-            boxes_array = np.vstack((boxes_array, bounding_box_1.reshape(1, 4), bounding_box_2, bounding_box_3.reshape(1, 4)))
+            boxes_array = np.vstack((boxes_array, bounding_box_1.reshape(1, 4), bounding_box_2.reshape(1, 4), bounding_box_3.reshape(1, 4)))
             self.assertTrue(np.alltrue(boxes_array == bounding_boxes_2d.values))
 
 
@@ -101,11 +102,45 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             bounding_boxes_2d.extend(boxes_array_to_extend)
             
             
-    def test_extend_incorrect_size(self):
-        ...
+    def test_extend_incorrect_values(self):
+        for _ in range(self.number_checks):
+            number_boxes_initial = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_initial = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_initial, 2))
+            boxes_array_width_height_initial = np.random.randint(1, 500, (number_boxes_initial, 2))
+            boxes_array = np.hstack((boxes_array_top_left_initial, boxes_array_width_height_initial))
+
+            number_boxes_to_extend = np.random.randint(1, self.maximum_number_boxes)
+
+            boxes_array_top_left_extend = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_to_extend, 2))
+            boxes_array_width_height_extend = np.random.randint(-300, 300, (number_boxes_to_extend, 2))
+            if np.any(boxes_array_width_height_extend > 0):
+                boxes_array_width_height_extend[0, 0] = -1
+            boxes_array_to_extend = np.hstack((boxes_array_top_left_extend, boxes_array_width_height_extend))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            with self.assertRaises(ValueError):
+                bounding_boxes_2d.extend(boxes_array_to_extend)
+
 
     def test_extend_incorrect_dimensions(self):
-        ...
+        for _ in range(self.number_checks):
+            number_boxes_initial = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_initial = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_initial, 2))
+            boxes_array_width_height_initial = np.random.randint(1, 500, (number_boxes_initial, 2))
+            boxes_array = np.hstack((boxes_array_top_left_initial, boxes_array_width_height_initial))
+
+            number_boxes_to_extend = np.random.randint(1, self.maximum_number_boxes)
+            number_columns_width_height_to_extend = np.random.randint(1, 10)
+            if number_columns_width_height_to_extend == 2:
+                number_columns_width_height_to_extend += 1
+
+            boxes_array_top_left_extend = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_to_extend, 2))
+            boxes_array_width_height_extend = np.random.randint(1, 600, (number_boxes_to_extend, number_columns_width_height_to_extend))
+            boxes_array_to_extend = np.hstack((boxes_array_top_left_extend, boxes_array_width_height_extend))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            with self.assertRaises(ValueError):
+                bounding_boxes_2d.extend(boxes_array_to_extend)
 
 
     def test_circumscribe(self):
@@ -232,4 +267,22 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
 
     def test_clamp(self):
-        ...
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes_array_width_height = np.random.randint(1, 500, (number_boxes, 2))
+            boxes_array_xywh = np.hstack((boxes_array_top_left, boxes_array_width_height))
+
+            boxes_array_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_array_xywh)
+            clamp_box_xyxy = np.hstack((np.mean(boxes_array_xyxy[:, :2], axis=0), np.mean(boxes_array_xyxy[:, 2:], axis=0))).astype(np.int64)
+            clamp_box_xywh = BoundingBoxes2DArray.xyxy_to_xywh(clamp_box_xyxy)
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array_xywh))
+            clamped_boxes_xywh = BoundingBoxes2DArray.clamp(bounding_boxes_2d, clamp_box_xywh)
+            clamped_boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamped_boxes_xywh)
+            clamp_box_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamp_box_xywh)
+
+            clamp_box_xyxy = np.repeat(clamp_box_xyxy, number_boxes, axis=0)
+
+            self.assertTrue(np.alltrue(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2]))
+            self.assertTrue(np.alltrue(clamped_boxes_xyxy[:, 2:] <= clamp_box_xyxy[:, 2:]))
