@@ -85,9 +85,22 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
                 bounding_boxes_2d.append(bounding_box)
 
 
-    def test_extend(self):
-        ...
+    def test_extend_correct(self):
+        for _ in range(self.number_checks):
+            number_boxes_initial = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_initial = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_initial, 2))
+            boxes_array_width_height_initial = np.random.randint(1, 500, (number_boxes_initial, 2))
+            boxes_array = np.hstack((boxes_array_top_left_initial, boxes_array_width_height_initial))
 
+            number_boxes_to_extend = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_extend = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_to_extend, 2))
+            boxes_array_width_height_extend = np.random.randint(1, 500, (number_boxes_to_extend, 2))
+            boxes_array_to_extend = np.hstack((boxes_array_top_left_extend, boxes_array_width_height_extend))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            bounding_boxes_2d.extend(boxes_array_to_extend)
+            
+            
     def test_extend_incorrect_size(self):
         ...
 
@@ -161,6 +174,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
             self.assertEqual(apriori_known_mean_area, mean_area)
 
+
     def test_perimeters(self):
         for _ in range(self.number_checks):
             number_boxes = np.random.randint(1, 512)
@@ -205,4 +219,17 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
 
     def test_xywh_to_xyxy(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            width_heights = np.random.randint(1, 500, (number_boxes, 2))
+
+            boxes_xywh = np.hstack((left_tops, width_heights))
+            boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_xywh)
+            boxes_xywh_reverse = BoundingBoxes2DArray.xyxy_to_xywh(boxes_xyxy)
+
+            self.assertTrue(np.alltrue(boxes_xywh == boxes_xywh_reverse))
+
+
+    def test_clamp(self):
         ...

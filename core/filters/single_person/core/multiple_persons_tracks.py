@@ -2,6 +2,7 @@ import os
 import pickle
 
 import cv2
+import numpy as np
 import torch
 
 from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
@@ -62,7 +63,7 @@ class MultiplePersonsTracks:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
 
 
-    def visualize(self, persons_ids=None, **options) -> None:
+    def visualize(self, **options) -> None:
         """
         Description:
             Visualize multiple persons tracks.
@@ -70,6 +71,8 @@ class MultiplePersonsTracks:
         :params person_ids: person's ids
         """
         boxes_thickness = options.get('frames_thickness', 2)
+        next_frame_wait = options.get('next_frame_wait', 10)
+
         video_reader = VideoReader(self.video_properties.filepath)
 
         for frame in video_reader:
@@ -81,4 +84,23 @@ class MultiplePersonsTracks:
                 frame = cv2.rectangle(frame, current_point_1, current_point_2, current_color, boxes_thickness)
 
             cv2.imshow('Multiple Persons Track', frame)
-            cv2.waitKey(15)
+            cv2.waitKey(next_frame_wait)
+
+
+    @staticmethod
+    def compare_visualization(persons_tracks_1, persons_tracks_2, **options) -> None:
+        """
+         Description:
+            Visualize two multiple persons tracks (for comparison purpose).
+        """
+
+        boxes_thickness = options.get('frames_thickness', 2)
+        next_frame_wait = options.get('next_frame_wait', 10)
+
+        video_reader_1 = VideoReader(persons_tracks_1.video_properties.filepath)
+        video_reader_2 = VideoReader(persons_tracks_2.video_properties.filepath)
+
+        for frame_1, frame_2 in zip(video_reader_1, video_reader_2):
+            frame = np.hstack((frame_1, frame_2))
+            cv2.imshow('Multiple Persons Track', frame)
+            cv2.waitKey(next_frame_wait)

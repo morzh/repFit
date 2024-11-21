@@ -11,7 +11,7 @@ class BoundingBoxes2DArray:
         Class for storing and operating on bounding boxes array.
         Array of bounding boxes, represented by [top, left, width, height] format in image coordinates.
 
-    :ivar values: bounding boxes values
+    :ivar values: bounding boxes values (XYWH format).
     """
 
     XYWH = BoundingBoxMode.XYWH.value
@@ -72,7 +72,7 @@ class BoundingBoxes2DArray:
         """
         if bounding_boxes.shape[1] != 4 or len(bounding_boxes.shape) != 2:
             raise ValueError('Input bounding_box(es) should have size [N, 4].')
-        if (mode == BoundingBoxes2DArray.XYWH) and (np.any(bounding_boxes[:, 2] < 0) or np.any(bounding_boxes[3] < 0)):
+        if (mode == BoundingBoxes2DArray.XYWH) and np.any(bounding_boxes[:, 2:] < 0):
             raise ValueError('Input bounding_boxes[:, 2:4] components should be greater or equal zero.')
         if mode == BoundingBoxes2DArray.XYXY:
             bounding_boxes = BoundingBoxes2DArray.xyxy_to_xywh(bounding_boxes)
@@ -84,6 +84,8 @@ class BoundingBoxes2DArray:
         """
         Description:
             Circumscribe all bounding boxes. Result is also a bounding box.
+
+        :param indices: indices of bounding boxes;
 
         :return: bounding box
         """
@@ -101,7 +103,9 @@ class BoundingBoxes2DArray:
         Description:
             Calculates areas of all bounding boxes.
 
-        :return: array of areas
+        :param indices: indices of bounding boxes;
+
+        :return: array of bounding box's areas.
         """
         selected_boxes = self.__selected_bounding_boxes(indices)
         return selected_boxes[:, 2] * selected_boxes[:, 3]
@@ -114,7 +118,7 @@ class BoundingBoxes2DArray:
 
         :param indices: indices of bounding boxes;
 
-        :return: mean area of selected bounding boxes
+        :return: mean area of the selected bounding boxes
         """
         areas = self.areas(indices)
         return np.mean(areas)
@@ -127,7 +131,7 @@ class BoundingBoxes2DArray:
 
         :param indices: indices of bounding boxes;
 
-        :return: perimeters of bounding boxes
+        :return: perimeters of the seelcted bounding boxes
         """
         selected_boxes = self.__selected_bounding_boxes(indices)
         return 2 * (selected_boxes[:, 2] + selected_boxes[:, 3])
