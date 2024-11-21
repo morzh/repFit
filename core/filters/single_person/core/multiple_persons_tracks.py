@@ -1,10 +1,13 @@
 import os
 import pickle
+
+import cv2
 import torch
 
 from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
+from core.utils.cv.video_reader import VideoReader
 
 
 class MultiplePersonsTracks:
@@ -18,6 +21,7 @@ class MultiplePersonsTracks:
     def __init__(self, video_properties: VideoProperties):
         self.persons: dict[int, SinglePersonTrack] = {}
         self.video_properties = video_properties
+        self.frames_number: int  = -1
 
 
     def update(self, data: torch.Tensor, frame_number: int) -> None:
@@ -46,6 +50,7 @@ class MultiplePersonsTracks:
         """
         filter_visitor.process(self)
 
+
     def serialize(self, filepath: os.PathLike) -> None:
         """
         Description:
@@ -55,3 +60,25 @@ class MultiplePersonsTracks:
         """
         with open(filepath, mode='wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
+
+
+    def visualize(self, persons_ids=None, **options) -> None:
+        """
+        Description:
+            Visualize multiple persons tracks.
+
+        :params person_ids: person's ids
+        """
+        boxes_thickness = options.get('frames_thickness', 2)
+        video_reader = VideoReader(self.video_properties.filepath)
+
+        for frame in video_reader:
+            for person_id, person_track in self.persons.values():
+                current_bounding_box = self.persons[person_id].data.bounding_box[video_reader.current_frame_index]
+                current_point_1 = (current_bounding_box[0], current_bounding_box[1])
+                current_point_2 = (current_bounding_box[0] + current_bounding_box[2], current_bounding_box[1] + current_bounding_box[3])
+                current_color = (125, 125, 125)
+                frame = cv2.rectangle(frame, current_point_1, current_point_2, current_color, boxes_thickness)
+
+            cv2.imshow('Multiple Persons Track', frame)
+            cv2.waitKey(15)

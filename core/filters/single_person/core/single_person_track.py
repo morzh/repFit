@@ -2,6 +2,9 @@ import numpy as np
 
 from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
+from core.utils.cv.video_file_segments import VideoFileSegments
+from core.utils.cv.video_properties import VideoProperties
+from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
 class SinglePersonTrack:
@@ -10,7 +13,7 @@ class SinglePersonTrack:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
     :ivar data:
-    :ivar frame_segments:
+    :ivar segments:
     """
 
     def __init__(self):
@@ -19,7 +22,7 @@ class SinglePersonTrack:
             SinglePersonTrack class constructor.
         """
         self.data = PersonTrackingData()
-        self.frame_segments = FramesSegments()
+        self.segments = FramesSegments()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float) -> None:
@@ -42,11 +45,11 @@ class SinglePersonTrack:
         :param fps: input video frames per second
         :param time_threshold: time threshold in seconds, if segment's  duration is less the threshold it will be deleted
         """
-        if self.frame_segments.size == 0:
-            self.frame_segments = self.data.calculate_segments()
+        if self.segments.size == 0:
+            self.segments = self.data.calculate_segments()
 
         frames_threshold = round(fps * time_threshold)
-        self.frame_segments.filter_by_length(frames_threshold)
+        self.segments.filter_by_length(frames_threshold)
 
 
     def bridge_gaps(self, fps: float, time_threshold: float = 5) -> None:
@@ -58,11 +61,11 @@ class SinglePersonTrack:
         :param fps: input video frames per second
         :param time_threshold: time threshold of the gap in seconds
         """
-        if self.frame_segments.size == 0:
-            self.frame_segments = self.data.calculate_segments()
+        if self.segments.size == 0:
+            self.segments = self.data.calculate_segments()
 
         frames_gap_threshold = round(fps * time_threshold)
-        self.frame_segments.bridge_gaps(frames_gap_threshold)
+        self.segments.bridge_gaps(frames_gap_threshold)
 
 
     def mean_area(self) -> float:
@@ -82,12 +85,37 @@ class SinglePersonTrack:
 
         :return: mean bounding boxes area per fame segment
         """
-        if self.frame_segments.size == 0:
-            self.frame_segments = self.data.calculate_segments()
+        if self.segments.size == 0:
+            self.segments = self.data.calculate_segments()
 
-        indices_array = self.frame_segments.as_frames_indices()
+        indices_array = self.segments.as_frames_indices()
         mean_areas = np.empty(len(indices_array))
         for index, indices in enumerate(indices_array):
             mean_areas[index] = self.data.bounding_boxes.mean_area(indices)
 
         return mean_areas
+
+
+    def is_track_equals_video(self, video_properties: VideoProperties, frames_number):
+        """
+        Description:
+        """
+        is_single_segment_equals_video_range = len(self.segments) == 1 and self.segments[0, 0] == 0 and self.segments[0, -1] == (frames_number - 1)
+        bounding_box = self.data.bounding_boxes.circumscribe()
+        is_single_bounding_box_matches_video_resolution = bounding_box[2:] == video_properties.resolution
+        return is_single_segment_equals_video_range and is_single_bounding_box_matches_video_resolution
+
+
+    def bounding_boxes_per_segment(self) -> BoundingBoxes2DArray:
+        """
+        Description:
+            Calculate overall bounding box for each segment.
+
+        :return: segment's bounding boxes.
+        """
+        boxes = BoundingBoxes2DArray()
+        for segment in self.segments:
+            segment_indices = segment.as_frames_indices()
+            bounding_box = self.data.bounding_boxes.circumscribe(segment_indices)
+            boxes.append(bounding_box)
+        return boxes

@@ -12,7 +12,7 @@ class PersonsTracker:
 
     :ivar model: AI model for person(s) detection.
     """
-    def __init__(self, weights_pathname: str = 'yolov10x.pt'):
+    def __init__(self, weights_pathname: str = 'yolov11x.pt'):
         self.model = YOLO(weights_pathname)
 
     def track(self, video_filepath: os.PathLike, stride=2) -> MultiplePersonsTracks:

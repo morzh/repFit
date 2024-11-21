@@ -37,6 +37,11 @@ class BoundingBoxes2DArray:
         return self.values.shape[0]
 
 
+    def __iter__(self):
+        for index in range(self.values.shape[0]):
+            yield self.values[index]
+
+
     def append(self, bounding_box: np.ndarray, mode=XYWH) -> None:
         """
         Description:
@@ -160,6 +165,17 @@ class BoundingBoxes2DArray:
         """
         columns_number = bounding_boxes.shape[1]
         return np.alltrue(bounding_boxes[:, 2:] > 0) and columns_number == 4
+
+
+    @staticmethod
+    def intersect(boxes_1, boxes_2):
+        """
+        Description:
+
+        """
+        # TODO: implement it
+        boxes = BoundingBoxes2DArray()
+        return boxes
 
 
     def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:

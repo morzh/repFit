@@ -134,6 +134,7 @@ class FramesSegments:
         self.bridge_gaps(0)
 
 
+
     def write(self, filepath: str) -> None:
         """
         Description:

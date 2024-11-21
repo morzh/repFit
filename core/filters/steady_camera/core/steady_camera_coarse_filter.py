@@ -26,6 +26,7 @@ class SteadyCameraCoarseFilter:
     Description:
         Steady camera filter. This filter extracts steady camera segments in video. Coarse in the name of the filter means, it uses averaged frames
         to speedup video processing. The downside of the averaging is the filter mey not be that precise.
+
     Remarks:
         As this approach uses frames averaging, at the begging and at the end of a video segment camera could be slightly non-steady.
         Also, when camera angle changes fast enough (in the period of one or several frames), this algorithm may not catch it.
@@ -37,6 +38,7 @@ class SteadyCameraCoarseFilter:
         :param video_filepath: video file pathname;
         :param ocr_detector: ocr model to use for text masking;
         :param kwargs: see below.
+
         :keyword number_frames_to_average: -- number of frames to average before registration
         :keyword maximum_shift_length: pixel shift length threshold. If norm(pixel_shift) < maximum_shift_length, camera considered as steady
         between respective frames.
@@ -60,6 +62,7 @@ class SteadyCameraCoarseFilter:
         self.poc_engine = ImageSequenceRegistrationPoc(self.poc_resolution)
         self.poc_minimum_confidence = kwargs.get('poc_minimum_confidence', 0.2)
 
+
     def _calculate_poc_resolution(self) -> None:
         """
         Description:
@@ -70,6 +73,7 @@ class SteadyCameraCoarseFilter:
         original_resolution = self.video_frames_batch.video_properties.resolution
         poc_resolution = (int(original_resolution[0] * poc_scale_factor + 0.5), int(original_resolution[1] * poc_scale_factor + 0.5))
         self.poc_resolution = poc_resolution[0], poc_resolution[1]
+
 
     def process(self, verbose=False) -> None:
         """
@@ -145,7 +149,7 @@ class SteadyCameraCoarseFilter:
 
         segments = self.unite_overlapping_ranges(segments_bins)
         segments[:, 1] += 1
-        video_file_segments = VideoFileSegments(segments, self.video_frames_batch.video_properties)
+        video_file_segments = VideoFileSegments(segments, self.video_frames_batch.video_properties, self.video_frames_batch.current_frame_index)
         return video_file_segments
 
 

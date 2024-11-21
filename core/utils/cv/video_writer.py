@@ -6,11 +6,15 @@ import numpy as np
 
 from typing import Annotated, Literal
 from numpy.typing import NDArray
-from sqlalchemy.testing.plugin.plugin_base import warnings
+from sqlalchemy.testing.plugin.plugin_base import warnings, options
 
+from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
+from core.utils.cv.frames_segments import FramesSegments
+from core.utils.cv.video_properties import VideoProperties
 from core.utils.cv.video_stride_reader import VideoReader
 from core.utils.cv.video_file_segments import VideoFileSegments
+from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.utils.io.files_operations import extract_extension_from_filepath, filter_filepath_segment
 
 
@@ -35,71 +39,131 @@ class VideoWriter:
         self._fps = fps
 
 
-    def write_segments(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady', method='cv2'):
+    def write_segments(self, video_file_segments: VideoFileSegments, output_filename_suffix: str = 'steady', method='cv2'):
         """
         Description:
             Write video segments as separate video files.
 
         :param video_file_segments: video segments
-        :param filter_name: name of the filter (prefix to frames range)
+        :param output_filename_suffix: name of the filter (prefix to frames range)
         :param method: write method (cv2 or ffmpeg )
 
         :raise ValueError: if ``method`` is different from cv2 or ffmpeg.
         """
-        if video_file_segments.size == 0:
+        if video_file_segments.segments.size == 0:
             warnings.warn('Segments are empty. No video will bw written.')
             return
 
-        if video_file_segments.whole_video_segments_check():
+        if video_file_segments.is_whole_video_single_segment():
             video_filename_base, _ = extract_extension_from_filepath(self._input_filepath)
-            video_filename = f'{video_filename_base}__{filter_name}__.mp4'
+            video_filename = f'{video_filename_base}__{output_filename_suffix}__.mp4'
             output_filepath = os.path.join(self._output_folder, video_filename)
             shutil.copy(self._input_filepath, output_filepath)
             return
 
         if method == 'cv2':
-            self._write_segments_cv2(video_file_segments, filter_name)
+            self._write_segments_cv2(video_file_segments.video_properties, video_file_segments.segments, output_filename_suffix)
         elif method == 'ffmpeg':
-            self._write_segments_ffmpeg(video_file_segments, filter_name)
+            self._write_segments_ffmpeg(video_file_segments, output_filename_suffix)
         else:
             raise ValueError('Method could be only cv2 or ffmpeg')
 
 
-    def write_person_track(self, track: SinglePersonTrack, person_id: int, suffix_person='ch', suffix_segment='fr') -> None:
+    def write_multiple_persons_tracks(self, tracks: MultiplePersonsTracks) -> None:
+        """
+        Description:
+        """
+        for person_id, person_track in tracks.persons.values():
+            self.write_single_person_track(person_id, person_track, tracks.video_properties, tracks.frames_number)
+
+
+    def write_single_person_track(self, person_id: int, track: SinglePersonTrack, video_properties: VideoProperties, frames_number: int) -> None:
         """
         Description:
             Write person's track to a wet of video files.
-
-        :param track: person's track
         """
-        for segment in track.frame_segments:
-            source_video_filename = os.path.basename(self._input_filepath)
-            source_video_filename_base = os.path.split(source_video_filename, '.')[0]
-            current_video_filename = f'{source_video_filename_base}__{suffix_person}{person_id}_fr{suffix_segment[0]}-{suffix_segment[1]}__.mp4'
-            video_filepath = os.path.join(self._output_folder, current_video_filename)
-            self._write_single_segment_ffmpeg(segment, video_filepath)
+        if track.segments.size == 0:
+            warnings.warn('Segments are empty. No video will bw written.')
+            return
+
+        if track.is_track_equals_video(video_properties, frames_number):
+            video_filename_base, _ = extract_extension_from_filepath(self._input_filepath)
+            video_filename = f'{video_filename_base}__person-{person_id}__.mp4'
+            output_filepath = os.path.join(self._output_folder, video_filename)
+            shutil.copy(self._input_filepath, output_filepath)
+            return
+
+        bounding_boxes = track.bounding_boxes_per_segment()
+        output_filename_suffix = f'person-{person_id}'
+        self.write_segments_with_bounding_boxes(video_properties, track.segments, bounding_boxes, output_filename_suffix)
 
 
-    def _write_segments_cv2(self, video_file_segments: VideoFileSegments, filter_name: str = 'steady') -> None:
+
+    def write_segments_with_bounding_boxes(self, segments: FramesSegments, boxes: BoundingBoxes2DArray, output_filename_suffix: str = '') -> None:
+        """
+        Description:
+
+        :param video_properties: person's track
+        :param segments: video segments
+        :param boxes: bounding boxes
+        :param output_filename_suffix:
+        """
+
+        video_reader = VideoReader(self._input_filepath)
+
+        source_video_filename = os.path.basename(self._input_filepath)
+        source_video_filename_base = os.path.split(source_video_filename, '.')[0]
+
+        index = 0
+        current_segment = segments[index]
+        current_segment_start = current_segment[0]
+        current_segment_end = current_segment[1]
+        current_bounding_box = boxes[index]
+        current_resolution = (current_bounding_box[2], current_bounding_box[3])
+
+        for index_frame, frame in enumerate(video_reader):
+            current_video_writer = None
+            if index_frame == current_segment_start:
+                current_output_filename = f'{source_video_filename_base}__{output_filename_suffix}_{current_segment[0]}-{current_segment[1]}__.mp4'
+                current_output_filepath = os.path.join(self._output_folder, current_output_filename)
+                current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, current_resolution)
+
+            if current_segment_start <= index_frame < current_segment_end:
+                frame_bounding_box = frame[current_bounding_box[0]: current_bounding_box[0] + current_bounding_box[2], current_bounding_box[1]: current_bounding_box[1] + current_bounding_box[3]]
+                current_video_writer.write(frame_bounding_box)
+
+            if index_frame == (current_segment_end - 1):
+                current_video_writer.release()
+                index += 1
+                if index == segments.shape[0]:
+                    return
+                current_segment = segments.values[index]
+                current_segment_start = current_segment[0]
+                current_segment_end = current_segment[1]
+
+
+
+    def _write_segments_cv2(self, video_properties: VideoProperties, segments: FramesSegments, video_filename_suffix: str = 'steady') -> None:
         """
         Description:
             Write video segments as separate video files.
 
-        :param video_file_segments: video segments
-        :param filter_name: name of the filter (prefix to frames range)
+        :param video_properties: video properties
+        :param segments: video segments
+        :param video_filename_suffix: name of the filter (suffix before frames range)
         """
         # logger.info(f'Video segments: \n {video_segments.segments}')
         video_reader = VideoReader(self._input_filepath)
-        resolution = (video_file_segments.video_properties.video_width, video_file_segments.video_properties.video_height)
+        resolution = (video_properties.width, video_properties.height)
         index_segment = 0
-        current_segment = video_file_segments.values[index_segment]
+        current_segment = segments.values[index_segment]
         current_segment_start = current_segment[0]
         current_segment_end = current_segment[1]
 
         for index_frame, frame in enumerate(video_reader):
             current_video_writer = None
             if index_frame == current_segment_start:
-                current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, current_segment, filter_name)
+                current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, current_segment, video_filename_suffix)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, resolution)
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
 
@@ -109,15 +173,15 @@ class VideoWriter:
             if index_frame == (current_segment_end - 1):
                 current_video_writer.release()
                 index_segment += 1
-                if index_segment == video_file_segments.shape[0]:
+                if index_segment == segments.shape[0]:
                     return
-                current_segment = video_file_segments.values[index_segment]
+                current_segment = segments.values[index_segment]
                 current_segment_start = current_segment[0]
                 current_segment_end = current_segment[1]
 
 
     def _write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, postfix: str = 'steady') -> None:
-        for segment in video_file_segments:
+        for segment in video_file_segments.segments:
             current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, segment, postfix)
             self._write_single_segment_ffmpeg(segment, current_output_filepath)
 
@@ -135,7 +199,6 @@ class VideoWriter:
         video_cut = input_stream.trim(start=segment[0], end=segment[1]).setpts(pts)
         output_video = ffmpeg.output(video_cut, output_filepath, format='mp4')
         output_video.run()
-
 
 
     @property
