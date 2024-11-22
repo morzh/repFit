@@ -78,9 +78,9 @@ class PersonTrackingData:
         for index in range(segments_bins.shape[0] - 1):
             if segments_bins[index, 1] == segments_bins[index + 1, 0]:
                 segments_bins[index + 1, 0] = segments_bins[index, 0]
-                segments_bins[index] = np.nan
+                segments_bins[index] = -1
 
-        mask = segments_bins[:, 0] != np.nan
+        mask = segments_bins[:, 0] != -1
         segments = segments_bins[mask]
         segments[:, 1] += 1
         return FramesSegments(segments)

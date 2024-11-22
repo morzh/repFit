@@ -1,6 +1,5 @@
 import copy
 import unittest
-
 import numpy as np
 
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray

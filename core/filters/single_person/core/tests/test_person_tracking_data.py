@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 
 from core.filters.single_person.core.strictly_increasing_sequence import StrictlyIncreasingSequence
+from core.utils.cv.frames_segments import FramesSegments
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
 
@@ -12,7 +13,7 @@ class TestPersonTrackingData(unittest.TestCase):
         self.number_checks = 1_500
 
     def test_append_correct(self):
-        tracking_data = self.fill_data()
+        tracking_data = self.generate_tracking_data()
         for index in range(self.number_checks):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(1, 500, (1, 2))
@@ -24,7 +25,7 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     def test_append_incorrect_bounding_box(self):
-        tracking_data = self.fill_data()
+        tracking_data = self.generate_tracking_data()
         for index in range(self.number_checks):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(-200, 220, (1, 2))
@@ -41,7 +42,7 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     def test_append_incorrect_frame_index(self):
-        tracking_data = self.fill_data()
+        tracking_data = self.generate_tracking_data()
         for index in range(self.number_checks):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(1, 220, (1, 2))
@@ -93,13 +94,19 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     def test_calculate_segments(self):
-        ...
+        for index in range(100):
+        # for index in range(self.number_checks):
+            number_segments = np.random.randint(1, 100)
+            stride = np.random.randint(1, 10)
+            frames_segments_ground_truth = self.frames_segments(number_segments, stride=stride)
+            tracking_data = self.generate_tracking_data_with_known_segments(frames_segments_ground_truth, stride)
+            frames_segments = tracking_data.calculate_segments(stride)
+            self.assertTrue(np.alltrue(frames_segments_ground_truth.values == frames_segments.values))
 
 
     @staticmethod
-    def fill_data() -> PersonTrackingData:
+    def generate_tracking_data() -> PersonTrackingData:
         number_occurrences = 5_000
-        number_frames = 10_000
 
         top_lefts = np.random.randint(-500, 500, (number_occurrences, 2))
         width_heights = np.random.randint(1, 500, (number_occurrences, 2))
@@ -118,3 +125,47 @@ class TestPersonTrackingData(unittest.TestCase):
         tracking_data._confidences = confidences
 
         return tracking_data
+
+
+    @staticmethod
+    def frames_segments(number_segments, stride=1, high_value = 1_000) -> FramesSegments:
+        random_integers = np.random.randint(stride + 1, high=high_value, size=(number_segments * 2,))
+        time_points = np.cumsum(random_integers)
+        time_points = (time_points // stride) * stride
+        segments = time_points.reshape((-1, 2))
+        segments[:, 1] += 1
+        return FramesSegments(segments)
+
+
+    @staticmethod
+    def generate_tracking_data_with_known_segments(segments: FramesSegments, stride=1) -> PersonTrackingData:
+        tracking_data = PersonTrackingData()
+        for segment in segments:
+            current_number_indices = int((segment[1] - segment[0] -1 ) / stride)
+            current_segment_indices = np.linspace(segment[0], segment[1] - 1, current_number_indices + 1)
+            current_segment_indices = np.append(current_segment_indices, segment[-1])
+            current_segment_indices = current_segment_indices.astype(np.int64)
+            current_bounding_boxes = TestPersonTrackingData.bounding_boxes(current_number_indices).astype(np.int64)
+
+            # current_confidences = 0.5 * np.ones(current_segment_indices.shape)
+            # tracking_data._bounding_boxes.extend(current_bounding_boxes)
+            # tracking_data._frames_indices._values = np.append(tracking_data._frames_indices._values, current_segment_indices).astype(np.int64)
+            # tracking_data._confidences = np.append(tracking_data._confidences, current_confidences)
+
+            for bounding_box, frame_index in zip(current_bounding_boxes, current_segment_indices):
+                tracking_data.append(bounding_box, frame_index, 0.5)
+
+        return tracking_data
+
+
+    @staticmethod
+    def single_bounding_box() -> np.ndarray:
+        return np.array([*np.random.randint(-2048, 2048), *np.random.randint(1, 1024, (2,))])
+
+
+    @staticmethod
+    def bounding_boxes(number_boxes: int):
+        boxes_array_top_left = np.random.randint(-2048, 2048, (number_boxes, 2))
+        boxes_array_width_height = np.random.randint(1, 500, (number_boxes, 2))
+        boxes_array = np.hstack((boxes_array_top_left, boxes_array_width_height))
+        return boxes_array.astype(np.int64)
