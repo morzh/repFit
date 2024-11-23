@@ -94,8 +94,7 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     def test_calculate_segments(self):
-        for index in range(100):
-        # for index in range(self.number_checks):
+        for index in range(self.number_checks):
             number_segments = np.random.randint(1, 100)
             stride = np.random.randint(1, 10)
             frames_segments_ground_truth = self.frames_segments(number_segments, stride=stride)
@@ -141,19 +140,19 @@ class TestPersonTrackingData(unittest.TestCase):
     def generate_tracking_data_with_known_segments(segments: FramesSegments, stride=1) -> PersonTrackingData:
         tracking_data = PersonTrackingData()
         for segment in segments:
-            current_number_indices = int((segment[1] - segment[0] -1 ) / stride)
-            current_segment_indices = np.linspace(segment[0], segment[1] - 1, current_number_indices + 1)
-            current_segment_indices = np.append(current_segment_indices, segment[-1])
+            current_number_indices = int((segment[1] - segment[0] - 1 ) / stride)
+            current_segment_indices = np.linspace(segment[0], segment[1] - 1, current_number_indices + 1, endpoint=True)
             current_segment_indices = current_segment_indices.astype(np.int64)
-            current_bounding_boxes = TestPersonTrackingData.bounding_boxes(current_number_indices).astype(np.int64)
+            current_segment_indices = current_segment_indices[:-1]
+            current_number_boxes = len(current_segment_indices)
+            current_bounding_boxes = TestPersonTrackingData.bounding_boxes(current_number_boxes).astype(np.int64)
 
-            # current_confidences = 0.5 * np.ones(current_segment_indices.shape)
-            # tracking_data._bounding_boxes.extend(current_bounding_boxes)
-            # tracking_data._frames_indices._values = np.append(tracking_data._frames_indices._values, current_segment_indices).astype(np.int64)
-            # tracking_data._confidences = np.append(tracking_data._confidences, current_confidences)
-
-            for bounding_box, frame_index in zip(current_bounding_boxes, current_segment_indices):
-                tracking_data.append(bounding_box, frame_index, 0.5)
+            current_confidences = 0.5 * np.ones(current_segment_indices.shape)
+            tracking_data._bounding_boxes.extend(current_bounding_boxes)
+            tracking_data._frames_indices._values = np.append(tracking_data._frames_indices._values, current_segment_indices).astype(np.int64)
+            tracking_data._confidences = np.append(tracking_data._confidences, current_confidences)
+            # for bounding_box, frame_index in zip(current_bounding_boxes, current_segment_indices):
+            #     tracking_data.append(bounding_box, frame_index, 0.5)
 
         return tracking_data
 

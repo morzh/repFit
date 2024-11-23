@@ -27,10 +27,10 @@ class VideoReader:
 
         self.video_properties: VideoProperties = self._init_video_properties(video_filepath)
 
-        self._success: bool = False
+        self._success: bool = True
         self._current_frame: cv2.typing.MatLike | None = None
         self._current_frame_index: int = -1
-        self._init_video_capture()
+        # self._init_video_capture()
 
 
     def __iter__(self) -> Iterator[cv2.typing.MatLike]:
@@ -40,17 +40,20 @@ class VideoReader:
 
         :rtype: video frame
         """
-        while self._success:
-            current_frame = self._read_frame()
-            yield_frame = self._current_frame
-            self._current_frame = current_frame
-            yield yield_frame
+        while True:
+            # current_frame = self._read_frame()
+            success, frame = self.video_capture.read()
+            if not success:
+                break
+            self._current_frame_index += 1
+            yield frame
 
 
     def __del__(self):
         self.video_capture.release()
 
 
+    '''
     def _init_video_capture(self) -> None:
         """
         Description:
@@ -58,6 +61,7 @@ class VideoReader:
         """
         if self.video_capture.isOpened():
             self._current_frame = self._read_frame()
+    '''
 
     def _init_video_properties(self, video_filepath) -> VideoProperties:
         """
@@ -74,7 +78,7 @@ class VideoReader:
         frames_number = int(self.video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
         return VideoProperties(filepath=video_filepath, width=width, height=height, approximate_frames_number=frames_number, fps=fps)
 
-
+    '''
     def _read_frame(self) -> cv2.typing.MatLike:
         """
         Description:
@@ -86,6 +90,7 @@ class VideoReader:
         if self._success:
             self._current_frame_index += 1
         return frame
+    '''
 
 
     @property

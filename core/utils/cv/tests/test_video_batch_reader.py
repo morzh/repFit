@@ -15,6 +15,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
         self.maximum_mosaic_resolution = (1500, 2460)
         self.number_checks = 150
         self.write_test_video()
+        print(f'Frames number is {self.frames_number}')
 
 
     def test_attributes_values(self):
@@ -44,6 +45,7 @@ class TestVideoReaderFramesBatch(unittest.TestCase):
         number_checks = 5
         for check_index in range(number_checks):
             batch_size = np.random.randint(5, 50)
+            print(f'Current batch size is {batch_size}')
             video_reader_frames_batch = VideoReaderFramesBatch(self.test_video_filename, batch_size=batch_size)
             window_name = f'Test #{check_index + 1}; number of frames is {self.frames_number}'
 

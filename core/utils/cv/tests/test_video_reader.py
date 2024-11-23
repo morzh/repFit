@@ -30,18 +30,11 @@ class TestVideoReader(unittest.TestCase):
         print(f'Frames number: {self.frames_number}')
 
 
-    def test_attributes_values(self):
-        """
-
-        """
-        for check_index in range(self.number_checks):
-            stride = np.random.randint(2, 11)
-            video_reader = VideoReader(self.test_video_filename, stride=stride)
-
-            for _ in video_reader:
-                ...
-
-            self.assertEqual(self.frames_number - 1, video_reader.current_frame_index)
+    def test_frame_index(self):
+        video_reader = VideoReader(self.test_video_filename)
+        for _ in video_reader:
+            ...
+        self.assertEqual(self.frames_number - 1, video_reader.current_frame_index)
 
 
     def test_visual(self):

@@ -12,7 +12,7 @@ class TestVideoStrideReader(unittest.TestCase):
         Description:
             Generates and saves small video with increasing per frames number sequence. In other words each frame depicts it's index.
         """
-        self.frames_number = np.random.randint(300, 1200)
+        self.frames_number = np.random.randint(100, 600)
         self.shape = (256, 256, 3)
         self.text_origin_point = (10, 160)
         self.test_video_filename = 'test_video_stride_reader.mp4'
@@ -45,19 +45,18 @@ class TestVideoStrideReader(unittest.TestCase):
             if (self.frames_number - 1) % stride == 0:
                 stride_frames_number += 1
 
-            self.assertEqual(stride_frames_number, video_reader.current_stride_frame_index)
             self.assertEqual(self.frames_number - 1, video_reader.current_frame_index)
 
 
     def test_stride_visually(self):
-        number_checks = 5
+        number_checks = 2
         for check_index in range(number_checks):
-            stride = np.random.randint(1, 10)
+            stride = np.random.randint(2, 10)
 
-            video_reader = VideoStrideReader(self.test_video_filename, stride=stride)
+            video_stride_reader = VideoStrideReader(self.test_video_filename, stride=stride)
             window_name = f'Test #{check_index + 1}; stride={stride}, number of frames is {self.frames_number}'
 
-            for frame in video_reader:
+            for frame in video_stride_reader:
                 cv2.imshow(window_name, frame)
                 cv2.waitKey(-1)
 

@@ -1,6 +1,7 @@
 import os
 
 import cv2
+from collections import deque
 from pathlib import Path
 from typing import Iterator
 
@@ -28,7 +29,8 @@ class VideoStrideReader(VideoReader):
         super().__init__(video_filepath, **options)
 
         self._stride: int = max(options.get('stride', 1), 1)
-        self._current_stride_frame_index: int = -1
+        self._stride_frames = deque(maxlen=2)
+
 
     def __iter__(self) -> Iterator[cv2.typing.MatLike]:
         """
@@ -39,18 +41,10 @@ class VideoStrideReader(VideoReader):
         """
         for frame in super().__iter__():
             if self.current_frame_index % self._stride == 0:
-                self._current_stride_frame_index += 1
-                yield frame
+                self._stride_frames.append(frame)
+                if len(self._stride_frames) == 2:
+                    yield self._stride_frames[0]
 
-    @property
-    def current_stride_frame_index(self) -> int:
-        """
-        Description:
-            Returns current video frame index, taking stride into account
-
-        :return: current stride frame index
-        """
-        return self._current_stride_frame_index
 
     @property
     def stride(self) -> int:
