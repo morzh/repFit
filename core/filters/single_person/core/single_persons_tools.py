@@ -4,7 +4,7 @@ import time
 
 from core.filters.single_person.core.filters.area_filter_addon import AreaFilterAddon
 from core.filters.single_person.core.filters.area_ratio_filter_addon import AreaRatioFilterAddon
-from core.filters.single_person.core.filters.beidge_gaps_filter_addon import BridgeGapsFilterAddon
+from core.filters.single_person.core.filters.bridge_gaps_filter_addon import BridgeGapsFilterAddon
 from core.filters.single_person.core.filters.segments_duration_filter_addon import SegmentsDurationFilterAddon
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
