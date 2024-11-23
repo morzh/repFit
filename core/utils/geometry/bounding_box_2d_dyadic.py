@@ -164,8 +164,8 @@ def intersection_over_union(self: bbox2d, bounding_box: bbox2d) -> numeric:
     
     :return: IOU metric value
     """
-    intersection_area = self.intersect(bounding_box).area
-    union_area = self.area + bounding_box.area - self.intersect(bounding_box).area
+    intersection_area = self.intersect(bounding_box).area_threshold
+    union_area = self.area + bounding_box.area - self.intersect(bounding_box).area_threshold
     return intersection_area / union_area
 
 

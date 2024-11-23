@@ -8,17 +8,19 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Filter persons track which mean bounding box area is less than the biggest bounding box mean area .
+
+    :ivar area_ratio:
     """
 
-    def __init__(self, **parameters):
-        self.ratio = parameters.get('ratio', 4)
+    def __init__(self, area_ratio=4):
+        self.area_ratio = area_ratio
 
-    def process(self, tracks: MultiplePersonsTracks):
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
             Filter persons track which mean bounding box area is less than the biggest bounding box mean area .
 
-        :param tracks: areas ratio
+        :param tracks: person's track
         """
         persons_number = len(tracks.persons)
         persons_areas = np.zeros(persons_number)
@@ -26,7 +28,7 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
             persons_areas[id_person] = tracks.persons[id_person].mean_area()
 
         person_maximum_area = np.max(persons_areas)
-        area_threshold = person_maximum_area / self.ratio
+        area_threshold = person_maximum_area / self.area_ratio
         small_persons_indices = np.argwhere(persons_areas < area_threshold)
 
         for key in small_persons_indices:

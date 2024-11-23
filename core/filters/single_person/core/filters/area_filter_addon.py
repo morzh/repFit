@@ -7,20 +7,20 @@ from core.filters.single_person.core.multiple_persons_tracks import MultiplePers
 class AreaFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
-        Filter person by mean area of person's bounding boxes in pixels.
+        Filter person by mean area of person's bounding boxes in pixels (for all tracks).
 
-    :ivar area: area in pixels
+    :ivar area_threshold: area in pixels
     """
 
-    def __init__(self, area):
-        self.area = area
+    def __init__(self, area_threshold = 500):
+        self.area_threshold = area_threshold
 
-    def process(self, tracks: MultiplePersonsTracks):
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         """
 
         """
         persons_number = len(tracks.persons)
         for id_person in range(persons_number):
             current_mean_area = tracks.persons[id_person].mean_area()
-            if current_mean_area < self.area:
+            if current_mean_area < self.area_threshold:
                 del tracks.persons[id_person]

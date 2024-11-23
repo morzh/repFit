@@ -6,13 +6,14 @@ from core.filters.single_person.core.multiple_persons_tracks import MultiplePers
 class MultiPersonsFilterAddonBase(ABC):
     """
     Description:
-        Base abstract filter class  MultiplePersonsTracks processing.
+        Base abstract filter class for MultiplePersonsTracks processing.
     """
+
     @abstractmethod
     def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
-            Abstract ``MultiplePersonsTracks`` filter method
+            Abstract filter method.
             
-        :param tracks: instance of ``MultiplePersonsTracks`` class.
+        :param tracks: tracks to filter.
         """
