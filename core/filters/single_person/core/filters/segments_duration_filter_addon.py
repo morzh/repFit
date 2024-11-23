@@ -5,6 +5,8 @@ from core.filters.single_person.core.multiple_persons_tracks import MultiplePers
 class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
+        Filter every frame segment of person track in ``tracks`` by time.
+        If duration of some frame segment will be less than ``duration_threshold``, it will be deleted.
 
     :ivar duration_threshold: duration threshold in seconds.
     """
@@ -15,6 +17,7 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
     def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
+            Filter every frame segment of person track in ``tracks`` by time using threshold in seconds.
 
         :param tracks: person's tracks.
         """

@@ -13,7 +13,7 @@ class MultiPersonsFilterAddonBase(ABC):
     def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
-            Abstract filter method.
+            Abstract method for filtering ``tracks`` using visitor pattern.
             
         :param tracks: tracks to filter.
         """
