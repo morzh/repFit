@@ -18,6 +18,7 @@ class AreaFilterAddon(MultiPersonsFilterAddonBase):
     def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
+            Filter out each person's track, whose mean bounding box area less than the given threshold.
 
         :param tracks: person's tracks.
         """

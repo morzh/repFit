@@ -8,7 +8,7 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
         Filter for bridging gaps between frames segments.
         If gap between neighbouring segments is less than the given threshold  value, this segments will be fused into one.
 
-    :ivar gap_threshold: gap threshold
+    :ivar gap_threshold: gap threshold in seconds
     """
     def __init__(self, gap_threshold=5.0):
         self.gap_threshold = gap_threshold
