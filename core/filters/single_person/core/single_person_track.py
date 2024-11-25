@@ -12,8 +12,8 @@ class SinglePersonTrack:
     Description:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
-    :ivar data:
-    :ivar segments:
+    :ivar data: data, obtained from person's tracker
+    :ivar segments: video frame segments
     """
 
     def __init__(self):
@@ -21,8 +21,8 @@ class SinglePersonTrack:
         Description:
             SinglePersonTrack class constructor.
         """
-        self.data = PersonTrackingData()
-        self.segments = FramesSegments()
+        self.data: PersonTrackingData = PersonTrackingData()
+        self.segments: FramesSegments = FramesSegments()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float) -> None:
@@ -96,9 +96,15 @@ class SinglePersonTrack:
         return mean_areas
 
 
-    def is_track_equals_video(self, video_properties: VideoProperties, frames_number):
+    def is_track_equals_video(self, video_properties: VideoProperties, frames_number) -> bool:
         """
         Description:
+            Returns true, when two following conditions satisfied:
+                1. Track has only one segment, equals to  [0, video_frames_number].
+                2. Overall bounding box has is [0, 0, width-1, height-1]
+            and returns False otherwise.
+
+        :returns: True is track concise with video, False otherwise.
         """
         is_single_segment_equals_video_range = len(self.segments) == 1 and self.segments[0, 0] == 0 and self.segments[0, -1] == (frames_number - 1)
         bounding_box = self.data.bounding_boxes.circumscribe()
