@@ -7,13 +7,14 @@ from core.filters.single_person.core.multiple_persons_tracks import MultiplePers
 class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
-        Filter persons track which mean bounding box area is less than the biggest bounding box mean area .
+        This is two-step filter. On the first step the biggest mean bounding box value calculated for each single person's track.
+        On the second step, filter deletes tracks whose mean bounding box area is less than value, calculated at the first one.
 
     :ivar area_ratio_threshold: persons mean areas ratio threshold.
     """
-
     def __init__(self, area_ratio_threshold=4):
         self.area_ratio_threshold = area_ratio_threshold
+
 
     def process(self, tracks: MultiplePersonsTracks) -> None:
         """
