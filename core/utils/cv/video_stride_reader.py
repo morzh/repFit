@@ -52,6 +52,6 @@ class VideoStrideReader(VideoReader):
         Description:
             Frames stride getter.
 
-        :return: frames stride
+        :return: video frames stride
         """
         return self._stride

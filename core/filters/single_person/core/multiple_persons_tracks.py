@@ -68,6 +68,9 @@ class MultiplePersonsTracks:
         Description:
             Visualize multiple persons tracks.
 
+        :keyword frames_thickness: person bounding box thickness
+        :keyword next_frame_wait: gap between gaps in milliseconds
+
         :params person_ids: person's ids
         """
         boxes_thickness = options.get('frames_thickness', 2)

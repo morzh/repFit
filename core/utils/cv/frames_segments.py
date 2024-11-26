@@ -88,12 +88,12 @@ class FramesSegments:
             where :math:`N_f` -- number of frames, :math:`N_s` -- number of segments, :math:`\{s_n\}` -- segments,
             :math:`\mathbf{C}` -- set closure.
 
-        :param lower_bound:
-        :param upper_bound:
+        :param lower_bound: lower bound of a set, containing all segments.
+        :param upper_bound: high bound of a set, containing all segments.
 
-        :raises ValueError:
+        :raises ValueError: when lower or high bound has incorrect values.
 
-        :return:  video segments complement
+        :return: video segments complement
         """
         if lower_bound > self.values[0, 0]:
             raise ValueError('Lower bound is greater than the start of the first segment')
@@ -132,7 +132,6 @@ class FramesSegments:
             Combine in place adjacent segments. E.g. segments [0, 200] and [200, 599] will be combined to [0, 599] segment.
         """
         self.bridge_gaps(0)
-
 
 
     def write(self, filepath: str) -> None:
@@ -198,16 +197,13 @@ class FramesSegments:
         return np.abs(self.values[:, 1] - self.values[:, 0])
 
 
-    def as_frames_indices(self, stride=1) -> list:
+    def as_frames_indices(self) -> list[np.ndarray]:
         """
         Description:
             Calculates frames indices. If [f_start, f_end] is a frame segment, frames indices will be [f_start, f_start + 1, ..., f_end - 1]
 
         :return: frames indices
         """
-        if stride != 1:
-            raise NotImplementedError('Stride value, other than 1 is not implemented')
-
         number_segments = self.values.shape[0]
         frames_indices = [np.ndarray] * number_segments
 

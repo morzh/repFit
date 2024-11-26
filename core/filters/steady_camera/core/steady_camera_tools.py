@@ -100,28 +100,28 @@ def extract_coarse_steady_camera_filter_video_segments(video_filepath: str, **op
     steady_camera_filter = SteadyCameraCoarseFilter(video_filepath, ocr_model, persons_mask_model, **filter_parameters)
     steady_camera_filter.process(filter_parameters['poc_show_averaged_frames_pair'])
 
-    steady_segments = steady_camera_filter.steady_camera_video_segments()
-    steady_segments.filter_by_time(options['minimum_steady_camera_time_segment'])
+    steady_video_file_segments = steady_camera_filter.steady_camera_video_segments()
+    steady_video_file_segments.filter_by_time(options['minimum_steady_camera_time_segment'])
 
     if options['combine_adjacent_segments']:
-        steady_segments.combine_adjacent()
+        steady_video_file_segments.segments.combine_adjacent()
 
     if filter_parameters['poc_registration_verbose']:
         steady_camera_filter.log_registration_results()
     if filter_parameters['verbose_steady_segments']:
-        logger.info(steady_segments)
+        logger.info(steady_video_file_segments)
 
-    return steady_segments
+    return steady_video_file_segments
 
 
-def write_video_segments(video_filepath, output_folder, video_segments: VideoFileSegments, **options) -> None:
+def write_video_segments(video_filepath, output_folder, video_file_segments: VideoFileSegments, **options) -> None:
     """
     Description:
         Cuts input video according video_segments information.
 
     :param video_filepath: input video filepath
     :param output_folder: output folder for trimmed videos
-    :param video_segments information about video segments to trim
+    :param video_file_segments information about video segments to trim
 
     :keyword verbose_filename: log video_filepath's filename
     :keyword save_steady_camera_segments_values: save .npy file with steady segments values (for further statistics).
@@ -142,20 +142,20 @@ def write_video_segments(video_filepath, output_folder, video_segments: VideoFil
 
     video_writer = VideoWriter(input_filepath=video_filepath,
                                output_folder=output_folder,
-                               fps=video_segments.video_properties.video_fps)
+                               fps=video_file_segments.video_properties.fps)
 
-    video_writer._write_segments_cv2(video_segments, video_filename_suffix='steady')
-    if options['save_steady_camera_segments_values'] and video_segments.size > 0:
-        write_segments_values(video_segments, video_writer.input_filepath, video_writer.output_folder, filter_name='steady')
+    video_writer.write_segments(video_file_segments, output_filename_suffix='steady')
+    if options['save_steady_camera_segments_values'] and len(video_file_segments.segments) > 0:
+        write_segments_values(video_file_segments, video_writer.input_filepath, video_writer.output_folder, filter_name='steady')
 
     if options['write_segments_complement']:
         time_threshold = options['minimum_non_steady_camera_time_segment']
-        video_segments.complement()
-        video_segments.filter_by_length(time_threshold)
-        video_writer._write_segments_cv2(video_segments, video_filename_suffix='nonsteady')
+        video_file_segments.complement()
+        video_file_segments.segments.filter_by_length(time_threshold)
+        video_writer.write_segments(video_file_segments, output_filename_suffix='nonsteady')
 
-        if options['save_non_steady_camera_segments_values'] and video_segments.size > 0:
-            write_segments_values(video_segments, video_writer.input_filepath, video_writer.output_folder, filter_name='steady')
+        if options['save_non_steady_camera_segments_values'] and len(video_file_segments.segments) > 0:
+            write_segments_values(video_file_segments, video_writer.input_filepath, video_writer.output_folder, filter_name='steady')
 
 
 def process_steady_camera_segments(video_source_filepath, videos_target_folder, **options) -> None:
@@ -184,7 +184,7 @@ def process_steady_camera_segments(video_source_filepath, videos_target_folder, 
     write_video_segments(video_source_filepath, videos_target_folder, video_segments, **options['video_segments_writer'])
     video_processing_end_time = time.time()
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
-                f'video duration is {(video_segments.video_properties.frames_number / video_segments.video_properties.video_fps):.2f} seconds.')
+                f'video duration is {(video_segments.video_properties.approximate_frames_number / video_segments.video_properties.fps):.2f} seconds.')
 
 
 def sort_videos_by_criteria(move_to_folders_strategy: str, raw_videos_folder: str, filtered_videos_folder: str) -> None:

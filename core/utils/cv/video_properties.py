@@ -1,11 +1,12 @@
 import os
 from dataclasses import dataclass
 
+
 @dataclass(slots=True, frozen=True)
 class VideoProperties:
     """
         Description:
-            Video properties storage class
+            Video properties storage class.
 
     :ivar filepath: video filepath;
     :ivar width: video width;
@@ -23,7 +24,7 @@ class VideoProperties:
     def resolution(self) -> tuple[int, int]:
         """
         Description:
-            Get resolution in (width, height) format.
+            Video resolution in (width, height) format getter.
 
         :return: video resolution
         """
@@ -33,7 +34,7 @@ class VideoProperties:
     def duration(self) -> float:
         """
         Description:
-            Get video duration in seconds.
+            Video duration (seconds) getter.
 
         :return: video duration
         """

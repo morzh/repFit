@@ -4,9 +4,7 @@ import ffmpeg
 import cv2
 import numpy as np
 
-from typing import Annotated, Literal
-from numpy.typing import NDArray
-from sqlalchemy.testing.plugin.plugin_base import warnings, options
+from sqlalchemy.testing.plugin.plugin_base import warnings
 
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
@@ -18,12 +16,9 @@ from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.utils.io.files_operations import extract_extension_from_filepath, filter_filepath_segment
 
 
-segments_list = Annotated[NDArray[np.int32], Literal["N", 2]]
-
-
 class VideoWriter:
     """
-    Class for writing video segments to a different video files to a given output folder.
+    Class for writing video segments or multiple persons tracks to separate video files using given output folder.
     """
     def __init__(self, input_filepath: os.PathLike, output_folder: os.PathLike, fps: float):
         """
@@ -39,14 +34,15 @@ class VideoWriter:
         self._fps = fps
 
 
-    def write_segments(self, video_file_segments: VideoFileSegments, output_filename_suffix: str = 'steady', method='cv2'):
+    def write_segments(self, video_file_segments: VideoFileSegments, output_filename_suffix: str = 'steady', method='cv2') -> None:
         """
         Description:
             Write video segments as separate video files.
 
         :param video_file_segments: video segments
-        :param output_filename_suffix: name of the filter (prefix to frames range)
-        :param method: write method (cv2 or ffmpeg )
+        :param output_filename_suffix: (short) string to represent some additional information in filename.
+        This string will be in front of the frames range and after file basename.
+        :param method: write method (cv2 or ffmpeg)
 
         :raise ValueError: if ``method`` is different from cv2 or ffmpeg.
         """
@@ -72,21 +68,29 @@ class VideoWriter:
     def write_multiple_persons_tracks(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
+            Write multiple person's tracks to separate video files.
+
+        :param tracks: multiple persons tracks
         """
         for person_id, person_track in tracks.persons.values():
             self.write_single_person_track(person_id, person_track, tracks.video_properties, tracks.frames_number)
 
 
-    def write_single_person_track(self, person_id: int, track: SinglePersonTrack, video_properties: VideoProperties, frames_number: int) -> None:
+    def write_single_person_track(self, person_id: int, track: SinglePersonTrack, video_properties: VideoProperties, video_frames_number: int) -> None:
         """
         Description:
-            Write person's track to a wet of video files.
+            Write single person's track to separate video files.
+
+        :param person_id: person ID
+        :param track: single person track
+        :param video_properties: video properties
+        :param video_frames_number:  number of video frames 
         """
         if track.segments.size == 0:
             warnings.warn('Segments are empty. No video will bw written.')
             return
 
-        if track.is_track_equals_video(video_properties, frames_number):
+        if track.is_track_equals_video(video_properties, video_frames_number):
             video_filename_base, _ = extract_extension_from_filepath(self._input_filepath)
             video_filename = f'{video_filename_base}__person-{person_id}__.mp4'
             output_filepath = os.path.join(self._output_folder, video_filename)
@@ -95,18 +99,17 @@ class VideoWriter:
 
         bounding_boxes = track.bounding_boxes_per_segment()
         output_filename_suffix = f'person-{person_id}'
-        self.write_segments_with_bounding_boxes(video_properties, track.segments, bounding_boxes, output_filename_suffix)
+        self.write_segments_with_bounding_boxes(track.segments, bounding_boxes, output_filename_suffix)
 
 
-
-    def write_segments_with_bounding_boxes(self, segments: FramesSegments, boxes: BoundingBoxes2DArray, output_filename_suffix: str = '') -> None:
+    def write_segments_with_bounding_boxes(self, segments: FramesSegments, boxes: BoundingBoxes2DArray, suffix: str = '') -> None:
         """
         Description:
+            Write frames segments with corresponding bounding boxes to separate video files.
 
-        :param video_properties: person's track
-        :param segments: video segments
-        :param boxes: bounding boxes
-        :param output_filename_suffix:
+        :param segments: video frames segments
+        :param boxes: bounding boxes. Each bounding box corresponds to each segment.
+        :param suffix: (short) string to represent some additional information in filename.
         """
 
         video_reader = VideoReader(self._input_filepath)
@@ -124,7 +127,7 @@ class VideoWriter:
         for index_frame, frame in enumerate(video_reader):
             current_video_writer = None
             if index_frame == current_segment_start:
-                current_output_filename = f'{source_video_filename_base}__{output_filename_suffix}_{current_segment[0]}-{current_segment[1]}__.mp4'
+                current_output_filename = f'{source_video_filename_base}__{suffix}_{current_segment[0]}-{current_segment[1]}__.mp4'
                 current_output_filepath = os.path.join(self._output_folder, current_output_filename)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, current_resolution)
 
@@ -143,14 +146,14 @@ class VideoWriter:
 
 
 
-    def _write_segments_cv2(self, video_properties: VideoProperties, segments: FramesSegments, video_filename_suffix: str = 'steady') -> None:
+    def _write_segments_cv2(self, video_properties: VideoProperties, segments: FramesSegments, suffix: str = 'steady') -> None:
         """
         Description:
-            Write video segments as separate video files.
+            Write video segments as a separate video files.
 
         :param video_properties: video properties
-        :param segments: video segments
-        :param video_filename_suffix: name of the filter (suffix before frames range)
+        :param segments: video frame segments
+        :param suffix: suffix of the output filename (after source filename base and before frames range). E.g. it could be the name of the filter
         """
         # logger.info(f'Video segments: \n {video_segments.segments}')
         video_reader = VideoReader(self._input_filepath)
@@ -163,7 +166,7 @@ class VideoWriter:
         for index_frame, frame in enumerate(video_reader):
             current_video_writer = None
             if index_frame == current_segment_start:
-                current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, current_segment, video_filename_suffix)
+                current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, current_segment, suffix)
                 current_video_writer = cv2.VideoWriter(current_output_filepath, cv2.VideoWriter_fourcc(*'mp4v'), self._fps, resolution)
                 # logger.info(f'Opened video for writing with segment {video_segments.segments[index_segment]}, {index_segment=}')
 
@@ -180,18 +183,25 @@ class VideoWriter:
                 current_segment_end = current_segment[1]
 
 
-    def _write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, postfix: str = 'steady') -> None:
+    def _write_segments_ffmpeg(self, video_file_segments: VideoFileSegments, suffix: str = 'steady') -> None:
+        """
+        Description:
+            Write video file segments to separate video files.
+
+        :param video_file_segments: video file segments;
+        :param suffix: (short) string to represent some additional information in filename.
+        """
         for segment in video_file_segments.segments:
-            current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, segment, postfix)
+            current_output_filepath = filter_filepath_segment(self._input_filepath, self._output_folder, segment, suffix)
             self._write_single_segment_ffmpeg(segment, current_output_filepath)
 
 
     def _write_single_segment_ffmpeg(self, segment: np.ndarray, output_filepath: str) -> None:
         """
         Description:
-            Write video segment to video file. In other words trim video  from start to end video frame.
+            Write single video segment to the video file. In other words trim video from start to end video frame.
 
-        :param segment: input segment  (numpy array of size 2)
+        :param segment: input segment (numpy array of size 2)
         :param output_filepath: output video filepath.
         """
         pts = 'PTS-STARTPTS'
@@ -203,14 +213,32 @@ class VideoWriter:
 
     @property
     def input_filepath(self) -> os.PathLike:
+        """
+        Description:
+            Input video file path getter.
+
+        :return: input video filepath.
+        """
         return self._input_filepath
 
 
     @property
     def output_folder(self) -> os.PathLike:
+        """
+        Description:
+            Output folder getter.
+
+        :return: output folder for videos
+        """
         return self._output_folder
 
 
     @property
     def fps(self) -> float:
+        """
+        Description:
+            Input video file frames per second path getter.
+
+        :return: input video FPS.
+        """
         return self._fps
