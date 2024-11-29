@@ -24,7 +24,7 @@ def make_mp_joints(video_fpath: Path):
     mp_joints = []
     frames_with_joints = []
     with mp_pose.Pose(static_image_mode=False, model_complexity=model_complexity) as pose:
-        for frame in video_reader.frame_generator():
+        for frame in video_reader:
             result = pose.process(frame)
             joints = to_np(result)
             if joints is not None:

@@ -95,7 +95,10 @@ class FramesSegments:
 
         :return: video segments complement
         """
-        if lower_bound > self.values[0, 0]:
+        if self.values.shape[0] == 0:
+            self.values = np.array([[lower_bound, upper_bound]])
+            return
+        elif lower_bound > self.values[0, 0]:
             raise ValueError('Lower bound is greater than the start of the first segment')
         elif upper_bound < self.values[-1, -1]:
             raise ValueError('Upper bound is less then the end of the last segment.')
@@ -118,6 +121,9 @@ class FramesSegments:
 
         :param gap_threshold: maximum gap length
         """
+        if self.values.shape[0] <= 1:
+            return
+
         low_bound = int(self.values[0, 0])
         high_bound = int(self.values[-1, -1])
 

@@ -1,5 +1,6 @@
 from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
+from core.filters.single_person.core.single_person_track import SinglePersonStatus
 
 
 class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
@@ -21,5 +22,15 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
 
         :param tracks: person's tracks.
         """
-        for person_track in tracks.persons.values():
-            person_track.filter_by_time(tracks.video_properties.fps, self.duration_threshold)
+        keys_to_delete = []
+        for person_id, person in tracks.persons.items():
+            person.filter_by_time(tracks.video_properties.fps, self.duration_threshold)
+            if len(person.segments) == 0:
+                keys_to_delete.append(person_id)
+
+            person.information.filters_applied.append('segments_duration')
+            person.information.track_status = SinglePersonStatus.FILTERED
+
+
+        for key in keys_to_delete:
+            tracks.persons.pop(key, None)

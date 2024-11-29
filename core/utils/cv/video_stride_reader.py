@@ -16,7 +16,7 @@ class VideoStrideReader(VideoReader):
     The reason of such behaviour is FrameSegments class consideration and further frame segments calculation.
     """
 
-    def __init__(self, video_filepath: os.PathLike, **options):
+    def __init__(self, video_filepath: os.PathLike | str, **options):
         """
         Description:
             VideoStrideReader class constructor.
@@ -30,6 +30,8 @@ class VideoStrideReader(VideoReader):
         super().__init__(video_filepath, **options)
         self._stride: int = max(options.get('stride', 1), 1)
         self._stride_frames = deque(maxlen=2)
+        self._stride_frames_indices = deque(maxlen=2)
+
 
 
     def __iter__(self) -> Iterator[cv2.typing.MatLike]:
@@ -42,6 +44,7 @@ class VideoStrideReader(VideoReader):
         for frame in super().__iter__():
             if self.current_frame_index % self._stride == 0:
                 self._stride_frames.append(frame)
+                self._stride_frames_indices.append(self._current_frame_index)
                 if len(self._stride_frames) == 2:
                     yield self._stride_frames[0]
 
@@ -55,3 +58,17 @@ class VideoStrideReader(VideoReader):
         :return: video frames stride
         """
         return self._stride
+
+
+    @property
+    def current_stride_frame_index(self) -> int:
+        """
+        Description:
+            Frames stride frame index getter.
+
+        :return: video stride frame index
+        """
+        if len(self._stride_frames_indices) < 2:
+            return -1
+        elif len(self._stride_frames_indices) == 2:
+            return self._stride_frames_indices[0]

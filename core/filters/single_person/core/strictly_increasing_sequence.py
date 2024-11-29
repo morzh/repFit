@@ -1,4 +1,5 @@
 import numpy as np
+from sqlalchemy.testing.plugin.plugin_base import warnings
 
 
 class StrictlyIncreasingSequence:
@@ -42,10 +43,11 @@ class StrictlyIncreasingSequence:
         """
         if self._values.size == 0:
             self._values = np.array([element])
-        elif self._values.shape[0] > 0 and element > self._values[-1]:
+        elif self._values.size > 0 and element > self._values[-1]:
             self._values = np.append(self._values, element)
         else:
-            raise ValueError('New frame index should be greater, than the previous one.')
+            raise warnings.warn(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
+            # raise ValueError(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
 
 
     @staticmethod
@@ -69,6 +71,7 @@ class StrictlyIncreasingSequence:
             return True
 
         return False
+
 
     @property
     def values(self) -> np.ndarray:

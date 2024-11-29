@@ -1,8 +1,9 @@
 from core.filters.single_person.core.filters.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
+from core.filters.single_person.core.single_person_track import SinglePersonStatus
 
 
-class AreaFilterAddon(MultiPersonsFilterAddonBase):
+class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Filter each person track by mean person's bounding boxes area in pixels.
@@ -21,8 +22,15 @@ class AreaFilterAddon(MultiPersonsFilterAddonBase):
 
         :param tracks: person's tracks.
         """
-        persons_number = len(tracks.persons)
-        for id_person in range(persons_number):
-            current_mean_area = tracks.persons[id_person].mean_area()
+        keys_to_delete = []
+        for person_id, person in tracks.persons.items():
+            current_mean_area = person.mean_area()
             if current_mean_area < self.area_threshold:
-                del tracks.persons[id_person]
+                keys_to_delete.append(person_id)
+
+            person.information.filters_applied.append('absolute_area')
+            person.information.track_status = SinglePersonStatus.FILTERED
+
+
+        for key in keys_to_delete:
+            tracks.persons.pop(key, None)

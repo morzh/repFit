@@ -3,8 +3,47 @@ video_input:
   minimal_resolution: 256
 
 
-bounding_boxes_segments_extraction:
+tracking:
+  use_saved_data: true
   yolo_weights_path: '/home/anton/work/fitMate/repFit/core/filters/single_person/weights'
   yolo_model: 'yolov10x.pt'
-  frames_stride: 2
+  frames_stride: 3
   person_minimal_time: 3 # time in seconds
+  skip_tracked_videos: true
+  tracking_persist: true
+  verbose_tracking: false
+  visualize_while_tracking: false
+  tracked_data_suffix: 'tracked_data'
+  write_tracked_data: true
+
+visualization:
+  do_visualization: true
+  bounding_box_thickness: 2
+  transparent_threshold: 0.15 # if confidence below this threshold, bounding box will not draw
+  opaque_threshold: 0.85 # if confidence above this threshold, bounding box will be opaque
+  hsv_step: 20 # degrees
+  next_frame_wait: 10
+  write_video: true
+  video_suffix: 'viz_data'
+
+filtering:
+  do_filtering: true
+  confidence:
+    apply: true
+    threshold: 0.4
+  absolute_area:
+    apply: true
+    threshold: 400 # pixels
+  area_ratio:
+    apply: true
+    threshold: 6
+  segments_duration:
+    apply: true
+    threshold: 4.0 # lest than X.x seconds
+  bridging_gaps:
+    apply: true
+    threshold: 2.0 # second
+  whole_person:
+    apply: false
+  bounding_box_enlarge:
+    apply: false

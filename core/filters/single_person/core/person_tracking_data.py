@@ -22,6 +22,16 @@ class PersonTrackingData:
         self._confidences: np.ndarray = np.empty(0, )
 
 
+    def __len__(self):
+        return self.frames_indices.values.shape[0]
+
+
+    def __delitem__(self, index):
+        self._confidences =np.delete(self._confidences, index)
+        self._bounding_boxes.values = np.delete(self._bounding_boxes.values, index, axis=0)
+        self._frames_indices._values = np.delete(self._frames_indices.values, index)
+
+
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, bounding_box_mode=BoundingBoxes2DArray.XYWH) -> None:
         """
         Description:
@@ -47,21 +57,42 @@ class PersonTrackingData:
         """
         Description:
             Calculates bounding box at ``frame_index``. If ``frame_index`` presented in data, corresponding bounding box will be returned.
-            In other case, bounding box will be interpolated.
+            In other case, bounding box will be interpolated or extrapolated.
 
         :param frame_index: frame index
 
+        :raises ValueError:
+
         :return: bounding box, represented by numpy array
         """
-        index_high_bound_occurrence = np.argmax(self._frames_indices >= frame_index)
-
-        if self._frames_indices[index_high_bound_occurrence] == frame_index:
-            return self._bounding_boxes[index_high_bound_occurrence]
+        if len(self._frames_indices) == 0:
+            return np.array([-1, -1, 0, 0])
+        elif len(self._frames_indices) == 1:
+            return self._bounding_boxes[0]
+        elif frame_index <= self._frames_indices.values[-1]:
+            return self._bounding_box_interpolation(frame_index)
         else:
-            segment_start = self._frames_indices[index_high_bound_occurrence - 1]
-            segment_end = self._frames_indices[index_high_bound_occurrence]
-            factor = (frame_index - segment_start) / (segment_end - segment_start)
-            return self._bounding_boxes[index_high_bound_occurrence - 1] + factor * (self._bounding_boxes[index_high_bound_occurrence] - self._bounding_boxes[index_high_bound_occurrence - 1])
+            return self._bounding_box_extrapolation(frame_index)
+
+
+    def confidence(self, frame_index) -> float:
+        """
+        Description:
+            Returns confidence value at given ``frame_index``.
+            Under the hood, it finds nearest to input ``frame_index`` confidence value.
+
+        :param frame_index: frame index
+
+        :return: confidence value
+        """
+        if len(self._frames_indices) == 0:
+            return 0.0
+        elif len(self._frames_indices) == 1:
+            return float(self._confidences[0])
+
+        confidence_index = np.argmin(np.abs(self._frames_indices.values - frame_index))
+        confidence_value = float(self._confidences[confidence_index])
+        return confidence_value
 
 
     def calculate_segments(self, stride=1) -> FramesSegments:
@@ -93,7 +124,35 @@ class PersonTrackingData:
 
         :return: True if consistent, False otherwise.
         """
-        return StrictlyIncreasingSequence.is_consistent(self._frames_indices) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
+        return StrictlyIncreasingSequence.is_consistent(self._frames_indices.values) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
+
+
+    def _bounding_box_interpolation(self, frame_index: int) -> np.ndarray:
+        """
+        Description:
+        """
+        index_high_bound_occurrence = np.argmax(self._frames_indices.values >= frame_index)
+
+        if self._frames_indices[index_high_bound_occurrence] == frame_index:
+            return self._bounding_boxes[index_high_bound_occurrence]
+        else:
+            segment_start = self._frames_indices[index_high_bound_occurrence - 1]
+            segment_end = self._frames_indices[index_high_bound_occurrence]
+            factor = (frame_index - segment_start) / (segment_end - segment_start)
+
+            return self._bounding_boxes[index_high_bound_occurrence - 1] + factor * (self._bounding_boxes[index_high_bound_occurrence] - self._bounding_boxes[index_high_bound_occurrence - 1])
+
+
+    def _bounding_box_extrapolation(self, frame_index) -> np.ndarray:
+        """
+        Description:
+        """
+        last_frame_index = self._frames_indices.values[-1]
+        direction = self._bounding_boxes[-1] - self._bounding_boxes[-2]
+        factor = frame_index - last_frame_index
+        extrapolated_bounding_box = self._bounding_boxes[-1] + factor * direction
+        # print(extrapolated_bounding_box)
+        return extrapolated_bounding_box
 
 
     @property

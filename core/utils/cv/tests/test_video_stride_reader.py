@@ -1,3 +1,5 @@
+import copy
+
 import cv2
 import numpy as np
 import unittest
@@ -12,7 +14,7 @@ class TestVideoStrideReader(unittest.TestCase):
         Description:
             Generates and saves small video with increasing per frames number sequence. In other words each frame depicts it's index.
         """
-        self.frames_number = np.random.randint(100, 600)
+        self.frames_number = np.random.randint(100, 6000)
         self.shape = (256, 256, 3)
         self.text_origin_point = (10, 160)
         self.test_video_filename = 'test_video_stride_reader.mp4'
@@ -36,16 +38,29 @@ class TestVideoStrideReader(unittest.TestCase):
         """
         for check_index in range(self.number_checks):
             stride = np.random.randint(2, 11)
-            video_reader = VideoStrideReader(self.test_video_filename, stride=stride)
+            video_stride_reader = VideoStrideReader(self.test_video_filename, stride=stride)
 
-            for _ in video_reader:
+            for _ in video_stride_reader:
                 ...
 
             stride_frames_number = (self.frames_number - 1) // stride - 1
             if (self.frames_number - 1) % stride == 0:
                 stride_frames_number += 1
 
-            self.assertEqual(self.frames_number - 1, video_reader.current_frame_index)
+            self.assertEqual(self.frames_number - 1, video_stride_reader.current_frame_index)
+
+
+    def test_stride_frame_index(self):
+        for check_index in range(self.number_checks):
+            stride = np.random.randint(2, 11)
+            video_stride_reader = VideoStrideReader(self.test_video_filename, stride=stride)
+            self.assertEqual(video_stride_reader.current_stride_frame_index, -1)
+            last_frame_index = -1
+
+            for frame in video_stride_reader:
+                if video_stride_reader.current_stride_frame_index > 0:
+                    self.assertTrue(video_stride_reader.current_stride_frame_index == (last_frame_index + stride))
+                last_frame_index = video_stride_reader.current_stride_frame_index
 
 
     def test_stride_visually(self):

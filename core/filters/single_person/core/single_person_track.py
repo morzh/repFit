@@ -1,10 +1,21 @@
 import numpy as np
+from enum import Enum
 
 from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
-from core.utils.cv.video_file_segments import VideoFileSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+
+
+class SinglePersonStatus(Enum):
+    NOT_FILTERED = 0
+    FILTERED = 1
+    READY_TO_WRITE = 2
+
+
+class SinglePersonInformation:
+    filters_applied: list = []
+    track_status: SinglePersonStatus = SinglePersonStatus.NOT_FILTERED
 
 
 class SinglePersonTrack:
@@ -17,12 +28,9 @@ class SinglePersonTrack:
     """
 
     def __init__(self):
-        """
-        Description:
-            SinglePersonTrack class constructor.
-        """
-        self.data: PersonTrackingData = PersonTrackingData()
-        self.segments: FramesSegments = FramesSegments()
+        self.data = PersonTrackingData()
+        self.segments = FramesSegments()
+        self.information = SinglePersonInformation()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float) -> None:
@@ -34,7 +42,11 @@ class SinglePersonTrack:
         :param frame_index: frame number
         :param confidence: bounding box confidence
         """
-        self.data.append(bounding_box, frame_index, confidence)
+        self.data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY)
+
+
+    def calculate_segments(self, stride):
+        self.segments = self.data.calculate_segments(stride)
 
 
     def filter_by_time(self, fps: float, time_threshold: float = 5) -> None:
@@ -45,8 +57,7 @@ class SinglePersonTrack:
         :param fps: input video frames per second
         :param time_threshold: time threshold in seconds, if segment's  duration is less the threshold it will be deleted
         """
-        if self.segments.size == 0:
-            self.segments = self.data.calculate_segments()
+        if self.segments.size == 0: return
 
         frames_threshold = round(fps * time_threshold)
         self.segments.filter_by_length(frames_threshold)
@@ -61,9 +72,7 @@ class SinglePersonTrack:
         :param fps: input video frames per second
         :param time_threshold: time threshold of the gap in seconds
         """
-        if self.segments.size == 0:
-            self.segments = self.data.calculate_segments()
-
+        if len(self.segments) <= 1: return
         frames_gap_threshold = round(fps * time_threshold)
         self.segments.bridge_gaps(frames_gap_threshold)
 
@@ -85,8 +94,7 @@ class SinglePersonTrack:
 
         :return: mean bounding boxes area per fame segment
         """
-        if self.segments.size == 0:
-            self.segments = self.data.calculate_segments()
+        if self.segments.size == 0: return np.array([])
 
         indices_array = self.segments.as_frames_indices()
         mean_areas = np.empty(len(indices_array))
