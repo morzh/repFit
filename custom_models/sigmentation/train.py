@@ -4,9 +4,10 @@ import time
 import torch
 from torch import nn
 from model import SegmentationModel
-from dataset import SegmentationDataset
+from dataset import SegmentationDataset, SegmentationDatasetValidation
 import matplotlib.pyplot as plt
 import pandas as pd
+from custom_models.paths import DATASETS_DPATH
 
 # Define relevant variables for the ML task
 num_classes = 10
@@ -23,7 +24,8 @@ models_dpath = "./checkpoints"
 os.makedirs(models_dpath, exist_ok=True)
 
 def train(model_name: str = 'segmentation_v1.0'):
-    train_loader = SegmentationDataset(sample_length, epoch_size=10, batch_size=1000)
+    train_loader = SegmentationDataset(sample_length=sample_length, epoch_size=10, batch_size=1000)
+    val_loader = SegmentationDatasetValidation(sample_length=sample_length, epoch_size=10, batch_size=1000)
     model = SegmentationModel()
 
     loss_fn = nn.MSELoss()
@@ -31,8 +33,18 @@ def train(model_name: str = 'segmentation_v1.0'):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     model = model.to(device)
     model.parameters()
-    # model.load_state_dict(torch.load(f"./checkpoints/{model_name}.pt"))
-    # model.eval()
+    model.load_state_dict(torch.load(f"./checkpoints/{model_name}.pt"))
+    model.eval()
+
+###############################3
+    #delete
+    avg_val_loss = 0.
+    for i, (x_batch, y_batch) in enumerate(val_loader):
+        y_pred = model(to_tensor(x_batch).cuda())
+        y_pred = y_pred.detach().cpu()
+        val_loss = loss_fn(y_pred, to_tensor(y_batch)).item() / len(train_loader)
+        avg_val_loss += val_loss
+############################3
 
     for epoch in range(num_epochs):
         start_time = time.time()
@@ -52,12 +64,13 @@ def train(model_name: str = 'segmentation_v1.0'):
 
         if epoch % 10 == 0:
             avg_val_loss = 0.
-            for i, (x_batch, y_batch) in enumerate(train_loader):
+            for i, (x_batch, y_batch) in enumerate(val_loader):
                 y_pred = model(to_tensor(x_batch).cuda())
                 val_loss = loss_fn(y_pred.detach().cpu(), to_tensor(y_batch)).item() / len(train_loader)
                 avg_val_loss += val_loss
 
             elapsed_time = time.time() - start_time
+            torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
 
         print(f'Epoch {epoch + 1}/{num_epochs} \t loss={avg_loss} \t   val_loss={avg_val_loss} \t  time={elapsed_time}s')
 

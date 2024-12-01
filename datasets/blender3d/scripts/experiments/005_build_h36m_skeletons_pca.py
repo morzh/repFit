@@ -379,8 +379,7 @@ def animated_joints_spheres(joints_skeleton_material):
 
 def skeleton_video_sample(video_filename: str, joints_skeleton_material: any,
                           videos_folder: Optional[str] = None, joints_3d_animations_folder: str | None = None,
-                          joints_3d_stacked_animations_folder: str | None = None, joints_3d_animation_pca_folder: str | None = None) -> Type[
-    bpy.context.active_object]:
+                          joints_3d_stacked_animations_folder: str | None = None, joints_3d_animation_pca_folder: str | None = None):
     video_filename_base = os.path.splitext(video_filename)[0]
     joints_filename = video_filename_base + '.npy'
     animated_skeletons_filepath = os.path.join(joints_3d_animations_folder, joints_filename)
@@ -465,7 +464,7 @@ def skeleton_video_sample(video_filename: str, joints_skeleton_material: any,
 
 
 def main():
-    root_folder = '/media/anton/4c95a564-35ea-40b5-b747-58d854a622d0/home/anton/work/fitMate/datasets/squats_2022_skeletons/results_base_video_mp3'
+    root_folder = '/home/ubuntu/PycharmProjects/FitMate/repFit/datasets/squad_markup'
 
     video_folder = 'final_videos'
     joints_folder = 'joints3d'

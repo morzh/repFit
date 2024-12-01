@@ -6,15 +6,8 @@ DATASETS_DPATH = PROJECT_ROOT / "datasets"
 RESULTS_ROOT = PROJECT_ROOT / "results"
 
 
-RESULTS_DPATH = DATASETS_DPATH / "PCA_5.07.24" / "results"
-# RESULTS_DPATH = RESULTS_ROOT / "squats_2022_steady"
-
-VIDEO_DPATH = DATASETS_DPATH / "PCA_5.07.24" / "filtered_final_video"
-
-# VIDEO_DPATH = DATASETS_DPATH / "base_videos"
-# VIDEO_DPATH = DATASETS_DPATH / "squats_2022_coarse_steady_camera_yolo_segmentation-m" / "steady"
-
-# RESULTS_DPATH = RESULTS_ROOT / "video_filter_v2.0"
+RESULTS_DPATH = DATASETS_DPATH / "squad_markup"
+VIDEO_DPATH = RESULTS_DPATH / "base_videos"
 
 
 YOLO_BBOXES_DPATH = RESULTS_DPATH / "yolo_bboxes"
