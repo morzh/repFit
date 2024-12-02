@@ -42,9 +42,12 @@ class PersonsTracker:
         persons_tracks = MultiplePersonsTracks(video_properties=video_stride_reader.video_properties, stride=stride)
 
         for frame in video_stride_reader:
-            predictions = self.model.track(frame, classes=0, persist=persist, save=False, show=show_tracked_data, verbose=verbose)
-            detected_data = predictions[0].boxes.data.cpu().numpy()
-            if detected_data.size > 0 and detected_data.shape[1] != 7:  continue
-            persons_tracks.update(detected_data, video_stride_reader.current_stride_frame_index)
+            current_predictions = self.model.track(frame, classes=0, persist=persist, save=False, show=show_tracked_data, verbose=verbose)
+            current_detected_bounding_boxes = current_predictions[0].boxes.data.cpu().numpy()
+            current_detected_key_points = current_predictions[0].keypoints.data.cpu().numpy()
+            current_frame_index = video_stride_reader.current_stride_frame_index
+
+            if current_detected_bounding_boxes.size > 0 and current_detected_bounding_boxes.shape[1] != 7:  continue
+            persons_tracks.update(current_frame_index, current_detected_bounding_boxes, keypoints=current_detected_key_points)
 
         return persons_tracks

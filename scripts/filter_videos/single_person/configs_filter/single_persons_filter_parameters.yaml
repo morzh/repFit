@@ -6,7 +6,7 @@ video_input:
 tracking:
   use_saved_data: true
   yolo_weights_path: '/home/anton/work/fitMate/repFit/core/filters/single_person/weights'
-  yolo_model: 'yolov10x.pt'
+  yolo_model: 'yolo11x-pose.pt'
   frames_stride: 3
   person_minimal_time: 3 # time in seconds
   skip_tracked_videos: true
@@ -19,30 +19,31 @@ tracking:
 visualization:
   do_visualization: true
   bounding_box_thickness: 2
-  transparent_threshold: 0.15 # if confidence below this threshold, bounding box will not draw
-  opaque_threshold: 0.85 # if confidence above this threshold, bounding box will be opaque
-  hsv_step: 20 # degrees
-  next_frame_wait: 10
+#  transparent_threshold: 0.15 # if confidence below this threshold, bounding box will not draw
+#  opaque_threshold: 0.85 # if confidence above this threshold, bounding box will be opaque
+  hsv_step: 20 # Hue step in degrees for HSV model
+  draw_keypoints: true # draw skeleton joints
+  show_frame_delay: 10
   write_video: true
   video_suffix: 'viz_data'
 
 filtering:
-  do_filtering: true
+  do_filtering: false
   confidence:
     apply: true
     threshold: 0.4
   absolute_area:
     apply: true
-    threshold: 400 # pixels
+    threshold: 400 # square pixels
   area_ratio:
     apply: true
     threshold: 6
   segments_duration:
     apply: true
-    threshold: 4.0 # lest than X.x seconds
+    threshold: 4.0 # duration in seconds
   bridging_gaps:
     apply: true
-    threshold: 2.0 # second
+    threshold: 2.0 # duration in second
   whole_person:
     apply: false
   bounding_box_enlarge:

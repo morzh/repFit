@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 from typing import Annotated, Literal, TypeVar
 
-from datasets.skeletons_processing.core.human36m_statistics import Human36mStatistics
+from core.skeletons.core.human36m_statistics import Human36mStatistics
 
 Float32 = TypeVar("Float32", bound=np.float32)
 joints_batch = Annotated[npt.NDArray[Float32], Literal["N", 17, 3]]

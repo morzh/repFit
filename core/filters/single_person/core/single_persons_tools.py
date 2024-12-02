@@ -3,14 +3,14 @@ import os
 import pickle
 import time
 
-from core.filters.single_person.core.filters.confidence_filter_addon import ConfidenceFilterAddon
+from core.filters.single_person.core.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
 
-from core.filters.single_person.core.filters.absolute_area_filter_addon import AbsoluteAreaFilterAddon
-from core.filters.single_person.core.filters.area_ratio_filter_addon import AreaRatioFilterAddon
-from core.filters.single_person.core.filters.bridge_gaps_filter_addon import BridgeGapsFilterAddon
-from core.filters.single_person.core.filters.segments_duration_filter_addon import SegmentsDurationFilterAddon
+from core.filters.single_person.core.filter_addons.absolute_area_filter_addon import AbsoluteAreaFilterAddon
+from core.filters.single_person.core.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
+from core.filters.single_person.core.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
+from core.filters.single_person.core.filter_addons.segments_duration_filter_addon import SegmentsDurationFilterAddon
 from core.utils.cv.video_writer import VideoWriter
 
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
