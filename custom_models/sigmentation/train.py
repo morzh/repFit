@@ -12,7 +12,7 @@ from custom_models.paths import DATASETS_DPATH
 # Define relevant variables for the ML task
 num_classes = 10
 lr = 0.001
-num_epochs = 200
+num_epochs = 500
 
 
 
@@ -22,7 +22,14 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 models_dpath = "./checkpoints"
 os.makedirs(models_dpath, exist_ok=True)
 
-def train(model_name: str = 'segmentation_v1.0'):
+
+# Tasks
+# 1. Delete one action from sample if it touches a boarder
+# 2. Extend input samples with boarders for add zeros frames in train dataset
+# 3. Update all dataset to one fps
+
+
+def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentation_v1.0.pt'):
     train_loader = SegmentationDataset(epoch_size=10, batch_size=1000)
     val_loader = SegmentationDatasetValidation(sliding_window_length=10)
     model = SegmentationModel()
@@ -32,7 +39,7 @@ def train(model_name: str = 'segmentation_v1.0'):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     model = model.to(device)
     model.parameters()
-    model.load_state_dict(torch.load(f"./checkpoints/segmentation_v1.00.pt"))
+    model.load_state_dict(torch.load(f"{models_dpath}/{from_weights}"))
     model.eval()
 
     for epoch in range(num_epochs):
@@ -63,7 +70,7 @@ def train(model_name: str = 'segmentation_v1.0'):
             # save one example for check real progress
             save_fig([y_batch, y_pred], f'figs/{epoch}.png')
             elapsed_time = time.time() - start_time
-            torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
+            torch.save(model.state_dict(), os.path.join(models_dpath, model_name + f'_{epoch}.pt'))
 
         print(f'Epoch {epoch + 1}/{num_epochs} \t loss={avg_loss} \t   val_loss={avg_val_loss} \t  time={elapsed_time}s')
 
