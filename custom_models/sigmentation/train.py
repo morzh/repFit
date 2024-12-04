@@ -14,8 +14,7 @@ num_classes = 10
 lr = 0.001
 num_epochs = 200
 
-# length of one data sample in frames. Calc it as fpt*seconds
-sample_length = 200
+
 
 # Device will determine whether to run the training on GPU or CPU.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -24,8 +23,8 @@ models_dpath = "./checkpoints"
 os.makedirs(models_dpath, exist_ok=True)
 
 def train(model_name: str = 'segmentation_v1.0'):
-    train_loader = SegmentationDataset(sample_length=sample_length, epoch_size=10, batch_size=1000)
-    val_loader = SegmentationDatasetValidation(sample_length=sample_length, epoch_size=10, batch_size=1000)
+    train_loader = SegmentationDataset(epoch_size=10, batch_size=1000)
+    val_loader = SegmentationDatasetValidation(sliding_window_length=10)
     model = SegmentationModel()
 
     loss_fn = nn.MSELoss()
@@ -42,10 +41,11 @@ def train(model_name: str = 'segmentation_v1.0'):
     for i, (x_batch, y_batch) in enumerate(val_loader):
         y_pred = model(to_tensor(x_batch).cuda())
         y_pred = y_pred.detach().cpu()
+        val_loader
         val_loss = loss_fn(y_pred, to_tensor(y_batch)).item() / len(train_loader)
         avg_val_loss += val_loss
 ############################3
-
+    exit(0)
     for epoch in range(num_epochs):
         start_time = time.time()
         model.train()
