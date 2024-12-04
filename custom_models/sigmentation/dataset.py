@@ -249,6 +249,9 @@ class SegmentationDatasetValidation(Dataset):
 
         self.dataset = self.load_data()
         self.board_size = self.sample_length - self.sliding_window_length
+        self._sample_length = None
+
+        self.sum_k = self.sample_length / self.sliding_window_length # how much point were sum in each position
 
 
     def __len__(self):
@@ -356,6 +359,7 @@ class SegmentationDatasetValidation(Dataset):
 
         boarder_array = np.zeros(shape=(sample_shape.shape[0], self.board_size))
         input_array = np.hstack((boarder_array, input_array, boarder_array))
+        self._sample_length = input_array.shape[-1]
         for start_idx in range(0, input_array.shape[-1]-self.sample_length, self.sliding_window_length):
             sample = input_array[..., start_idx: start_idx + self.sample_length]
 
@@ -366,3 +370,18 @@ class SegmentationDatasetValidation(Dataset):
     def __iter__(self):
         for i in range(len(self.dataset)):
             yield self.generate_batch(i)
+
+    def join_results(self, y_train: np.ndarray, y_predicted: np.ndarray) -> (np.ndarray, np.ndarray):
+        """ Join split by sample_length samples to original row """
+        y_train = y_train.squeeze()
+        y_predicted = y_predicted.squeeze()
+        y_train_array = np.zeros((self._sample_length))
+        y_predicted_array = y_train_array.copy()
+        stop_range = self._sample_length-self.sample_length
+        for i, start in enumerate(range(0, stop_range, self.sliding_window_length)):
+            y_train_array[start: self.sample_length+start] += y_train[i]
+            y_predicted_array[start: self.sample_length+start] += y_predicted[i]
+
+        y_train_array = y_train_array/self.sum_k
+        y_predicted_array = y_predicted_array/self.sum_k
+        return y_train_array, y_predicted_array

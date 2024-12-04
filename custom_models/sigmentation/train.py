@@ -32,20 +32,9 @@ def train(model_name: str = 'segmentation_v1.0'):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     model = model.to(device)
     model.parameters()
-    model.load_state_dict(torch.load(f"./checkpoints/{model_name}.pt"))
+    model.load_state_dict(torch.load(f"./checkpoints/segmentation_v1.00.pt"))
     model.eval()
 
-###############################3
-    #delete
-    avg_val_loss = 0.
-    for i, (x_batch, y_batch) in enumerate(val_loader):
-        y_pred = model(to_tensor(x_batch).cuda())
-        y_pred = y_pred.detach().cpu()
-        val_loader
-        val_loss = loss_fn(y_pred, to_tensor(y_batch)).item() / len(train_loader)
-        avg_val_loss += val_loss
-############################3
-    exit(0)
     for epoch in range(num_epochs):
         start_time = time.time()
         model.train()
@@ -66,9 +55,13 @@ def train(model_name: str = 'segmentation_v1.0'):
             avg_val_loss = 0.
             for i, (x_batch, y_batch) in enumerate(val_loader):
                 y_pred = model(to_tensor(x_batch).cuda())
-                val_loss = loss_fn(y_pred.detach().cpu(), to_tensor(y_batch)).item() / len(train_loader)
+                y_pred = y_pred.detach().cpu()
+                y_batch, y_pred = val_loader.join_results(y_batch, y_pred.numpy())
+                val_loss = loss_fn(to_tensor(y_pred), to_tensor(y_batch)).item() / len(train_loader)
                 avg_val_loss += val_loss
 
+            # save one example for check real progress
+            save_fig([y_batch, y_pred], f'figs/{epoch}.png')
             elapsed_time = time.time() - start_time
             torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
 
