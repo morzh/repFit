@@ -10,7 +10,8 @@ min_distance_between_samples_frames: int = 3 # cut from both sides, real gab wil
 sample_length: int = 200 # length of one data sample in frames. Calc it as fpt*seconds
 
 # 17 points by 3 axis + pca + y
-sample_shape = np.zeros((17 * 3 + 2, sample_length))
+frame_length = 17 * 3 + 2
+sample_shape = np.zeros((frame_length, sample_length))
 
 
 def cut_continuous_mark(sample: list, gap_distance: int) -> List[tuple]:
@@ -37,7 +38,6 @@ class SegmentationDataset(Dataset):
     def __init__(
         self,
         dpath=DATASETS_DPATH / "train_mix_squad",
-        min_sample_length: int = 100,
         epoch_size: int = 100,
         batch_size: int = 1000
     ):
@@ -48,14 +48,13 @@ class SegmentationDataset(Dataset):
         self.markup_fpath = dpath / "markup.json"
 
         self.sample_length = sample_length
-        self.min_sample_length = min_sample_length
         self.epoch_size = epoch_size
         self.batch_size = batch_size
         self.speed_range = (0.8, 1.2)
         self.stretch_by_axis_range = (0.8, 1.2)
         self.n_threads = 10
         self.remove_class_labels = [7]
- 
+        self._boarder_template = np.zeros((frame_length, int(0.3 * sample_length)))
 
         self.dataset = self.load_data()
 
@@ -88,16 +87,22 @@ class SegmentationDataset(Dataset):
             pca_row = np.load(str(pca_fpath))
             joints = np.load(self.skeleton_dpath / pca_fpath.name)
 
-            length = min(pca_row.shape[0], joints.shape[0])
-            if length < self.min_sample_length:
-                continue
-            print(f"{stem=}; {pca_row.shape[0]=}; {joints.shape[0]=}")
+            print(f"Load {stem=}; {len(joints)=}; {len(pca_row)=}")
+            assert pca_row.shape[0] == joints.shape[0], "Dataset has a wrong data sample"
 
             # flatten joint 3d to 2d shape
-            joints = np.reshape(joints, (length, np.dot(*joints.shape[1:])))
+            joints = np.reshape(joints, (len(joints), np.dot(*joints.shape[1:])))
 
             y = self.make_y_sample(joints.shape[0], markup[stem])
-            original_data.append(self.join_data_sample(pca_row, joints, y))
+            data_sample = self.join_data_sample(pca_row, joints, y)
+
+            # add extra zeros boarder for increase train progress
+            data_sample = np.hstack((self._boarder_template, data_sample, self._boarder_template))
+
+            if len(data_sample) < sample_length:
+                data_sample = np.hstack((data_sample, np.zeros((frame_length, sample_length - len(data_sample)))))
+
+            original_data.append(data_sample)
         return original_data
 
     def read_frame_range(self, stem: str) -> (int, int):

@@ -7,14 +7,11 @@ from model import SegmentationModel
 from dataset import SegmentationDataset, SegmentationDatasetValidation
 import matplotlib.pyplot as plt
 import pandas as pd
-from custom_models.paths import DATASETS_DPATH
 
 # Define relevant variables for the ML task
 num_classes = 10
 lr = 0.001
 num_epochs = 500
-
-
 
 # Device will determine whether to run the training on GPU or CPU.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -24,24 +21,24 @@ os.makedirs(models_dpath, exist_ok=True)
 
 
 # Tasks
-# 2. Extend input samples with boarders for add zeros frames in train dataset
 # 3. Update all dataset to one fps
 # 5. Add data drop rate in train
+# 6. Make training optimization for better GPU/CPU utilization
 
 
-def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentation_v1.0.pt'):
+def train(model_name: str = 'segmentation_v1.0', from_weights: str = None):
     train_loader = SegmentationDataset(epoch_size=10, batch_size=1000)
     val_loader = SegmentationDatasetValidation(sliding_window_length=10)
     model = SegmentationModel()
-
-    loss_fn = nn.MSELoss()
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     model = model.to(device)
     model.parameters()
-    model.load_state_dict(torch.load(f"{models_dpath}/segmentation_v1.0_490.pt"))
+    if from_weights:
+        model.load_state_dict(torch.load(f"{models_dpath}/{from_weights}"))
     model.eval()
     # avg_val_loss = validation(model, val_loader, loss_fn, model_name)
+
+    loss_fn = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
     for epoch in range(num_epochs):
         start_time = time.time()
@@ -50,20 +47,14 @@ def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentati
         for i, (x_batch, y_batch) in enumerate(train_loader):
             y_pred = model(to_tensor(x_batch).cuda())
             loss = loss_fn(y_pred.cpu(), to_tensor(y_batch))
-
             optimizer.zero_grad()
             loss.backward()
-
             optimizer.step()
             avg_loss += loss.item() / len(train_loader)
-
         model.eval()
 
         if epoch % 10 == 0:
             avg_val_loss = validation(model, val_loader, loss_fn, model_name)
-
-            # save one example for check real progress
-            save_fig([y_batch, y_pred], f'figs/{epoch}.png')
             elapsed_time = time.time() - start_time
             torch.save(model.state_dict(), os.path.join(models_dpath, model_name + f'_{epoch}.pt'))
 
@@ -74,14 +65,16 @@ def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentati
 
 def validation(model, val_loader, loss_fn, dpath: str):
     avg_val_loss = 0.
-    os.makedirs(dpath, exist_ok=True)
     for i, (x_batch, y_batch) in enumerate(val_loader):
         y_pred = model(to_tensor(x_batch).cuda())
         y_pred = y_pred.detach().cpu()
         y_batch, y_pred = val_loader.join_results(y_batch, y_pred.numpy())
         val_loss = loss_fn(to_tensor(y_pred), to_tensor(y_batch)).item() / len(val_loader)
-        save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{i}.png")
         avg_val_loss += val_loss
+
+    os.makedirs(dpath, exist_ok=True)
+    # save one example for check real progress
+    save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{i}.png")
     return avg_val_loss
 
 
@@ -128,4 +121,5 @@ def report(train_loader, y_pred):
 
 
 if __name__ == '__main__':
+    # from_weights: str = 'segmentation_model.pt'
     train()
