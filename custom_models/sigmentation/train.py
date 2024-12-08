@@ -27,7 +27,6 @@ os.makedirs(models_dpath, exist_ok=True)
 # 1. Delete one action from sample if it touches a boarder
 # 2. Extend input samples with boarders for add zeros frames in train dataset
 # 3. Update all dataset to one fps
-# 4. Delete zeros from train dataset
 # 5. Add data drop rate in train
 
 
@@ -43,7 +42,7 @@ def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentati
     model.parameters()
     model.load_state_dict(torch.load(f"{models_dpath}/segmentation_v1.0_490.pt"))
     model.eval()
-    avg_val_loss = validation(model, val_loader, loss_fn, model_name)
+    # avg_val_loss = validation(model, val_loader, loss_fn, model_name)
 
     for epoch in range(num_epochs):
         start_time = time.time()

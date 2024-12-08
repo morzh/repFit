@@ -21,6 +21,15 @@ def cut_continuous_mark(sample: list, gap_distance: int) -> List[tuple]:
         start = point + gap_distance
     return points
 
+def speed_augmentation(data_array: np.ndarray, speed_range):
+    speed = np.random.uniform(speed_range)
+    y = np.arange(data_array.shape[0])
+    x = np.arange(data_array.shape[1])
+    x2 = np.arange(data_array.shape[1] * speed) * speed
+    sample = interp2d(x, y, data_array, kind='cubic')(x2, y)
+    sample[sample[..., -1] < 0] = 0
+    return sample
+
 
 class SegmentationDataset(Dataset):
     """Skeleton joints and PCA"""
@@ -184,7 +193,7 @@ class SegmentationDataset(Dataset):
 
         for idx in data_indexes:
             data_array = self.dataset[idx]
-            sample = self.speed_augmentation(data_array)
+            sample = speed_augmentation(data_array, self.speed_range)
             sample = self.stretch_by_axis(sample)
             sample = self.cut_sample(sample)
 
@@ -193,15 +202,6 @@ class SegmentationDataset(Dataset):
             y.append(sample[-1:, ...])
 
         return np.array(x, dtype="float32"), np.array(y, dtype="float32")
-
-    def speed_augmentation(self, data_array: np.ndarray):
-        speed = np.random.uniform(*self.speed_range)
-        y = np.arange(data_array.shape[0])
-        x = np.arange(data_array.shape[1])
-        x2 = np.arange(data_array.shape[1] * speed) * speed
-        sample = interp2d(x, y, data_array, kind='cubic')(x2, y)
-
-        return sample
 
     def stretch_by_axis(self, data_array: np.ndarray):
         data_array = np.copy(data_array)
@@ -331,21 +331,13 @@ class SegmentationDatasetValidation(Dataset):
 
         """
         data_array = self.dataset[idx]
-        array = self.speed_augmentation(data_array)
+        array = speed_augmentation(data_array, self.speed_range)
         array = self.stretch_by_axis(array)
         self._last_batch_pca = array[0, :]
         x, y = self.cut_samples(array)
 
         return np.array(x, dtype="float32"), np.array(y, dtype="float32")
 
-    def speed_augmentation(self, data_array: np.ndarray):
-        speed = np.random.uniform(*self.speed_range)
-        y = np.arange(data_array.shape[0])
-        x = np.arange(data_array.shape[1])
-        x2 = np.arange(data_array.shape[1] * speed) * speed
-        sample = interp2d(x, y, data_array, kind='cubic')(x2, y)
-
-        return sample
 
     def stretch_by_axis(self, data_array: np.ndarray):
         data_array = np.copy(data_array)
