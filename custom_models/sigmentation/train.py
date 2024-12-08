@@ -24,7 +24,6 @@ os.makedirs(models_dpath, exist_ok=True)
 
 
 # Tasks
-# 1. Delete one action from sample if it touches a boarder
 # 2. Extend input samples with boarders for add zeros frames in train dataset
 # 3. Update all dataset to one fps
 # 5. Add data drop rate in train

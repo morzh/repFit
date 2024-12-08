@@ -22,7 +22,7 @@ def cut_continuous_mark(sample: list, gap_distance: int) -> List[tuple]:
     return points
 
 def speed_augmentation(data_array: np.ndarray, speed_range):
-    speed = np.random.uniform(speed_range)
+    speed = np.random.uniform(*speed_range)
     y = np.arange(data_array.shape[0])
     x = np.arange(data_array.shape[1])
     x2 = np.arange(data_array.shape[1] * speed) * speed
@@ -196,6 +196,7 @@ class SegmentationDataset(Dataset):
             sample = speed_augmentation(data_array, self.speed_range)
             sample = self.stretch_by_axis(sample)
             sample = self.cut_sample(sample)
+            sample = self.delete_not_full_actions(sample)
 
             # cut sample by x and y parts
             x.append(sample[:-1, ...])
@@ -224,6 +225,24 @@ class SegmentationDataset(Dataset):
             tmp[..., :sample.shape[-1]] = sample
             sample = tmp
         return sample
+
+    def delete_not_full_actions(self, input_array: np.ndarray) -> np.ndarray:
+        """ Delete an action from 'y' if it touches a boarder """
+        if input_array[-1, 0] != 0:
+            for i in range(len(input_array)):
+                if input_array[-1, i] != 0:
+                    input_array[-1, i] = 0
+                else:
+                    break
+
+        if input_array[-1, -1] != 0:
+            for i in range(1, len(input_array)):
+                if input_array[-1, -i] != 0:
+                    input_array[-1, -i] = 0
+                else:
+                    break
+
+        return input_array
 
     def __iter__(self):
         for i in range(self.epoch_size):
