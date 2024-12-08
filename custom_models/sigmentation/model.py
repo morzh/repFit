@@ -7,13 +7,16 @@ from torchsummary import summary
 
 
 class conv_1d_block(nn.Module):
-    def __init__(self, in_layer, out_layer, kernel_size=7, stride=1, padding=0, activation=nn.Tanh):
+    def __init__(self, in_layer, out_layer, kernel_size=7, stride=1, padding=0, activation=nn.Tanh, dropout: float = None):
         super().__init__()
         self.conv = nn.Conv1d(in_layer, out_layer, kernel_size=kernel_size, stride=stride, padding=padding)
         self.bn = nn.BatchNorm1d(out_layer)
+        self.dropout = None if dropout else nn.Dropout(0.05)
         self.activation = activation()
 
     def forward(self, x):
+        if self.dropout:
+            x = self.dropout(x)
         x_re = self.conv(x)
         x_re = self.bn(x_re)
         x_out = self.activation(x_re)
@@ -48,7 +51,7 @@ class SegmentationModel(nn.Module):
         self.conv6 = conv_1d_block(256, 128, kernel_size=4, stride=1, padding=1)
         self.conv7 = conv_1d_block(640, 64, kernel_size=3, stride=1, padding=1)
         self.conv8 = conv_1d_block(321, 64, kernel_size=3, stride=1, padding=1)
-        self.conv9 = conv_1d_block(65, 1, kernel_size=3, stride=1, padding=1)
+        self.conv9 = conv_1d_block(65, 1, kernel_size=3, stride=1, padding=1, activation=nn.Sigmoid)
 
         self.upsample2 = self.upsample(2)
 

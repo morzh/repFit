@@ -22,7 +22,6 @@ os.makedirs(models_dpath, exist_ok=True)
 
 # Tasks
 # 3. Update all dataset to one fps
-# 5. Add data drop rate in train
 # 6. Make training optimization for better GPU/CPU utilization
 
 
