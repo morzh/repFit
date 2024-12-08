@@ -27,6 +27,8 @@ os.makedirs(models_dpath, exist_ok=True)
 # 1. Delete one action from sample if it touches a boarder
 # 2. Extend input samples with boarders for add zeros frames in train dataset
 # 3. Update all dataset to one fps
+# 4. Delete zeros from train dataset
+# 5. Add data drop rate in train
 
 
 def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentation_v1.0.pt'):
@@ -39,8 +41,9 @@ def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentati
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
     model = model.to(device)
     model.parameters()
-    model.load_state_dict(torch.load(f"{models_dpath}/{from_weights}"))
+    model.load_state_dict(torch.load(f"{models_dpath}/segmentation_v1.0_490.pt"))
     model.eval()
+    avg_val_loss = validation(model, val_loader, loss_fn, model_name)
 
     for epoch in range(num_epochs):
         start_time = time.time()
@@ -59,23 +62,29 @@ def train(model_name: str = 'segmentation_v1.0', from_weights: str = 'segmentati
         model.eval()
 
         if epoch % 10 == 0:
-            avg_val_loss = 0.
-            for i, (x_batch, y_batch) in enumerate(val_loader):
-                y_pred = model(to_tensor(x_batch).cuda())
-                y_pred = y_pred.detach().cpu()
-                y_batch, y_pred = val_loader.join_results(y_batch, y_pred.numpy())
-                val_loss = loss_fn(to_tensor(y_pred), to_tensor(y_batch)).item() / len(train_loader)
-                avg_val_loss += val_loss
+            avg_val_loss = validation(model, val_loader, loss_fn, model_name)
 
             # save one example for check real progress
             save_fig([y_batch, y_pred], f'figs/{epoch}.png')
             elapsed_time = time.time() - start_time
             torch.save(model.state_dict(), os.path.join(models_dpath, model_name + f'_{epoch}.pt'))
 
-        print(f'Epoch {epoch + 1}/{num_epochs} \t loss={avg_loss} \t   val_loss={avg_val_loss} \t  time={elapsed_time}s')
+        print(f'Epoch {epoch + 1}/{num_epochs} \t loss={avg_loss} \t val_loss={avg_val_loss} \t  time={elapsed_time}s')
 
     torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
     make_figs(x_batch, y_pred, model_name)
+
+def validation(model, val_loader, loss_fn, dpath: str):
+    avg_val_loss = 0.
+    os.makedirs(dpath, exist_ok=True)
+    for i, (x_batch, y_batch) in enumerate(val_loader):
+        y_pred = model(to_tensor(x_batch).cuda())
+        y_pred = y_pred.detach().cpu()
+        y_batch, y_pred = val_loader.join_results(y_batch, y_pred.numpy())
+        val_loss = loss_fn(to_tensor(y_pred), to_tensor(y_batch)).item() / len(val_loader)
+        save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{i}.png")
+        avg_val_loss += val_loss
+    return avg_val_loss
 
 
 def make_figs(x, y, name):

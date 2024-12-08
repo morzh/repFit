@@ -252,7 +252,7 @@ class SegmentationDatasetValidation(Dataset):
         self._sample_length = None
 
         self.sum_k = self.sample_length / self.sliding_window_length # how much point were sum in each position
-
+        self._last_batch_pca = None
 
     def __len__(self):
         return self.epoch_size
@@ -333,7 +333,7 @@ class SegmentationDatasetValidation(Dataset):
         data_array = self.dataset[idx]
         array = self.speed_augmentation(data_array)
         array = self.stretch_by_axis(array)
-        
+        self._last_batch_pca = array[0, :]
         x, y = self.cut_samples(array)
 
         return np.array(x, dtype="float32"), np.array(y, dtype="float32")
@@ -382,6 +382,10 @@ class SegmentationDatasetValidation(Dataset):
             y_train_array[start: self.sample_length+start] += y_train[i]
             y_predicted_array[start: self.sample_length+start] += y_predicted[i]
 
+        boarder = self.sample_length - self.sliding_window_length
+        y_train_array = y_train_array[boarder:-boarder]
+        y_predicted_array = y_predicted_array[boarder:-boarder]
         y_train_array = y_train_array/self.sum_k
         y_predicted_array = y_predicted_array/self.sum_k
+
         return y_train_array, y_predicted_array
