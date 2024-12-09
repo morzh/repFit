@@ -21,11 +21,10 @@ os.makedirs(models_dpath, exist_ok=True)
 
 
 # Tasks
-# 3. Update all dataset to one fps
 # 6. Make training optimization for better GPU/CPU utilization
 
 
-def train(model_name: str = 'segmentation_v1.0', from_weights: str = None):
+def train(model_name: str = 'segmentation_v2.0', from_weights: str = None):
     train_loader = SegmentationDataset(epoch_size=10, batch_size=1000)
     val_loader = SegmentationDatasetValidation(sliding_window_length=10)
     model = SegmentationModel()

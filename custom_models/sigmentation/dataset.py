@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from custom_models.paths import PROJECT_ROOT, DATASETS_DPATH
 from pathlib import Path
 from scipy.interpolate import interp2d
+from utils.cv.video_reader import VideoReader
 
 min_distance_between_samples_frames: int = 3 # cut from both sides, real gab will be *2
 sample_length: int = 200 # length of one data sample in frames. Calc it as fpt*seconds
@@ -22,8 +23,7 @@ def cut_continuous_mark(sample: list, gap_distance: int) -> List[tuple]:
         start = point + gap_distance
     return points
 
-def speed_augmentation(data_array: np.ndarray, speed_range):
-    speed = np.random.uniform(*speed_range)
+def speed_augmentation(data_array: np.ndarray, speed: float):
     y = np.arange(data_array.shape[0])
     x = np.arange(data_array.shape[1])
     x2 = np.arange(data_array.shape[1] * speed) * speed
@@ -39,13 +39,15 @@ class SegmentationDataset(Dataset):
         self,
         dpath=DATASETS_DPATH / "train_mix_squad",
         epoch_size: int = 100,
-        batch_size: int = 1000
+        batch_size: int = 1000,
+        equal_fps: int = 20 # make all data to equal fps
     ):
-
+        self.equal_fps = equal_fps
         self.pca_dpath = dpath / "joints3d_pca"
         self.skeleton_dpath = dpath / "joints3d_aligned_to_global_frame"
         self.skeleton_info_dpath = dpath / "joints2d_info"
         self.markup_fpath = dpath / "markup.json"
+        self.video_dpath = dpath / "base_videos"
 
         self.sample_length = sample_length
         self.epoch_size = epoch_size
@@ -96,19 +98,15 @@ class SegmentationDataset(Dataset):
             y = self.make_y_sample(joints.shape[0], markup[stem])
             data_sample = self.join_data_sample(pca_row, joints, y)
 
-            # add extra zeros boarder for increase train progress
-            data_sample = np.hstack((self._boarder_template, data_sample, self._boarder_template))
-
-            if len(data_sample) < sample_length:
-                data_sample = np.hstack((data_sample, np.zeros((frame_length, sample_length - len(data_sample)))))
+            if self.equal_fps:
+                video_reader = VideoReader(list(self.video_dpath.glob(stem+".*"))[0], use_tqdm=False)
+                d_speed = self.equal_fps / video_reader.fps
+                data_sample = speed_augmentation(data_sample, d_speed)
 
             original_data.append(data_sample)
         return original_data
 
     def read_frame_range(self, stem: str) -> (int, int):
-        # with open(self.skeleton_info_dpath / (stem + ".pickle"), 'rb') as file:
-        #     joints_info = pickle.load(file)
-
         with open(self.skeleton_info_dpath / (stem + ".json"), 'r') as file:
             joints_info = json.load(file)
 
@@ -144,6 +142,14 @@ class SegmentationDataset(Dataset):
     def join_data_sample(self, pca, joints, y):
         data_sample = np.hstack((pca, joints, y.reshape((len(y), 1))))
         data_sample = data_sample.transpose()
+
+        # add extra zeros boarder for increase train progress
+        data_sample = np.hstack((self._boarder_template, data_sample, self._boarder_template))
+
+        if len(data_sample) < sample_length:
+            data_sample = np.hstack(
+                (data_sample, np.zeros((frame_length, sample_length - len(data_sample)))))
+
         return data_sample
 
     def load_markup(self) -> Dict[str, list]:
@@ -198,7 +204,7 @@ class SegmentationDataset(Dataset):
 
         for idx in data_indexes:
             data_array = self.dataset[idx]
-            sample = speed_augmentation(data_array, self.speed_range)
+            sample = speed_augmentation(data_array, np.random.uniform(*self.speed_range))
             sample = self.stretch_by_axis(sample)
             sample = self.cut_sample(sample)
             sample = self.delete_not_full_actions(sample)
@@ -257,12 +263,14 @@ class SegmentationDataset(Dataset):
 class SegmentationDatasetValidation(Dataset):
     """Skeleton joints and PCA"""
 
-    def __init__(self, sliding_window_length: int = 10):
+    def __init__(self, sliding_window_length: int = 10, equal_fps: int=20):
         assert sliding_window_length < sample_length
+        self.equal_fps = equal_fps
         self.pca_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d_pca"
         self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d"
         self.skeleton_info_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints2d_info"
         self.markup_fpath = PROJECT_ROOT / "markup" / "markup.json"
+        self.video_dpath = DATASETS_DPATH / "PCA_5.07.24" / "filtered_final_video"
 
         self.sample_length = sample_length
         self.epoch_size = 1
@@ -300,26 +308,30 @@ class SegmentationDatasetValidation(Dataset):
         original_data = []
         # start in position:  -self.sample_length + self.sliding_window_length
         # because we need one number of sum values in each position
-        
+        print("Load validation dataset")
         for pca_fpath in self.pca_dpath.glob("*.npy"):
             stem = pca_fpath.stem
             if pca_fpath.stem not in markup_files_list:
+                print(f"Skip loading {pca_fpath.stem}")
                 continue
             pca_row = np.load(str(pca_fpath))
             joints = np.load(self.skeleton_dpath / pca_fpath.name)
             assert len(pca_row) == len(joints), "Something wrong with data. PCA and joints have different length"
-            length = min(pca_row.shape[0], joints.shape[0])
-            if length < self.sample_length:
-                # TODO: add zeros
-                continue
-            print(f"{stem=}; {pca_row.shape[0]=}; {joints.shape[0]=}")
+            print(f"Load {stem=}; {len(joints)=}; {len(pca_row)=}")
 
             # flatten joint 3d to 2d shape
-            joints = np.reshape(joints, (length, np.dot(*joints.shape[1:])))
+            joints = np.reshape(joints, (len(joints), np.dot(*joints.shape[1:])))
 
             y = self.make_y_sample(joints.shape[0], markup[stem])
             data_sample = np.hstack((pca_row, joints, y.reshape((len(y), 1))))
             data_sample = data_sample.transpose()
+
+
+            if self.equal_fps:
+                video_reader = VideoReader(list(self.video_dpath.glob(stem+".*"))[0], use_tqdm=False)
+                d_speed = self.equal_fps / video_reader.fps
+                data_sample = speed_augmentation(data_sample, d_speed)
+
             original_data.append(data_sample)
         return original_data
 
@@ -355,7 +367,7 @@ class SegmentationDatasetValidation(Dataset):
 
         """
         data_array = self.dataset[idx]
-        array = speed_augmentation(data_array, self.speed_range)
+        array = speed_augmentation(data_array, np.random.uniform(*self.speed_range))
         array = self.stretch_by_axis(array)
         self._last_batch_pca = array[0, :]
         x, y = self.cut_samples(array)
