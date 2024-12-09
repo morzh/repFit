@@ -28,7 +28,8 @@ def speed_augmentation(data_array: np.ndarray, speed: float):
     x = np.arange(data_array.shape[1])
     x2 = np.arange(data_array.shape[1] * speed) * speed
     sample = interp2d(x, y, data_array, kind='cubic')(x2, y)
-    sample[sample[..., -1] < 0] = 0
+    sample[-1, sample[-1, :] < 0] = 0
+    sample[-1, sample[-1, :] > 1] = 1
     return sample
 
 

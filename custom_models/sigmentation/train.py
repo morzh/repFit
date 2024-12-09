@@ -52,7 +52,7 @@ def train(model_name: str = 'segmentation_v2.0', from_weights: str = None):
         model.eval()
 
         if epoch % 10 == 0:
-            avg_val_loss = validation(model, val_loader, loss_fn, model_name)
+            avg_val_loss = validation(model, val_loader, loss_fn, model_name, epoch)
             elapsed_time = time.time() - start_time
             torch.save(model.state_dict(), os.path.join(models_dpath, model_name + f'_{epoch}.pt'))
 
@@ -61,7 +61,7 @@ def train(model_name: str = 'segmentation_v2.0', from_weights: str = None):
     torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
     make_figs(x_batch, y_pred, model_name)
 
-def validation(model, val_loader, loss_fn, dpath: str):
+def validation(model, val_loader, loss_fn, dpath: str, epoch: int = 0):
     avg_val_loss = 0.
     for i, (x_batch, y_batch) in enumerate(val_loader):
         y_pred = model(to_tensor(x_batch).cuda())
@@ -72,7 +72,7 @@ def validation(model, val_loader, loss_fn, dpath: str):
 
     os.makedirs(dpath, exist_ok=True)
     # save one example for check real progress
-    save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{i}.png")
+    save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{epoch}_{i}.png")
     return avg_val_loss
 
 
