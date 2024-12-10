@@ -33,12 +33,12 @@ def train(model_name: str = 'segmentation_v2.0', from_weights: str = None):
     if from_weights:
         model.load_state_dict(torch.load(f"{models_dpath}/{from_weights}"))
     model.eval()
-    # avg_val_loss = validation(model, val_loader, loss_fn, model_name)
-
     loss_fn = nn.MSELoss()
+    # avg_val_loss = validation(model, val_loader, loss_fn, model_name)
+    # exit(0)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
 
-    for epoch in range(num_epochs):
+    for epoch in range(1, num_epochs+1):
         start_time = time.time()
         model.train()
         avg_loss = 0.
@@ -56,8 +56,9 @@ def train(model_name: str = 'segmentation_v2.0', from_weights: str = None):
             elapsed_time = time.time() - start_time
             torch.save(model.state_dict(), os.path.join(models_dpath, model_name + f'_{epoch}.pt'))
 
-        print(f'Epoch {epoch + 1}/{num_epochs} \t loss={avg_loss} \t val_loss={avg_val_loss} \t  time={elapsed_time}s')
-
+            print(f'Epoch {epoch}/{num_epochs} \t {avg_loss=} \t {avg_val_loss=} \t  time={elapsed_time}s')
+        else:
+            print(f'Epoch {epoch}/{num_epochs}')
     torch.save(model.state_dict(), os.path.join(models_dpath, model_name + '.pt'))
     make_figs(x_batch, y_pred, model_name)
 
@@ -67,6 +68,7 @@ def validation(model, val_loader, loss_fn, dpath: str, epoch: int = 0):
         y_pred = model(to_tensor(x_batch).cuda())
         y_pred = y_pred.detach().cpu()
         y_batch, y_pred = val_loader.join_results(y_batch, y_pred.numpy())
+        # save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{epoch}_{i}.png")
         val_loss = loss_fn(to_tensor(y_pred), to_tensor(y_batch)).item() / len(val_loader)
         avg_val_loss += val_loss
 
@@ -106,6 +108,7 @@ def save_fig(vectors: list, fname: str):
             vector = vector.detach().cpu().numpy()
         plt.plot(vector)
     plt.savefig(fname, dpi=300)
+    print(f"Save fig: {fname}")
 
 
 def report(train_loader, y_pred):
@@ -119,5 +122,5 @@ def report(train_loader, y_pred):
 
 
 if __name__ == '__main__':
-    # from_weights: str = 'segmentation_model.pt'
-    train()
+    from_weights: str = 'segmentation_v2.2.pt'
+    train(from_weights=from_weights)
