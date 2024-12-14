@@ -2,22 +2,35 @@ import numpy as np
 import cv2
 
 
-def stepped_color(step, factor) -> tuple[int, int, int]:
+def stepped_color(step_value, steps_number) -> tuple[int, int, int]:
     """
     Description:
+        Calculates color using HSV model with given ``step_value`` and ``steps_number``.
+        Output is BGR color values.
 
+    :param step_value: HSV color model hue step size;
+    :param steps_number: number of steps.
+
+    :return: color BGR values.
     """
-    hsv_color = np.uint8([[[(factor * step) % 180, 255, 255]]])
-    rgb_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)
-    rgb_color = rgb_color[0, 0]
-    rgb_color = (int(rgb_color[0]), int(rgb_color[1]), int(rgb_color[2]))
-    return rgb_color
+    hsv_color = np.uint8([[[(steps_number * step_value) % 180, 255, 255]]])
+    bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)
+    bgr_color = bgr_color[0, 0]
+    bgr_color = (int(bgr_color[0]), int(bgr_color[1]), int(bgr_color[2]))
+    return bgr_color
 
 
-def alpha_from_confidence(minimum, maximum, confidence, normalized=True) -> int | float:
+def alpha_from_confidence(minimum: float, maximum: float, confidence: float, normalized=True) -> int | float:
     """
     Description:
+        Calculates color alpha value from ``confidence`` value and ``minimum`` -- ``maximum`` range.
 
+    :param minimum: value minimum bound;
+    :param maximum: value maximum bound;
+    :param confidence: confidence;
+    :param normalized: if True, alpha is in [0, 1] range or in [0, 255] otherwise.
+
+    :return: alpha color value.
     """
     values_range = maximum - minimum
     alpha_value = np.clip(confidence, minimum, maximum) - minimum
@@ -28,10 +41,18 @@ def alpha_from_confidence(minimum, maximum, confidence, normalized=True) -> int 
     return alpha_value
 
 
-def draw_bounding_boxes(person_id, frame, bounding_box, color, boxes_thickness) -> np.ndarray:
+def draw_bounding_boxes(person_id: int, frame: cv2.typing.MatLike, bounding_box: np.ndarray, color: tuple[int, int, int], boxes_thickness: int) -> np.ndarray:
     """
     Description:
+        DraW bounding box with ''person_id`` label on a ``frame``.
 
+    :param person_id: person ID;
+    :param frame: frame;
+    :param bounding_box: bounding box array;
+    :param color: BGR color values;
+    :param boxes_thickness: bounding box thickness.
+
+    :return: frame with bounding box drawn.
     """
     person_id_text = str(person_id).zfill(2)
 
@@ -61,11 +82,11 @@ def draw_skeleton_joints(frame: cv2.typing.MatLike, color, radius: int, keypoint
         5: Left Shoulder 6: Right Shoulder 7: Left Elbow 8: Right Elbow 9: Left Wrist 10: Right Wrist
         11: Left Hip 12: Right Hip 13: Left Knee 14: Right Knee 15: Left Ankle 16: Right Ankle
 
-    :param frame:
-    :param color:
-    :param radius:
-    :param keypoints:
-    :param confidence_threshold:
+    :param frame: frame;
+    :param color: BGR color values;
+    :param radius: joint radius;
+    :param keypoints: keypoints array;
+    :param confidence_threshold: confidence threshold.
 
     :return: image with depicted joints.
     """
@@ -92,11 +113,11 @@ def draw_skeleton_bones(frame: cv2.typing.MatLike, color: tuple[int, int, int], 
         5: Left Shoulder 6: Right Shoulder 7: Left Elbow 8: Right Elbow 9: Left Wrist 10: Right Wrist
         11: Left Hip 12: Right Hip 13: Left Knee 14: Right Knee 15: Left Ankle 16: Right Ankle
 
-    :param frame:
-    :param color:
+    :param frame: frame
+    :param color: BGR color values;
     :param thickness: bones thickness
-    :param keypoints:
-    :param confidence_threshold:
+    :param keypoints: coco keypoints array;
+    :param confidence_threshold: confidence threshold.
 
     :return: image with depicted bones.
     """
