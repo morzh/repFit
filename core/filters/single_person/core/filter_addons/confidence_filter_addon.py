@@ -1,9 +1,12 @@
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-# from core.filters.single_person.core.single_person_track import SinglePersonStatus
 
 
 class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
+    """
+    Description:
+
+    """
 
     def __init__(self, confidence_threshold=0.25):
         self.confidence_threshold = confidence_threshold

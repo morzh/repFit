@@ -2,7 +2,7 @@ from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_ba
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 
 
-class WholePersonFilterAddon(MultiPersonsFilterAddonBase):
+class PartialPersonFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
     """

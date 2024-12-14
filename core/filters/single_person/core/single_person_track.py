@@ -7,17 +7,6 @@ from core.utils.cv.video_properties import VideoProperties
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
-# class SinglePersonStatus(Enum):
-#     NOT_FILTERED = 0
-#     FILTERED = 1
-#     READY_TO_WRITE = 2
-
-
-# class SinglePersonInformation:
-#     filters_applied: list = []
-    # track_status: SinglePersonStatus = SinglePersonStatus.NOT_FILTERED
-
-
 class SinglePersonTrack:
     """
     Description:

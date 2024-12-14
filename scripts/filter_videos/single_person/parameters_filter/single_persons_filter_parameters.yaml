@@ -16,36 +16,41 @@ tracking:
   tracked_data_suffix: 'tracked_data'
   write_tracked_data: true
 
+
 visualization:
   do_visualization: true
   bounding_box_thickness: 2
-#  transparent_threshold: 0.15 # if confidence below this threshold, bounding box will not draw
-#  opaque_threshold: 0.85 # if confidence above this threshold, bounding box will be opaque
   hsv_step: 20 # Hue step in degrees for HSV model
   draw_keypoints: true # draw skeleton joints
   keypoints_confidence_threshold: 0.2
-  show_frame_delay: 30
+  show_frame_delay: 10
   write_video: true
   video_suffix: 'viz_data'
+
 
 filtering:
   do_filtering: false
   confidence:
     apply: true
-    threshold: 0.4
+    confidence_threshold: 0.4 # confidence in [0, 1] interval
   absolute_area:
     apply: true
-    threshold: 400 # square pixels
+    area_threshold: 1100 # square pixels
   area_ratio:
     apply: true
-    threshold: 6
+    ratio_threshold: 5
   segments_duration:
     apply: true
-    threshold: 4.0 # duration in seconds
+    duration_threshold: 1.5 # duration in seconds
   bridging_gaps:
     apply: true
-    threshold: 2.0 # duration in second
+    gap_threshold: 1.0 # duration in second
+  partial_person:
+    apply: true
+    joint_confidence_threshold: 0.3 # confidence in [0, 1] interval
   whole_person:
     apply: false
+    joint_confidence_minimum: 0.7 # confidence in [0, 1] interval
   bounding_box_enlarge:
     apply: false
+    enlarge_direction: 'random' # value could be vertical, horizontal or random.
