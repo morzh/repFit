@@ -1,7 +1,7 @@
 'videos_root_folder': '/home/anton/work/fitMate/datasets'
-'videos_source_subfolder': 'squats_2022'
+'videos_source_subfolder': 'squats_2022_test'
 'videos_target_subfolder': 'squats_2022_single_person'
 'move_to_folders_strategy': 'steady_non_steady'  # 'by_source_filename'
 'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm']
-'number_processes': 4
+'number_processes': 2
 'use_multiprocessing': false

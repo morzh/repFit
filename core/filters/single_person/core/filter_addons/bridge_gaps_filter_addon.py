@@ -1,6 +1,6 @@
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-from core.filters.single_person.core.single_person_track import SinglePersonStatus
+# from core.filters.single_person.core.single_person_track import SinglePersonStatus
 
 
 class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
@@ -25,5 +25,5 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
         video_fps = tracks.video_properties.fps
         for person in tracks.persons.values():
             person.bridge_gaps(video_fps)
-            person.information.filters_applied.append('bridge_gap')
-            person.information.track_status = SinglePersonStatus.FILTERED
+            # person.information.filters_applied.append('bridge_gap')
+            # person.information.track_status = SinglePersonStatus.FILTERED

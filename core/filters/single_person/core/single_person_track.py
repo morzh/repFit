@@ -1,5 +1,5 @@
 import numpy as np
-from enum import Enum
+# from enum import Enum
 
 from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
@@ -7,15 +7,15 @@ from core.utils.cv.video_properties import VideoProperties
 from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
-class SinglePersonStatus(Enum):
-    NOT_FILTERED = 0
-    FILTERED = 1
-    READY_TO_WRITE = 2
+# class SinglePersonStatus(Enum):
+#     NOT_FILTERED = 0
+#     FILTERED = 1
+#     READY_TO_WRITE = 2
 
 
-class SinglePersonInformation:
-    filters_applied: list = []
-    track_status: SinglePersonStatus = SinglePersonStatus.NOT_FILTERED
+# class SinglePersonInformation:
+#     filters_applied: list = []
+    # track_status: SinglePersonStatus = SinglePersonStatus.NOT_FILTERED
 
 
 class SinglePersonTrack:
@@ -30,7 +30,8 @@ class SinglePersonTrack:
     def __init__(self):
         self.data = PersonTrackingData()
         self.segments = FramesSegments()
-        self.information = SinglePersonInformation()
+        self.is_whole_person_segment = np.array([])
+        # self.information = SinglePersonInformation()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, keypoints: np.ndarray | None = None) -> None:
@@ -81,12 +82,19 @@ class SinglePersonTrack:
     def mean_area(self) -> float:
         """
         Description:
-            Calculates mean of all bounding boxes areas of a person.
+            Calculates mean of all person's bounding boxes areas.
 
         :return: mean area of all person's bounding boxes.
         """
         return self.data.bounding_boxes.mean_area()
 
+
+    def mean_height(self) -> float:
+        """
+        Description:
+            Calculates mean height of all person's bounding boxes.
+        """
+        return self.data.bounding_boxes.mean_height()
 
     def mean_area_per_segment(self) -> np.ndarray:
         """
@@ -105,7 +113,7 @@ class SinglePersonTrack:
         return mean_areas
 
 
-    def is_track_equals_video(self, video_properties: VideoProperties, frames_number) -> bool:
+    def is_track_equals_video(self, video_properties: VideoProperties, frames_number: int) -> bool:
         """
         Description:
             Returns true, when two following conditions satisfied:

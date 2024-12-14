@@ -45,6 +45,8 @@ class PersonsTracker:
             current_predictions = self.model.track(frame, classes=0, persist=persist, save=False, show=show_tracked_data, verbose=verbose)
             current_detected_bounding_boxes = current_predictions[0].boxes.data.cpu().numpy()
             current_detected_key_points = current_predictions[0].keypoints.data.cpu().numpy()
+            # if current_detected_key_points.shape[1] != 17:
+            #     print(current_detected_key_points)
             current_frame_index = video_stride_reader.current_stride_frame_index
 
             if current_detected_bounding_boxes.size > 0 and current_detected_bounding_boxes.shape[1] != 7:  continue

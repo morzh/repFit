@@ -1,6 +1,6 @@
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-from core.filters.single_person.core.single_person_track import SinglePersonStatus
+# from core.filters.single_person.core.single_person_track import SinglePersonStatus
 
 
 class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
@@ -22,8 +22,8 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
                 keys_to_delete.append(person_key)
             else:
                 person.calculate_segments(tracks.frames_stride)
-                person.information.filters_applied.append('person_confidence')
-                person.information.track_status = SinglePersonStatus.FILTERED
+                # person.information.filters_applied.append('person_confidence')
+                # person.information.track_status = SinglePersonStatus.FILTERED
 
 
         for key in keys_to_delete:

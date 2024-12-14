@@ -1,6 +1,6 @@
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-from core.filters.single_person.core.single_person_track import SinglePersonStatus
+# from core.filters.single_person.core.single_person_track import SinglePersonStatus
 
 
 class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
@@ -28,8 +28,8 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
             if current_mean_area < self.area_threshold:
                 keys_to_delete.append(person_id)
 
-            person.information.filters_applied.append('absolute_area')
-            person.information.track_status = SinglePersonStatus.FILTERED
+            # person.information.filters_applied.append('absolute_area')
+            # person.information.track_status = SinglePersonStatus.FILTERED
 
 
         for key in keys_to_delete:

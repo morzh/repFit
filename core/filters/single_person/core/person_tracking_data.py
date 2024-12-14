@@ -104,6 +104,9 @@ class PersonTrackingData:
     def frame_keypoints(self, frame_index: int) -> np.ndarray:
         """
         Description:
+            Calculates keypoints at ``frame_index``.
+
+        :param frame_index: index of a frame;
 
         :return: keypoints at given ``frame''
         """
@@ -112,7 +115,7 @@ class PersonTrackingData:
         elif len(self._frames_indices) == 1:
             return self._keypoints[0]
         elif frame_index <= self._frames_indices.values[-1]:
-            return self._interpolation(frame_index, self._keypoints)
+            return self._coco_keypoints_interpolation(frame_index, self._keypoints)
         else:
             return self._extrapolation(frame_index, self._keypoints)
 
@@ -149,32 +152,101 @@ class PersonTrackingData:
         return StrictlyIncreasingSequence.is_consistent(self._frames_indices.values) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
 
 
+    def _coco_keypoints_interpolation(self, frame_index: int, keypoints: np.ndarray) -> np.ndarray:
+        """
+        Description:
+            Interpolate ``keypoints`` at ``frame_index``.
+            YOLO assigns zero coordinates if joint cannot be tracked. To account this,
+            zero value is set to interpolated keypoint from any of the input values. ..... BLAH BLAH ...
+
+        :param frame_index: index of a frame
+        :param keypoints: COCO keypoints array
+
+        :return: interpolated keypoints
+        """
+        index_occurrence = np.argmax(self._frames_indices.values >= frame_index)
+
+        if self._frames_indices[index_occurrence] == frame_index:
+            return keypoints[index_occurrence]
+        else:
+            frame_1 = self._frames_indices[index_occurrence - 1]
+            frame_2 = self._frames_indices[index_occurrence]
+            factor = (frame_index - frame_1) / (frame_2 - frame_1)
+
+            value_1 = keypoints[index_occurrence - 1]
+            value_2 = keypoints[index_occurrence]
+
+            zeros_mask = np.vstack((np.argwhere(value_1 < 1e-6), np.argwhere(value_2 < 1e-6)))
+            zeros_mask = np.unique(zeros_mask, axis=0)
+
+            interpolated_keypoints = value_1 + factor * (value_2 - value_1)
+            interpolated_keypoints[zeros_mask[:, 0], zeros_mask[:, 1]] = 0.0
+
+            return interpolated_keypoints
+
+
+    def _coco_keypoints_extrapolation(self, frame_index, keypoints) -> np.ndarray:
+        """
+        Description:
+            Extrapolate ``array`` at ``frame_index``.
+            YOLO assigns zero coordinates if joint cannot be tracked. To account this,
+            zero value is set to extrapolated keypoint from any of the input values. ..... BLAH BLAH
+
+        :param frame_index: index of a frame
+        :param keypoints: COCO keypoints array
+
+        :return: extrapolated keypoints.
+        """
+        last_frame_index = self._frames_indices.values[-1]
+        direction = keypoints[-1] - keypoints[-2]
+        factor = frame_index - last_frame_index
+
+        zeros_mask = np.vstack((np.argwhere(keypoints[-1] < 1e-6), np.argwhere(keypoints[-2] < 1e-6)))
+        zeros_mask = np.unique(zeros_mask, axis=0)
+
+        extrapolated_keypoints = keypoints[-1] + factor * direction
+        extrapolated_keypoints[zeros_mask[:, 0], zeros_mask[:, 1]] = 0.0
+        return extrapolated_keypoints
+
+
     def _interpolation(self, frame_index: int, array) -> np.ndarray:
         """
         Description:
-        """
-        index_high_bound_occurrence = np.argmax(self._frames_indices.values >= frame_index)
+            Interpolate ``array`` at ``frame_index``.
 
-        if self._frames_indices[index_high_bound_occurrence] == frame_index:
-            return array[index_high_bound_occurrence]
+        :param frame_index: index of a frame
+        :param array:
+
+        :return: interpolated values
+        """
+        index_occurrence = np.argmax(self._frames_indices.values >= frame_index)
+
+        if self._frames_indices[index_occurrence] == frame_index:
+            return array[index_occurrence]
         else:
-            segment_start = self._frames_indices[index_high_bound_occurrence - 1]
-            segment_end = self._frames_indices[index_high_bound_occurrence]
+            segment_start = self._frames_indices[index_occurrence - 1]
+            segment_end = self._frames_indices[index_occurrence]
             factor = (frame_index - segment_start) / (segment_end - segment_start)
 
-            return (array[index_high_bound_occurrence - 1] +
-                    factor * (array[index_high_bound_occurrence] - array[index_high_bound_occurrence - 1]))
+            return (array[index_occurrence - 1] +
+                    factor * (array[index_occurrence] - array[index_occurrence - 1]))
 
 
     def _extrapolation(self, frame_index, array) -> np.ndarray:
         """
         Description:
+            Extrapolate ``array`` at ``frame_index``.
+
+        :param frame_index:
+        :param array:
+
+        :return: extrapolated values
         """
         last_frame_index = self._frames_indices.values[-1]
         direction = array[-1] - array[-2]
         factor = frame_index - last_frame_index
-        extrapolated_bounding_box = array[-1] + factor * direction
-        return extrapolated_bounding_box
+        extrapolated_array = array[-1] + factor * direction
+        return extrapolated_array
 
 
     @property

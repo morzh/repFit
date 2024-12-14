@@ -127,6 +127,15 @@ class BoundingBoxes2DArray:
         return np.mean(areas)
 
 
+    def mean_height(self, indices: np.ndarray | None = None) -> float:
+        """
+
+        """
+        selected_boxes = self.__selected_bounding_boxes(indices)
+        return np.mean(selected_boxes[:, 3])
+
+
+
     def perimeters(self, indices: np.ndarray | None = None) -> np.ndarray:
         """
         Description:

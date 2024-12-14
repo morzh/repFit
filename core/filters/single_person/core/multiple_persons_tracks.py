@@ -97,8 +97,9 @@ class MultiplePersonsTracks:
         for frame in video_reader:
             for person_id, person_track in self.persons.items():
                 person_track.calculate_segments(self.frames_stride)
-                mean_boxes_area = self.persons[person_id].mean_area()
-                joints_radius = int(mean_boxes_area * 0.00015)
+                mean_boxes_area = self.persons[person_id].mean_height()
+                joints_radius = max(int(round(mean_boxes_area * 0.01)), 1)
+                bones_thickness = max(int(round(joints_radius / 2)), 1)
                 for segment in person_track.segments:
                     if segment[0] <= video_reader.current_frame_index < segment[1]:
 
@@ -109,13 +110,12 @@ class MultiplePersonsTracks:
 
                         current_confidence = self.persons[person_id].data.confidence(video_reader.current_frame_index)
                         current_color = viz.stepped_color(hsv_step, person_id)
-                        # current_alpha = viz.alpha_from_confidence(confidence_transparent, confidence_opaque, current_confidence)
-                        # current_alpha = current_confidence
                         current_boxes_overlay = viz.draw_bounding_boxes(person_id, frame, current_bounding_box, current_color, boxes_thickness)
 
                         frame = cv2.addWeighted(current_boxes_overlay, current_confidence, frame, 1 - current_confidence, 0)
                         if person_track.data.keypoints is not None:
                             frame = viz.draw_skeleton_joints(frame, current_color, joints_radius, current_keypoints)
+                            frame = viz.draw_skeleton_bones(frame, current_color, bones_thickness, current_keypoints)
 
             cv2.imshow(imshow_window_name, frame)
             cv2.waitKey(show_frame_delay)

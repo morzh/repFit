@@ -23,7 +23,8 @@ visualization:
 #  opaque_threshold: 0.85 # if confidence above this threshold, bounding box will be opaque
   hsv_step: 20 # Hue step in degrees for HSV model
   draw_keypoints: true # draw skeleton joints
-  show_frame_delay: 10
+  keypoints_confidence_threshold: 0.2
+  show_frame_delay: 30
   write_video: true
   video_suffix: 'viz_data'
 
