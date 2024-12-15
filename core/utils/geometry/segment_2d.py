@@ -206,6 +206,7 @@ class Segment2D:
     def length(self):
         return np.linalg.norm(self.end - self.start)
 
+
     def to_list(self):
         """
         Description:
@@ -218,12 +219,14 @@ class Segment2D:
         """
         return (self.start[0], self.start[1]), ([self.end[0], self.end[1]])
 
+
     def copy(self) -> segment2d:
         """
         Description:
             Return a deep copy of the object.
         """
         return deepcopy(self)
+
 
     def __sign(self, value) -> Sign:
         """

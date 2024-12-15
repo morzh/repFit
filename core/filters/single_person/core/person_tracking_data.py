@@ -20,8 +20,8 @@ class PersonTrackingData:
     def __init__(self):
         self._bounding_boxes = BoundingBoxes2DArray()
         self._frames_indices = StrictlyIncreasingSequence()
-        self._confidences: np.ndarray = np.empty(0, )
-        self._keypoints: np.ndarray = np.empty((0, 17, 3))
+        self._confidences = np.empty(0, )
+        self._keypoints = np.empty((0, 17, 3))
 
 
     def __len__(self):
@@ -58,6 +58,24 @@ class PersonTrackingData:
             self._confidences = np.append(self._confidences, confidence)
         else:
             raise ValueError('Confidence should be greater or equal zero')
+
+
+    def apply_mask(self, mask: np.ndarray) -> None:
+        """
+        Description:
+            Apply 1D mask to tracking data.
+
+        :param mask: mask
+        """
+        if mask.shape[0] != len(self._frames_indices):
+            raise ValueError('Mask shape should be (N,), where N is frame indices number')
+        elif not mask.dtype == bool:
+            raise ValueError('Mask values should be boolean.')
+
+        self._keypoints = self._keypoints[mask]
+        self._bounding_boxes.values = self._bounding_boxes[mask]
+        self._confidences = self._confidences[mask]
+        self._frames_indices._values = self._frames_indices[mask]
 
 
     def bounding_box(self, frame_index) -> np.ndarray:
@@ -228,8 +246,7 @@ class PersonTrackingData:
             segment_end = self._frames_indices[index_occurrence]
             factor = (frame_index - segment_start) / (segment_end - segment_start)
 
-            return (array[index_occurrence - 1] +
-                    factor * (array[index_occurrence] - array[index_occurrence - 1]))
+            return array[index_occurrence - 1] + factor * (array[index_occurrence] - array[index_occurrence - 1])
 
 
     def _extrapolation(self, frame_index, array) -> np.ndarray:

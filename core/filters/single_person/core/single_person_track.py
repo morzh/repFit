@@ -20,7 +20,6 @@ class SinglePersonTrack:
         self.data = PersonTrackingData()
         self.segments = FramesSegments()
         self.is_whole_person_segment = np.array([])
-        # self.information = SinglePersonInformation()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, keypoints: np.ndarray | None = None) -> None:
@@ -85,6 +84,7 @@ class SinglePersonTrack:
         """
         return self.data.bounding_boxes.mean_height()
 
+
     def mean_area_per_segment(self) -> np.ndarray:
         """
         Description:
@@ -100,6 +100,21 @@ class SinglePersonTrack:
             mean_areas[index] = self.data.bounding_boxes.mean_area(indices)
 
         return mean_areas
+
+
+    def bounding_boxes_per_segment(self) -> BoundingBoxes2DArray:
+        """
+        Description:
+            Calculate overall bounding box for each segment.
+
+        :return: segment's bounding boxes.
+        """
+        boxes = BoundingBoxes2DArray()
+        for segment in self.segments:
+            segment_indices = segment.as_frames_indices()
+            bounding_box = self.data.bounding_boxes.circumscribe(segment_indices)
+            boxes.append(bounding_box)
+        return boxes
 
 
     def is_track_equals_video(self, video_properties: VideoProperties, frames_number: int) -> bool:
@@ -118,16 +133,16 @@ class SinglePersonTrack:
         return is_single_segment_equals_video_range and is_single_bounding_box_matches_video_resolution
 
 
-    def bounding_boxes_per_segment(self) -> BoundingBoxes2DArray:
+    def is_data_empty(self) -> bool:
         """
-        Description:
-            Calculate overall bounding box for each segment.
 
-        :return: segment's bounding boxes.
         """
-        boxes = BoundingBoxes2DArray()
-        for segment in self.segments:
-            segment_indices = segment.as_frames_indices()
-            bounding_box = self.data.bounding_boxes.circumscribe(segment_indices)
-            boxes.append(bounding_box)
-        return boxes
+        if not len(self.data.bounding_boxes) and not self.data.keypoints.shape[0] and not self.data.confidences.shape[0]:
+            return True
+        return False
+
+
+    def are_segments_empty(self):
+        """
+
+        """

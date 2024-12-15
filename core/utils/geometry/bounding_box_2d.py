@@ -17,6 +17,7 @@ class BoundingBox2D:
     class Order(Enum):
         VERTICAL = 0
         HORIZONTAL = 1
+        RANDOM = 2
 
     XYWH = BoundingBoxMode.XYWH.value
     XYXY = BoundingBoxMode.XYXY.value
@@ -86,24 +87,6 @@ class BoundingBox2D:
             raise ValueError('')
 
 
-    def apply_aspect_ratio(self, ratio: numeric) -> bbox2d:
-        """
-        Description:
-            Return bounding box mapped to new aspect ratio denoted by ``ratio``.
-
-        :param ratio: The new ratio should be given as the result of `width / height`.
-        :return: ``BoundingBox`` with new aspect ratio.
-        """
-        # we need ratio as height/width for the below formula to be correct
-        ratio = 1.0 / ratio
-
-        area = self._width * self._height
-        area_ratio = area / ratio
-        new_width = np.round(np.sqrt(area_ratio))
-        new_height = np.round(ratio * new_width)
-        new_bbox = BoundingBox2D(self._x, self._y, new_width, new_height)
-        return new_bbox
-
     def aspect_ratio(self) -> numeric:
         """
         Description:
@@ -112,6 +95,7 @@ class BoundingBox2D:
         :return: aspect ratio value
         """
         return self._width / self._height
+
 
     def to_list(self, mode:BoundingBoxMode=XYWH) -> list:
         """
@@ -131,6 +115,7 @@ class BoundingBox2D:
             return [self._x, self._y, bottom_right[0], bottom_right[1]]
         else:
             raise ValueError('Modes other than XYWH and XYXY are not supported')
+
 
     def to_numpy(self, mode=XYWH) -> np.ndarray:
         """
@@ -152,6 +137,7 @@ class BoundingBox2D:
         else:
             raise ValueError('Modes other than XYWH and XYXY are not supported')
 
+
     def copy(self) -> bbox2d:
         """
         Description:
@@ -171,7 +157,7 @@ class BoundingBox2D:
 
         :return: True if bounding box is degenerate, False otherwise.
         """
-        return self.area <= numeric(threshold)
+        return self.area < numeric(threshold)
 
 
     def contains_point(self, point: vec2d, use_border=True) -> bool:
@@ -185,6 +171,7 @@ class BoundingBox2D:
             return (self._x <= point[0] <= self._x + self._width) and (self._y <= point[1] <= self._y + self._height)
         else:
             return (self._x < point[0] < self._x + self._width) and (self._y < point[1] < self._y + self._height)
+
 
     def contains_bounding_box(self, bounding_box: bbox2d, use_border=True) -> bool:
         """
@@ -200,6 +187,7 @@ class BoundingBox2D:
                 self.contains_point(bounding_box.right_top, use_border) and
                 self.contains_point(bounding_box.right_bottom, use_border) and
                 self.contains_point(bounding_box.left_bottom, use_border))
+
 
     def contained_in_bounding_box(self, other: bbox2d, use_border=True) -> bool:
         """
@@ -228,6 +216,7 @@ class BoundingBox2D:
         """
         return BoundingBox2D(self._x + values[0], self._y + values[1], self._width, self._height)
 
+
     def scale(self, values: vec2d) -> bbox2d:
         """
         Description:
@@ -238,6 +227,7 @@ class BoundingBox2D:
         :return: Scaled BoundingBox instance
         """
         return BoundingBox2D(self._x, self._y, self._width * values[0], self._height * values[1])
+
 
     def offset(self, value: numeric) -> bbox2d:
         """
@@ -252,6 +242,7 @@ class BoundingBox2D:
             return BoundingBox2D(0, 0, 0, 0)
 
         return BoundingBox2D(self._x + value, self._y + value, self._width - 2 * value, self._height - 2 * value)
+
 
     def enlarge(self, obstacles: list[bbox2d], bounding_box: bbox2d, order: Order.VERTICAL) -> bbox2d:
         """
@@ -312,6 +303,7 @@ class BoundingBox2D:
             box_right_bottom = bounding_box.right_bottom
             self._height = box_right_bottom[1] - self._y
 
+
     def __enlarge_horizontally(self, obstacles_point_cloud: np.ndarray, bounding_box: bbox2d) -> None:
         """
         Description:
@@ -347,6 +339,7 @@ class BoundingBox2D:
         """
         return np.array([self._x, self._y])
 
+
     @property
     def right_top(self) -> vec2d:
         """
@@ -354,6 +347,7 @@ class BoundingBox2D:
             Returns top right coordinates of the bounding box.
         """
         return np.array([self._x + self._width, self._y])
+
 
     @property
     def right_bottom(self) -> vec2d:
@@ -363,6 +357,7 @@ class BoundingBox2D:
         """
         return np.array([self._x + self._width, self._y + self._height])
 
+
     @property
     def left_bottom(self) -> vec2d:
         """
@@ -370,6 +365,7 @@ class BoundingBox2D:
             Returns bottom left coordinates of the bounding box.
         """
         return np.array([self._x, self._y + self._height])
+
 
     @property
     def width(self) -> numeric:
@@ -381,6 +377,7 @@ class BoundingBox2D:
         """
         return self._width
 
+
     @property
     def height(self) -> numeric:
         """
@@ -390,6 +387,7 @@ class BoundingBox2D:
         :return: bounding box height
         """
         return self._height
+
 
     @property
     def area(self) -> numeric:

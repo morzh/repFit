@@ -25,8 +25,8 @@ def alpha_from_confidence(minimum: float, maximum: float, confidence: float, nor
     Description:
         Calculates color alpha value from ``confidence`` value and ``minimum`` -- ``maximum`` range.
 
-    :param minimum: value minimum bound;
-    :param maximum: value maximum bound;
+    :param minimum: minimum bound value;
+    :param maximum: maximum bound value;
     :param confidence: confidence;
     :param normalized: if True, alpha is in [0, 1] range or in [0, 255] otherwise.
 
@@ -47,7 +47,7 @@ def draw_bounding_boxes(person_id: int, frame: cv2.typing.MatLike, bounding_box:
         DraW bounding box with ''person_id`` label on a ``frame``.
 
     :param person_id: person ID;
-    :param frame: frame;
+    :param frame: video frame;
     :param bounding_box: bounding box array;
     :param color: BGR color values;
     :param boxes_thickness: bounding box thickness.
@@ -58,8 +58,13 @@ def draw_bounding_boxes(person_id: int, frame: cv2.typing.MatLike, bounding_box:
 
     rectangle_point_1 = tuple(bounding_box[:2])
     rectangle_point_2 = tuple(bounding_box[2:])
-    id_label_point_2 = (rectangle_point_1[0] + len(person_id_text) * 24, rectangle_point_1[1] - 30)
-    id_text_point = (rectangle_point_1[0] + 5, rectangle_point_1[1] - 5)
+
+    if rectangle_point_1[1] < 25:
+        id_label_point_2 = (rectangle_point_1[0] + len(person_id_text) * 24, rectangle_point_1[1] + 30)
+        id_text_point = (rectangle_point_1[0] + 5, rectangle_point_1[1] + 25)
+    else:
+        id_label_point_2 = (rectangle_point_1[0] + len(person_id_text) * 24, rectangle_point_1[1] - 30)
+        id_text_point = (rectangle_point_1[0] + 5, rectangle_point_1[1] - 5)
 
     overlay = frame.copy()
     cv2.rectangle(overlay, rectangle_point_1, rectangle_point_2, color, boxes_thickness)
@@ -73,16 +78,16 @@ def draw_bounding_boxes(person_id: int, frame: cv2.typing.MatLike, bounding_box:
 def draw_skeleton_joints(frame: cv2.typing.MatLike, color, radius: int, keypoints: np.ndarray, confidence_threshold=0.25) -> cv2.typing.MatLike:
     """
     Description:
-        Add COCO 17 points skeleton joints on an image.
+        Draw COCO 17 points skeleton joints on an image.
 
-        Remarks:
+    Remarks:
         COCO 17 joints format:
         https://github.com/robertklee/COCO-Human-Pose/blob/main/figures/skeleton_442619_flip_107_labelled.png
         0: Nose 1: Left Eye 2: Right Eye 3: Left Ear 4: Right Ear
         5: Left Shoulder 6: Right Shoulder 7: Left Elbow 8: Right Elbow 9: Left Wrist 10: Right Wrist
         11: Left Hip 12: Right Hip 13: Left Knee 14: Right Knee 15: Left Ankle 16: Right Ankle
 
-    :param frame: frame;
+    :param frame: video frame;
     :param color: BGR color values;
     :param radius: joint radius;
     :param keypoints: keypoints array;
@@ -104,7 +109,7 @@ def draw_skeleton_joints(frame: cv2.typing.MatLike, color, radius: int, keypoint
 def draw_skeleton_bones(frame: cv2.typing.MatLike, color: tuple[int, int, int], thickness: int, keypoints: np.ndarray, confidence_threshold=0.1) -> cv2.typing.MatLike:
     """
     Description
-        Add COCO 17 points skeleton bones on an image.
+        Draw COCO 17 points skeleton bones on an image.
 
     Remarks:
         COCO 17 joints format:
@@ -113,9 +118,9 @@ def draw_skeleton_bones(frame: cv2.typing.MatLike, color: tuple[int, int, int], 
         5: Left Shoulder 6: Right Shoulder 7: Left Elbow 8: Right Elbow 9: Left Wrist 10: Right Wrist
         11: Left Hip 12: Right Hip 13: Left Knee 14: Right Knee 15: Left Ankle 16: Right Ankle
 
-    :param frame: frame
+    :param frame: video frame
     :param color: BGR color values;
-    :param thickness: bones thickness
+    :param thickness: bones thickness;
     :param keypoints: coco keypoints array;
     :param confidence_threshold: confidence threshold.
 

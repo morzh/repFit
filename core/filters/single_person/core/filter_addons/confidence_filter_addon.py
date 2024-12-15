@@ -25,8 +25,6 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
                 keys_to_delete.append(person_key)
             else:
                 person.calculate_segments(tracks.frames_stride)
-                # person.information.filters_applied.append('person_confidence')
-                # person.information.track_status = SinglePersonStatus.FILTERED
 
 
         for key in keys_to_delete:

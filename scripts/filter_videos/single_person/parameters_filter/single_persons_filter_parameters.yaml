@@ -9,7 +9,7 @@ tracking:
   yolo_model: 'yolo11x-pose.pt'
   frames_stride: 3
   person_minimal_time: 3 # time in seconds
-  skip_tracked_videos: true
+  skip_tracked_videos: false
   tracking_persist: true
   verbose_tracking: false
   visualize_while_tracking: false
@@ -29,7 +29,7 @@ visualization:
 
 
 filtering:
-  do_filtering: false
+  do_filtering: true
   confidence:
     apply: true
     confidence_threshold: 0.4 # confidence in [0, 1] interval
@@ -47,7 +47,8 @@ filtering:
     gap_threshold: 1.0 # duration in second
   partial_person:
     apply: true
-    joint_confidence_threshold: 0.3 # confidence in [0, 1] interval
+    joint_confidence_threshold: 0.65 # confidence in [0, 1] interval
+    joints_number: 5
   whole_person:
     apply: false
     joint_confidence_minimum: 0.7 # confidence in [0, 1] interval

@@ -41,8 +41,10 @@ class BoundingBoxes2DArray:
         for index in range(self.values.shape[0]):
             yield self.values[index]
 
+
     def reshape(self, new_shape):
         return self.values.reshape(new_shape)
+
 
     def append(self, bounding_box: np.ndarray, mode=XYWH) -> None:
         """
@@ -133,7 +135,6 @@ class BoundingBoxes2DArray:
         """
         selected_boxes = self.__selected_bounding_boxes(indices)
         return np.mean(selected_boxes[:, 3])
-
 
 
     def perimeters(self, indices: np.ndarray | None = None) -> np.ndarray:
