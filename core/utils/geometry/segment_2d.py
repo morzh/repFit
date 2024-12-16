@@ -6,12 +6,18 @@ from core.utils.geometry.line_2d import Line2D
 from geometry_typing import vec2d, segment2d
 
 class Segment2D:
+    """
+    Description:
+        Representing 2D segment using start and end points.
+    """
+
     class Sign(enum.Enum):
         """
         Description
         """
-        POSITIVE = 0
-        NEGATIVE = 1
+        ZERO = 0
+        POSITIVE = 1
+        NEGATIVE = 2
 
         def __neg__(self):
             if self.value == self.NEGATIVE:
@@ -19,22 +25,21 @@ class Segment2D:
             else:
                 return self.NEGATIVE
 
-    """
-    Description:
-        Representing 2D segment using start and end points.
-    """
-    __slots__ = ['start', 'end']
 
+    __slots__ = ['start', 'end']
     def __init__(self, start: vec2d, end: vec2d):
         self.start = start
         self.end = end
+
 
     def __eq__(self, other: segment2d, threshold = 1e-6):
         return (np.linalg.norm(self.start - other.start) < threshold and
                 np.linalg.norm(self.end - other.end) < threshold)
 
+
     def __repr__(self):
         return f"Segment2D({self.start}, {self.end})"
+
 
     def has_intersecting_with(self, other: segment2d) -> bool:
         line_1 = Line2D.from_two_points(self.start, self.end)
@@ -43,6 +48,7 @@ class Segment2D:
         if line_1(other.start) * line_1(other.end) < 0 and line_2(self.start) * line_2(self.end) < 0:
             return True
         return False
+
 
     def is_parallel_to(self, other: segment2d, threshold = 1e-6) -> bool:
         """
@@ -59,6 +65,7 @@ class Segment2D:
             return True
 
         return False
+
 
     def is_degenerate(self, threshold = 1e-6):
         """
@@ -173,6 +180,7 @@ class Segment2D:
         minimum_distance_index = np.argmin(distances)
         return distances[minimum_distance_index], closest_points_candidates[minimum_distance_index]
 
+
     def normal(self, normalize=False) -> vec2d:
         """
         Description:
@@ -188,6 +196,7 @@ class Segment2D:
             return normal_ / np.linalg.norm(normal_)
         else:
             return normal_
+
 
     def direction(self, normalize = False) -> vec2d:
         """
@@ -213,6 +222,7 @@ class Segment2D:
         """
         return [[self.start[0], self.start[1]], [self.end[0], self.end[1]]]
 
+
     def to_tuples(self):
         """
         Description:
@@ -237,6 +247,3 @@ class Segment2D:
         """
         sign_value = self.Sign.POSITIVE if value >= 0 else self.Sign.NEGATIVE
         return sign_value
-
-
-
