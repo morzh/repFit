@@ -2,8 +2,8 @@ import enum
 import numpy as np
 from copy import deepcopy
 from core.utils.geometry.line_2d import Line2D
+from core.utils.geometry.geometry_typing import vec2d, segment2d
 
-from geometry_typing import vec2d, segment2d
 
 class Segment2D:
     """

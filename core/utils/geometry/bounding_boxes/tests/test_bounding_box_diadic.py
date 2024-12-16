@@ -1,8 +1,6 @@
-import copy
 import unittest
-import numpy as np
 
-from core.utils.geometry.bounding_box_2d import BoundingBox2D
+from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 
 
 class TestBoundingBoxes2DArray(unittest.TestCase):

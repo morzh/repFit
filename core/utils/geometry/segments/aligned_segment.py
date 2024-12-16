@@ -1,0 +1,65 @@
+import enum
+import numpy as np
+from copy import deepcopy
+from core.utils.geometry.line_2d import Line2D
+from core.utils.geometry.geometry_typing import vec2d, segment2d, alignedsegment2d, numeric
+
+
+class AlignedSegmentType(enum):
+    VERTICAL = 0
+    HORIZONTAL = 1
+
+
+class AlignedSegment2D:
+    """
+    Description:
+        Class, representing 2D segment, collinear with vector [1, 0] or [0, 1] .
+    """
+    def __init__(self, x, y, length, segment_type = AlignedSegmentType.VERTICAL):
+        self._x = x
+        self._y = y
+        self._length = length
+        self.__type = segment_type
+
+
+    def is_less_than(self, value: numeric) -> bool:
+        return self._x + self._length < value
+
+
+    def is_greater_than(self, value: numeric) -> bool:
+        return self._x > value
+
+
+    @property
+    def x(self) -> numeric:
+        return self._x
+
+
+    @x.setter
+    def x(self, value: numeric) -> None:
+        self._x = value
+
+
+    @property
+    def y(self) -> numeric:
+        return self._y
+
+
+    @y.setter
+    def y(self, value: numeric) -> None:
+        self._y = value
+
+
+    @property
+    def length(self) -> numeric:
+        return self._length
+
+
+    @length.setter
+    def length(self, value: numeric) -> None:
+        self._length = abs(value)
+
+
+    @staticmethod
+    def out_of_range(segments: list[alignedsegment2d], minimum, maximum) -> list[alignedsegment2d]:
+        return [s for s in segments if not s.is_less_than(minimum) and not s.is_greater_than(maximum)]

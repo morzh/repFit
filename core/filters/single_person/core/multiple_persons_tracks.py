@@ -7,7 +7,7 @@ from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_ba
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
 from core.utils.cv.video_reader import VideoReader
-from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 import core.utils.visualization.tracks_visualizing_utils as viz
 
 

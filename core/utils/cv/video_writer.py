@@ -12,7 +12,7 @@ from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.utils.cv.video_stride_reader import VideoReader
 from core.utils.cv.video_file_segments import VideoFileSegments
-from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.utils.io.files_operations import extract_extension_from_filepath, filter_filepath_segment
 
 

@@ -3,7 +3,7 @@ import numpy as np
 
 from core.filters.single_person.core.strictly_increasing_sequence import StrictlyIncreasingSequence
 from core.utils.cv.frames_segments import FramesSegments
-from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
 
 

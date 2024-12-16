@@ -1,24 +1,23 @@
 from copy import deepcopy
 from enum import Enum
-
-from einops.einops import np_ndarray
 from loguru import logger
 import numpy as np
 
-from core.utils.geometry.bounding_box_mode import BoundingBoxMode
+import core.utils.geometry.bounding_boxes.bounding_box_2d_dyadic as bbox_dyadic
+from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
 from core.utils.geometry.geometry_typing import numeric, bbox2d, vec2d
-
+from core.utils.geometry.segments.aligned_segment import AlignedSegment2D, AlignedSegmentType
 
 
 class BoundingBox2D:
     """
     Description:
-        BoundingBox2D class should serve for operations with bounding boxes.
+        Swiss army BoundingBox2D class.
 
-    :ivar _x:
-    :ivar _y:
-    :ivar _width:
-    :ivar _height:
+    :ivar _x: top left x coordinate
+    :ivar _y: top left y coordinate
+    :ivar _width: bounding box width
+    :ivar _height: bounding box height
 
     """
 
@@ -258,9 +257,8 @@ class BoundingBox2D:
 
         :return: True if given bounding_box is outside, False otherwise.
         """
-        vertices = self.vertices()
-        # return other.contains_single_point(vertices[0]) and other.contains_single_point(vertices[1]) and other.contains_single_point(vertices[2]) and other.contains_single_point(vertices[3])
-        return other.contains_multiple_points(vertices, use_border=use_border)
+        points = self.corners()
+        return other.contains_multiple_points(points, use_border=use_border)
 
 
     def shift(self, values: vec2d) -> bbox2d:
@@ -302,7 +300,47 @@ class BoundingBox2D:
         return BoundingBox2D(self._x - value, self._y - value, self._width + 2 * value, self._height + 2 * value)
 
 
-    def enlarge(self, obstacles: list[bbox2d], bounding_box: bbox2d, order: Order.VERTICAL) -> bbox2d:
+    def left_segment(self) -> AlignedSegment2D:
+        """
+        Description:
+            Returns left vertical segment of the bounding box.
+
+        :return: vertical left segment
+        """
+        return AlignedSegment2D(self.left_top[0], self.left_top[1], self._height, AlignedSegmentType.VERTICAL)
+
+
+    def right_segment(self) -> AlignedSegment2D:
+        """
+        Description:
+            Returns right vertical segment of the bounding box.
+
+        :return: vertical right segment
+        """
+        return AlignedSegment2D(self.right_top[0], self.right_top[1], self._height, AlignedSegmentType.VERTICAL)
+
+
+    def top_segment(self) -> AlignedSegment2D:
+        """
+        Description:
+            Returns left horizontal segment of the bounding box.
+
+        :return: horizontal top segment
+        """
+        return AlignedSegment2D(self.left_top[0], self.left_top[1], self._width, AlignedSegmentType.HORIZONTAL)
+
+
+    def bottom_segment(self) -> AlignedSegment2D:
+        """
+        Description:
+            Returns left horizontal segment of the bounding box.
+
+        :return: horizontal bottom segment
+        """
+        return AlignedSegment2D(self.left_bottom[0], self.left_bottom[1], self._width, AlignedSegmentType.HORIZONTAL)
+
+
+    def enlarge(self, obstacle_bounding_boxes: list[bbox2d], borderline_bounding_box: bbox2d, order: Order.RANDOM) -> bbox2d:
         """
         Description:
 
@@ -311,38 +349,50 @@ class BoundingBox2D:
             3. For each line which goes along box border find minimal distance to obstacle boxes (-1 if not found).
             4. Offset each this box border by a value from step 3.
 
-        :param obstacles:
-        :param bounding_box:
+        :param obstacle_bounding_boxes:
+        :param borderline_bounding_box:
         :param order: if VERTICAL enlargement first proceed in vertical direction, then in horizontal
 
         :return: enlarged bounding box
         """
-        if not self.contained_in_bounding_box(bounding_box):
+        if not self.contained_in_bounding_box(borderline_bounding_box):
             return self
 
         obstacles_point_cloud = np.empty((0, 2))
-        for obstacle in obstacles:
-            obstacles_point_cloud = np.vstack((obstacles_point_cloud, obstacle.corners))
+        for obstacle in obstacle_bounding_boxes:
+            obstacles_point_cloud = np.vstack((obstacles_point_cloud, obstacle.corners()))
 
-        enlarged_box = self.copy()
+        enlarged_box: BoundingBox2D = self.copy()
         if order == self.Order.RANDOM:
             order = np.random.randint(0, 2)
 
         if order == self.Order.VERTICAL:
-            enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
-            enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
+            enlarged_box.__enlarge_vertically(obstacle_bounding_boxes)
+            enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes)
         elif order == self.Order.HORIZONTAL:
-            enlarged_box.__enlarge_horizontally(obstacles_point_cloud, bounding_box)
-            enlarged_box.__enlarge_vertically(obstacles_point_cloud, bounding_box)
+            enlarged_box.__enlarge_horizontally(obstacles_point_cloud)
+            enlarged_box.__enlarge_vertically(obstacles_point_cloud)
 
-        return enlarged_box
+        return bbox_dyadic.intersect(enlarged_box, borderline_bounding_box)
 
 
     def maximum_dimension_value(self) -> numeric:
+        """
+        Description:
+            Returns max(width, height)
+
+        :return: maximum dimension value
+        """
         return max(self._width, self._height)
 
 
     def minimum_dimension_value(self) -> numeric:
+        """
+        Description:
+            Returns min(width, height)
+
+        :return: minimum dimension value
+        """
         return min(self._width, self._height)
 
 
@@ -356,7 +406,7 @@ class BoundingBox2D:
         return np.array([self._x + 0.5 * self._width, self._y  + 0.5 * self._height])
 
 
-    def vertices(self) -> np.ndarray:
+    def corners(self) -> np.ndarray:
         """
         Description:
             Returns corners coordinates as [4, 2] numpy array. Order is left top, right top, right bottom, left bottom
@@ -376,65 +426,44 @@ class BoundingBox2D:
         return self._width * self._height
 
 
-    def __enlarge_vertically(self, obstacles_point_cloud: np.ndarray, global_box_bound: bbox2d) -> None:
+    def __enlarge_vertically(self, obstacles: list[bbox2d]) -> None:
         """
         Description:
             Enlarge this bounding box in vertical direction.
 
-        :param  obstacles_point_cloud:
-        :param global_box_bound:
+        :param  obstacles:
         """
-        points_above_top_segment = np.where(obstacles_point_cloud[:, 1] > self._y, obstacles_point_cloud)
-        points_below_bottom_segment = np.where(obstacles_point_cloud[:, 1] > self._y + self._height, obstacles_point_cloud)
+        top_side_segments = [segment.top_segment() for segment in obstacles]
+        bottom_side_segments = [segment.bottom_segment() for segment in obstacles]
 
-        minimal_distance_to_top_segment = 0
-        if points_above_top_segment.size > 0:
-            points_in_range_of_top_segment = points_above_top_segment[self._x < points_above_top_segment < self._x + self._width]
-            minimal_distance_to_top_segment = np.minimum(points_in_range_of_top_segment - self._y)
-            self._y -= minimal_distance_to_top_segment
-        else:
-            box_left_top = global_box_bound.left_top
-            self._y = box_left_top[1]
-            self._height += self._y - box_left_top[1]
+        top_side_segments = AlignedSegment2D.out_of_range(top_side_segments, self.left_top[0], self.right_top[0])
+        bottom_side_segments = AlignedSegment2D.out_of_range(bottom_side_segments, self.left_top[0], self.right_top[0])
 
-        if points_below_bottom_segment.size > 0:
-            points_in_range_of_bottom_segment = points_below_bottom_segment[self._x < points_below_bottom_segment < self._x + self._width]
-            minimal_distance_to_bottom_segment = np.minimum(points_in_range_of_bottom_segment - (self._y + self._height))
-            self._height += minimal_distance_to_top_segment + minimal_distance_to_bottom_segment
-        else:
-            box_right_bottom = global_box_bound.right_bottom
-            self._height = box_right_bottom[1] - self._y
+        top_side_segments_y = [segment.x for segment in top_side_segments]
+        bottom_side_segments_y = [segment.x for segment in bottom_side_segments]
+
+        self._y = min(top_side_segments_y)
+        self._height = min(bottom_side_segments_y) - self._y
 
 
-    def __enlarge_horizontally(self, obstacles_point_cloud: np.ndarray, global_box_bound: bbox2d) -> None:
+    def __enlarge_horizontally(self, obstacles: list[bbox2d]) -> None:
         """
         Description:
             Enlarge this bounding box in horizontal direction.
 
-        :param  obstacles_point_cloud:
-        :param global_box_bound:
+        :param  obstacles:
         """
-        points_aside_left_segment = np.where(obstacles_point_cloud[:, 1] < self._x)
-        points_aside_right_segment = np.where(obstacles_point_cloud[:, 1] > self._x + self._width)
+        left_side_segments = [segment.right_segment() for segment in obstacles]
+        right_side_segments = [segment.left_segment() for segment in obstacles]
 
-        minimal_distance_to_left_segment = 0
+        left_side_segments = AlignedSegment2D.out_of_range(left_side_segments, self.left_top[1], self.left_bottom[1])
+        right_side_segments = AlignedSegment2D.out_of_range(right_side_segments, self.left_top[1], self.left_bottom[1])
 
-        if points_aside_left_segment.size > 0:
-            points_in_range_of_left_segment = points_aside_left_segment[self._y < points_aside_left_segment < self._y + self._height]
-            minimal_distance_to_left_segment = np.minimum(points_in_range_of_left_segment - self._x)
-            self._x -= minimal_distance_to_left_segment
-        else:
-            box_left_top = global_box_bound.left_top
-            self._x  = box_left_top[0]
-            self._width += box_left_top[0] - self._x
+        left_side_segments_x= [segment.x for segment in left_side_segments]
+        right_side_segments_x = [segment.x for segment in right_side_segments]
 
-        if points_aside_right_segment.size > 0:
-            points_in_range_of_right_segment = points_aside_right_segment[self._y < points_aside_right_segment < self._y + self._height]
-            minimal_distance_to_right_segment = np.minimum(points_in_range_of_right_segment - (self._x + self._width))
-            self._width += minimal_distance_to_left_segment + minimal_distance_to_right_segment
-        else:
-            box_right_top = global_box_bound.right_top
-            self._width += box_left_top[0] - (self._y + self._width)
+        self._x = min(left_side_segments_x)
+        self._width = min(right_side_segments_x) - self._x
 
 
     def perimeter(self) -> numeric:

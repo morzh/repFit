@@ -2,7 +2,7 @@ import copy
 import unittest
 import numpy as np
 
-from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
 class TestBoundingBoxes2DArray(unittest.TestCase):

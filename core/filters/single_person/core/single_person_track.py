@@ -4,7 +4,7 @@ import numpy as np
 from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
 from core.utils.cv.video_properties import VideoProperties
-from core.utils.geometry.bounding_boxes_2d_array import BoundingBoxes2DArray
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
 class SinglePersonTrack:

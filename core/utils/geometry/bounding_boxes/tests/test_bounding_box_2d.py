@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
-import matplotlib.pyplot as plt
-from core.utils.geometry.bounding_box_2d import BoundingBox2D
+from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 
 
 class TestBoundingBox(unittest.TestCase):
@@ -11,23 +10,23 @@ class TestBoundingBox(unittest.TestCase):
 
 
     def test_offset(self):
-        point_cloud = self.generate_bounding_box_vertices()
+        point_cloud = self.generate_bounding_box_corners()
         box = self.vertices_to_bounding_box(point_cloud)
         offset_value  = np.random.randint(-box.minimum_dimension_value(), box.minimum_dimension_value())
 
         offset_point_cloud = self.offset_point_cloud(point_cloud, offset_value)
-        vertices_check = box.offset(offset_value).vertices()
+        vertices_check = box.offset(offset_value).corners()
 
         self.assertTrue(np.all(vertices_check == offset_point_cloud))
 
 
     def test_vertices(self):
         for _ in range(self.number_checks):
-            vertices_point_cloud = self.generate_bounding_box_vertices()
+            vertices_point_cloud = self.generate_bounding_box_corners()
             current_center = np.mean(vertices_point_cloud, axis=0)
             box = self.vertices_to_bounding_box(vertices_point_cloud)
 
-            self.assertTrue(np.all(vertices_point_cloud == box.vertices()))
+            self.assertTrue(np.all(vertices_point_cloud == box.corners()))
             self.assertTrue(np.all(vertices_point_cloud[0] == box.left_top))
             self.assertTrue(np.all(vertices_point_cloud[1] == box.right_top))
             self.assertTrue(np.all(vertices_point_cloud[2] == box.right_bottom))
@@ -38,7 +37,7 @@ class TestBoundingBox(unittest.TestCase):
     def test_contain_methods(self):
         for _ in range(self.number_checks):
             box = self.generate_bounding_box()
-            vertices = box.vertices()
+            vertices = box.corners()
             inner_point_1 = self.inner_point(vertices)
             inner_point_2 = self.inner_point(vertices)
             outer_point = self.generate_outer_point(vertices)
@@ -57,13 +56,14 @@ class TestBoundingBox(unittest.TestCase):
             self.assertFalse(box.contained_in_bounding_box(inner_bounding_box))
             self.assertFalse(box.contained_in_bounding_box(intersect_bounding_box))
             self.assertTrue(box.contained_in_bounding_box(outer_bounding_box))
+            self.assertTrue(box.contained_in_bounding_box(box.offset(0)))
 
 
     def test_contains_point(self):
         for _ in range(self.number_checks):
             box = self.generate_bounding_box()
             center = box.center()
-            vertices = box.vertices()
+            vertices = box.corners()
 
             self.assertTrue(box.contains_single_point(center, use_border=False))
             for vertex in vertices:
@@ -74,7 +74,7 @@ class TestBoundingBox(unittest.TestCase):
 
     def test_enlarge_vertically(self):
         for _ in range(self.number_checks):
-            ...
+            number_obstacles = np.random.randint(1, 20)
 
 
     def test_enlarge_horizontally(self):
@@ -89,7 +89,7 @@ class TestBoundingBox(unittest.TestCase):
 
 
     @staticmethod
-    def generate_bounding_box_vertices() -> np.ndarray:
+    def generate_bounding_box_corners() -> np.ndarray:
         values_x = np.random.randint(-10_000, 10_000, 2)
         values_y = np.random.randint(-10_000, 10_000, 2)
 

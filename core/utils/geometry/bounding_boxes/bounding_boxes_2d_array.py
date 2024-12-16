@@ -1,8 +1,7 @@
 import numpy as np
 from sqlalchemy.testing.plugin.plugin_base import warnings
 
-from core.utils.geometry.bounding_box_mode import BoundingBoxMode
-from core.utils.geometry.bounding_box_2d import BoundingBox2D
+from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
 
 
 class BoundingBoxes2DArray:

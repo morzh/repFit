@@ -7,3 +7,5 @@ vec2d = Annotated[npt.NDArray[np.float32 | np.float64], Literal[2]] | tuple[floa
 bbox2d = TypeVar("bbox2d", bound="BoundingBox2D")
 line2d = TypeVar("line2d", bound="Line2D")
 segment2d = TypeVar("segment2d", bound="Segment2D")
+alignedsegment2d = TypeVar("alignedsegment2d", bound="AlignedSegment2D")
+
