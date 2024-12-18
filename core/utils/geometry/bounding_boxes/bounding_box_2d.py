@@ -1,3 +1,4 @@
+import copy
 from copy import deepcopy
 from enum import Enum
 from loguru import logger
@@ -8,6 +9,11 @@ from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
 from core.utils.geometry.geometry_typing import numeric, bbox2d, vec2d
 from core.utils.geometry.segments.aligned_segment_2d import AlignedSegment2D, AlignedSegmentType
 
+VISUAL_DEBUG = 0
+if VISUAL_DEBUG:
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+    from matplotlib import collections as mc
 
 class BoundingBox2D:
     """
@@ -328,7 +334,7 @@ class BoundingBox2D:
         elif right is not None:
             box.width += right
         elif bottom is not None:
-            box.width += bottom
+            box.height += bottom
 
         return box
 
@@ -373,7 +379,7 @@ class BoundingBox2D:
         return AlignedSegment2D(self.left_bottom[0], self.left_bottom[1], self._width, AlignedSegmentType.HORIZONTAL)
 
 
-    def enlarge(self, obstacle_bounding_boxes: list[bbox2d], borderline_bounding_box: bbox2d, order: Order.RANDOM) -> bbox2d:
+    def enlarge(self, obstacle_bounding_boxes: list[bbox2d], borderline_bounding_box: bbox2d, order = Order.RANDOM) -> bbox2d:
         """
         Description:
 
@@ -389,20 +395,16 @@ class BoundingBox2D:
         if not self.contained_in_bounding_box(borderline_bounding_box):
             return self
 
-        obstacles_point_cloud = np.empty((0, 2))
-        for obstacle in obstacle_bounding_boxes:
-            obstacles_point_cloud = np.vstack((obstacles_point_cloud, obstacle.corners()))
-
         enlarged_box = self.copy()
         if order == self.Order.RANDOM:
             order = np.random.randint(0, 2)
 
-        if order == self.Order.VERTICAL:
-            enlarged_box.__enlarge_vertically(obstacle_bounding_boxes, borderline_bounding_box)
-            enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes, borderline_bounding_box)
-        elif order == self.Order.HORIZONTAL:
-            enlarged_box.__enlarge_horizontally(obstacles_point_cloud, borderline_bounding_box)
-            enlarged_box.__enlarge_vertically(obstacles_point_cloud, borderline_bounding_box)
+        if order == self.Order.VERTICAL.value:
+            enlarged_box = enlarged_box.__enlarge_vertically(obstacle_bounding_boxes, borderline_bounding_box)
+            enlarged_box = enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes, borderline_bounding_box)
+        elif order == self.Order.HORIZONTAL.value:
+            enlarged_box = enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes, borderline_bounding_box)
+            enlarged_box = enlarged_box.__enlarge_vertically(obstacle_bounding_boxes, borderline_bounding_box)
 
         return enlarged_box
 
@@ -457,22 +459,24 @@ class BoundingBox2D:
         return self._width * self._height
 
 
-    def __enlarge_horizontally(self, obstacles: list[bbox2d], borderline_bounding_box: bbox2d) -> None:
+    def __enlarge_horizontally(self, obstacle_boxes: list[bbox2d], borderline_bounding_box: bbox2d) -> bbox2d:
         """
         Description:
             Enlarge this bounding box in horizontal direction.
 
-        :param obstacles:
+        :param obstacle_boxes:
         :param borderline_bounding_box:
         """
-        left_side_segments = [segment.right_segment() for segment in obstacles]
+        left_side_segments = [box.right_segment() for box in obstacle_boxes]
         left_side_segments.append(borderline_bounding_box.left_segment())
 
-        right_side_segments = [segment.left_segment() for segment in obstacles]
+        right_side_segments = [segment.left_segment() for segment in obstacle_boxes]
         right_side_segments.append(borderline_bounding_box.right_segment())
 
         left_side_segments = AlignedSegment2D.out_of_range(left_side_segments, self.left_top[1], self.left_bottom[1])
+        left_side_segments = [segment for segment in left_side_segments if segment.x <= self._x + self._width]
         right_side_segments = AlignedSegment2D.out_of_range(right_side_segments, self.left_top[1], self.left_bottom[1])
+        right_side_segments = [segment for segment in right_side_segments if segment.x >= self._x]
 
         left_side_segments_x = [segment.x for segment in left_side_segments]
         right_side_segments_x = [segment.x for segment in right_side_segments]
@@ -480,41 +484,101 @@ class BoundingBox2D:
         left_side_segments_x_maximum = max(left_side_segments_x)
         right_side_segments_x_minimum = min(right_side_segments_x)
 
-        if left_side_segments_x_maximum < self._x:
-            self.extend(left=self._x - left_side_segments_x_maximum)
+        enlarged_bounding_box = self.copy()
+        if left_side_segments_x_maximum <= enlarged_bounding_box.x:
+            enlarged_bounding_box = enlarged_bounding_box.extend(left=enlarged_bounding_box.x - left_side_segments_x_maximum)
+        if right_side_segments_x_minimum >= enlarged_bounding_box.x + enlarged_bounding_box.width:
+            enlarged_bounding_box = enlarged_bounding_box.extend(right=right_side_segments_x_minimum - enlarged_bounding_box.x - enlarged_bounding_box.width)
 
-        if right_side_segments_x_minimum > self._x + self._width:
-            self.extend(right=right_side_segments_x_minimum - self._x - self._width)
+        if VISUAL_DEBUG:
+            plot_left_side_segments = [s.endpoints_coordinates() for s in left_side_segments]
+            plot_right_side_segments = [s.endpoints_coordinates() for s in right_side_segments]
+            lines_left = mc.LineCollection(plot_left_side_segments, colors='red', linewidths=2)
+            lines_right = mc.LineCollection(plot_right_side_segments, colors='blue', linewidths=2)
+            fig, ax = plt.subplots()
+            fig.set_size_inches(22.5, 14.5)
+            plt.get_current_fig_manager().set_window_title('DEBUG Enlarge Horizontally')
+            for box in obstacle_boxes:
+                rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor=(.5, .5, .5, .25), facecolor=(1, 1, 1, 0))
+                ax.add_patch(rect)
+            ax.add_collection(lines_left)
+            ax.add_collection(lines_right)
 
+            rect = Rectangle((self.x, self.y), width=self.width, height=self.height,
+                             edgecolor='green', facecolor=(1, 1, 1, 0), linewidth=3)
+            ax.add_patch(rect)
 
-    def __enlarge_vertically(self, obstacles: list[bbox2d], borderline_bounding_box: bbox2d) -> None:
+            ax.add_patch(rect)
+            rect = Rectangle((enlarged_bounding_box.x, enlarged_bounding_box.y), width=enlarged_bounding_box.width, height=enlarged_bounding_box.height,
+                             edgecolor='green', facecolor=(1, 1, 1, 0))
+            ax.add_patch(rect)
+            plt.axvline(x=left_side_segments_x_maximum, color=(1, 0, 0, 0.25), label='axvline - full height')
+            plt.axvline(x=right_side_segments_x_minimum, color=(0, 0, 1, 0.25), label='axvline - full height')
+            ax.plot()
+            plt.show()
+
+        return enlarged_bounding_box
+
+    def __enlarge_vertically(self, obstacle_boxes: list[bbox2d], borderline_bounding_box: bbox2d) -> bbox2d:
         """
         Description:
             Enlarge this bounding box in vertical direction.
 
-        :param obstacles:
+        :param obstacle_boxes:
         :param borderline_bounding_box:
         """
-        top_side_segments = [segment.bottom_segment() for segment in obstacles]
+        top_side_segments = [box.bottom_segment() for box in obstacle_boxes]
         top_side_segments.append(borderline_bounding_box.top_segment())
 
-        bottom_side_segments = [segment.top_segment() for segment in obstacles]
+        bottom_side_segments = [segment.top_segment() for segment in obstacle_boxes]
         bottom_side_segments.append(borderline_bounding_box.bottom_segment())
 
         top_side_segments = AlignedSegment2D.out_of_range(top_side_segments, self.left_top[0], self.right_top[0])
+        top_side_segments = [segment for segment in top_side_segments if segment.y <= self._y + self._height]
         bottom_side_segments = AlignedSegment2D.out_of_range(bottom_side_segments, self.left_top[0], self.right_top[0])
+        bottom_side_segments = [segment for segment in bottom_side_segments if segment.y >= self._y]
 
-        top_side_segments_y = [segment.x for segment in top_side_segments]
-        bottom_side_segments_y = [segment.x for segment in bottom_side_segments]
+        top_side_segments_y = [segment.y for segment in top_side_segments]
+        bottom_side_segments_y = [segment.y for segment in bottom_side_segments]
 
         top_side_segments_y_maximum = max(top_side_segments_y)
         bottom_side_segments_y_minimum = min(bottom_side_segments_y)
 
-        if top_side_segments_y_maximum < self._y:
-            self.extend(top=self._y - top_side_segments_y_maximum)
+        enlarged_bounding_box = self.copy()
+        if top_side_segments_y_maximum <= enlarged_bounding_box.y:
+            enlarged_bounding_box = enlarged_bounding_box.extend(top=enlarged_bounding_box.y - top_side_segments_y_maximum)
+        if bottom_side_segments_y_minimum >= enlarged_bounding_box.y + enlarged_bounding_box.height:
+            enlarged_bounding_box = enlarged_bounding_box.extend(bottom=bottom_side_segments_y_minimum - enlarged_bounding_box.y - enlarged_bounding_box.height)
 
-        if bottom_side_segments_y_minimum > self._y + self._height:
-            self.extend(right=bottom_side_segments_y_minimum - self._y - self._height)
+
+        if VISUAL_DEBUG:
+            plot_top_side_segments = [s.endpoints_coordinates() for s in top_side_segments]
+            plot_bottom_side_segments = [s.endpoints_coordinates() for s in bottom_side_segments]
+            lines_top = mc.LineCollection(plot_top_side_segments, colors='red', linewidths=2)
+            lines_bottom = mc.LineCollection(plot_bottom_side_segments, colors='blue', linewidths=2)
+
+            fig, ax = plt.subplots()
+            fig.set_size_inches(22.5, 14.5)
+            plt.get_current_fig_manager().set_window_title('DEBUG Enlarge Vertically')
+
+            for box in obstacle_boxes:
+                rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor=(.5, .5, .5, .25), facecolor=(1, 1, 1, 0))
+                ax.add_patch(rect)
+            ax.add_collection(lines_top)
+            ax.add_collection(lines_bottom)
+
+            rect = Rectangle((self.x, self.y), width=self.width, height=self.height, edgecolor='green', facecolor=(1, 1, 1, 0), linewidth=3)
+            ax.add_patch(rect)
+            rect = Rectangle((enlarged_bounding_box.x, enlarged_bounding_box.y), width=enlarged_bounding_box.width, height=enlarged_bounding_box.height,
+                             edgecolor='green', facecolor=(1, 1, 1, 0))
+            ax.add_patch(rect)
+
+            plt.axhline(y=top_side_segments_y_maximum, color=(1, 0, 0, 0.25), label='axhline - full width')
+            plt.axhline(y=bottom_side_segments_y_minimum, color=(0, 0, 1, 0.25), label='axhline - full width')
+            ax.plot()
+            plt.show()
+
+        return enlarged_bounding_box
 
 
     def perimeter(self) -> numeric:

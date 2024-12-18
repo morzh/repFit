@@ -1,8 +1,8 @@
-import unittest
-
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 from scipy.spatial import distance
+import unittest
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes.tests.bounding_box_test_utils import (generate_inner_point, generate_outer_points, generate_bounding_box,
@@ -79,13 +79,38 @@ class TestBoundingBox(unittest.TestCase):
 
 
     def test_enlarge_vertically_visually(self):
+        number_boxes = 15
         for _ in range(self.number_checks):
-            points = np.random.randint(-10_000, 10_000, size=(30, 2))
-            distances = distance.cdist(points, points, 'euclidean')
-            mean_distance = np.mean(distances)
-            boxes = [BoundingBox2D.from_center_and_dimensions(center, mean_distance, mean_distance) for center in points]
+            random_range = (-10_000, 10_000)
+            borderline_box = BoundingBox2D(random_range[0], random_range[0], random_range[1] - random_range[0], random_range[1] - random_range[0])
+            current_points = np.random.randint(random_range[0], random_range[1], size=(number_boxes, 2))
+            current_distances = distance.cdist(current_points, current_points, 'euclidean')
+            current_estimated_distance = 0.2 * np.mean(current_distances)
+            current_boxes = [BoundingBox2D.from_center_and_dimensions(center, current_estimated_distance, current_estimated_distance) for center in current_points]
 
-            plt.scatter(points[:, 0], points[:, 1])
+            current_box_pop_index = np.random.randint(0, len(current_boxes))
+            current_box_to_enlarge = current_boxes.pop(current_box_pop_index)
+            current_box_enlarged = current_box_to_enlarge.enlarge(current_boxes, borderline_box)
+
+            fig, ax = plt.subplots()
+            fig.set_size_inches(22.5, 14.5)
+            for box in current_boxes:
+                rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor='blue', facecolor=(1, 1, 1, 0))
+                ax.add_patch(rect)
+            rect = Rectangle((current_box_to_enlarge.x, current_box_to_enlarge.y), width=current_box_to_enlarge.width, height=current_box_to_enlarge.height,
+                             edgecolor='red', facecolor=(1, 1, 1, 0), linewidth=3)
+            ax.add_patch(rect)
+            rect = Rectangle((current_box_enlarged.x, current_box_enlarged.y), width=current_box_enlarged.width, height=current_box_enlarged.height, edgecolor='orange', facecolor=(1, 1, 1, 0))
+            ax.add_patch(rect)
+
+            plt.axvline(x=random_range[0], color=(1, 0, 0, 0.25), label='axvline - full height')
+            plt.axvline(x=random_range[1], color=(0, 0, 1, 0.25), label='axvline - full height')
+
+            plt.axhline(y=random_range[0], color=(1, 0, 0, 0.25), label='axhline - full width')
+            plt.axhline(y=random_range[1], color=(0, 0, 1, 0.25), label='axhline - full width')
+
+            plt.scatter(current_points[:, 0], current_points[:, 1], s=2)
+            plt.tight_layout()
             plt.show()
 
     def test_enlarge_horizontally(self):

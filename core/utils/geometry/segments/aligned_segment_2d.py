@@ -35,11 +35,32 @@ class AlignedSegment2D:
             return self._y + self._length < value
 
 
+    def is_less_or_equal_than(self, value: numeric) -> bool:
+        if self.__type == AlignedSegmentType.HORIZONTAL:
+            return self._x + self._length <= value
+        else:
+            return self._y + self._length <= value
+
+
     def is_greater_than(self, value: numeric) -> bool:
         if self.__type == AlignedSegmentType.HORIZONTAL:
             return self._x > value
         else:
             return self._y > value
+
+
+    def is_greater_or_equal_than(self, value: numeric) -> bool:
+        if self.__type == AlignedSegmentType.HORIZONTAL:
+            return self._x >= value
+        else:
+            return self._y >= value
+
+
+    def endpoints_coordinates(self) -> tuple:
+        if self.__type == AlignedSegmentType.HORIZONTAL:
+            return (self._x, self._y), (self._x + self._length, self._y)
+        else:
+            return (self._x, self._y), (self._x, self._y + self._length)
 
 
     @property
@@ -78,5 +99,8 @@ class AlignedSegment2D:
 
 
     @staticmethod
-    def out_of_range(segments: list[alignedsegment2d], minimum, maximum) -> list[alignedsegment2d]:
-        return [s for s in segments if not s.is_less_than(minimum) and not s.is_greater_than(maximum)]
+    def out_of_range(segments: list[alignedsegment2d], minimum, maximum, non_strict=True) -> list[alignedsegment2d]:
+        if non_strict:
+            return [s for s in segments if not s.is_less_or_equal_than(minimum) and not s.is_greater_or_equal_than(maximum)]
+        else:
+            return [s for s in segments if not s.is_less_than(minimum) and not s.is_greater_than(maximum)]
