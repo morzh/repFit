@@ -473,9 +473,9 @@ class BoundingBox2D:
         right_side_segments = [segment.left_segment() for segment in obstacle_boxes]
         right_side_segments.append(borderline_bounding_box.right_segment())
 
-        left_side_segments = AlignedSegment2D.out_of_range(left_side_segments, self.left_top[1], self.left_bottom[1])
+        left_side_segments = AlignedSegment2D.in_range(left_side_segments, self.left_top[1], self.left_bottom[1])
         left_side_segments = [segment for segment in left_side_segments if segment.x <= self._x + self._width]
-        right_side_segments = AlignedSegment2D.out_of_range(right_side_segments, self.left_top[1], self.left_bottom[1])
+        right_side_segments = AlignedSegment2D.in_range(right_side_segments, self.left_top[1], self.left_bottom[1])
         right_side_segments = [segment for segment in right_side_segments if segment.x >= self._x]
 
         left_side_segments_x = [segment.x for segment in left_side_segments]
@@ -533,9 +533,9 @@ class BoundingBox2D:
         bottom_side_segments = [segment.top_segment() for segment in obstacle_boxes]
         bottom_side_segments.append(borderline_bounding_box.bottom_segment())
 
-        top_side_segments = AlignedSegment2D.out_of_range(top_side_segments, self.left_top[0], self.right_top[0])
+        top_side_segments = AlignedSegment2D.in_range(top_side_segments, self.left_top[0], self.right_top[0])
         top_side_segments = [segment for segment in top_side_segments if segment.y <= self._y + self._height]
-        bottom_side_segments = AlignedSegment2D.out_of_range(bottom_side_segments, self.left_top[0], self.right_top[0])
+        bottom_side_segments = AlignedSegment2D.in_range(bottom_side_segments, self.left_top[0], self.right_top[0])
         bottom_side_segments = [segment for segment in bottom_side_segments if segment.y >= self._y]
 
         top_side_segments_y = [segment.y for segment in top_side_segments]
