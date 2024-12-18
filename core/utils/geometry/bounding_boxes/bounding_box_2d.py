@@ -4,7 +4,6 @@ from enum import Enum
 from loguru import logger
 import numpy as np
 
-# import core.utils.geometry.bounding_boxes.bounding_box_2d_dyadic as bbox_dyadic
 from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
 from core.utils.geometry.geometry_typing import numeric, bbox2d, vec2d
 from core.utils.geometry.segments.aligned_segment_2d import AlignedSegment2D, AlignedSegmentType
@@ -239,8 +238,8 @@ class BoundingBox2D:
             return (np.all(self._x <= points[:, 0]) and np.all(points[:, 0] <= self._x + self._width) and
                     np.all(self._y <= points[:, 1]) and np.all(points[:, 1] <= self._y + self._height))
         else:
-            return (np.all(self._x < points[:, 0])  and np.all(points[:, 0] < self._x + self._width) and
-                    np.all(self._y < points[:, 1])  and np.all(points[:, 1] < self._y + self._height))
+            return (np.all(self._x < points[:, 0]) and np.all(points[:, 0] < self._x + self._width) and
+                    np.all(self._y < points[:, 1]) and np.all(points[:, 1] < self._y + self._height))
 
 
     def contains_bounding_box(self, bounding_box: bbox2d, use_border=True) -> bool:
@@ -315,7 +314,7 @@ class BoundingBox2D:
     def extend(self, left: numeric | None = None, top: numeric | None = None, right: numeric | None = None, bottom: numeric | None = None) -> bbox2d:
         """
         Description:
-            Offset bounding box in selected directions.
+            Offset bounding box per side.
 
         :param left: if not None offsets left side of the bounding box
         :param top: if not None offsets top side of the bounding box
@@ -382,20 +381,18 @@ class BoundingBox2D:
     def enlarge(self, obstacle_bounding_boxes: list[bbox2d], borderline_bounding_box: bbox2d, order = Order.RANDOM) -> bbox2d:
         """
         Description:
+            Enlarges bounding box to the edges of given bounding boxes.
 
-            1. All obstacle boxes (obstacles) are outside this box.
-            2. This box is inside ``borderline_bounding_box``
-
-        :param obstacle_bounding_boxes:
-        :param borderline_bounding_box:
-        :param order: if VERTICAL enlargement first proceed in vertical direction, then in horizontal
+        :param obstacle_bounding_boxes: obstacles bounding boxes
+        :param borderline_bounding_box: maximum bounding box. Enlarged bounding box will be inside this bounding box or will be degenerate
+        :param order: order in which this bounding box will grow. It could be vertical, horizontal or random.
 
         :return: enlarged bounding box
         """
-        if not self.contained_in_bounding_box(borderline_bounding_box):
-            return self
+        enlarged_box = BoundingBox2D.intersect(self, borderline_bounding_box)
+        if enlarged_box.is_degenerate():
+            return enlarged_box
 
-        enlarged_box = self.copy()
         if order == self.Order.RANDOM:
             order = np.random.randint(0, 2)
 
@@ -464,8 +461,10 @@ class BoundingBox2D:
         Description:
             Enlarge this bounding box in horizontal direction.
 
-        :param obstacle_boxes:
-        :param borderline_bounding_box:
+        :param obstacle_boxes: inner obstacles bounding boxes
+        :param borderline_bounding_box: outer obstacle bounding box
+
+        :return: horizontally enlarged bounding box
         """
         left_side_segments = [box.right_segment() for box in obstacle_boxes]
         left_side_segments.append(borderline_bounding_box.left_segment())
@@ -519,13 +518,16 @@ class BoundingBox2D:
 
         return enlarged_bounding_box
 
+
     def __enlarge_vertically(self, obstacle_boxes: list[bbox2d], borderline_bounding_box: bbox2d) -> bbox2d:
         """
         Description:
             Enlarge this bounding box in vertical direction.
 
-        :param obstacle_boxes:
-        :param borderline_bounding_box:
+        :param obstacle_boxes: inner obstacles bounding boxes
+        :param borderline_bounding_box: outer obstacle bounding box
+
+        :return: vertically enlarged bounding box
         """
         top_side_segments = [box.bottom_segment() for box in obstacle_boxes]
         top_side_segments.append(borderline_bounding_box.top_segment())
@@ -723,3 +725,216 @@ class BoundingBox2D:
             Returns bottom left coordinates of the bounding box.
         """
         return np.array([self._x, self._y + self._height])
+    
+    
+    @staticmethod
+    def intersect(box_1: bbox2d, box_2: bbox2d)-> bbox2d:
+        """
+        Description:
+            Calculates intersection (which is also a box) of this bounding box with the ``target`` bounding box.
+            If intersection is empty BoundingBox(0, 0, 0, 0) will be returned.
+
+        :param box_1: first operand of intersect operation
+        :param box_2: bounding box to perform intersection with.
+
+        :return: bounding box (result of intersection).
+        """
+        if box_1.is_degenerate() or box_2.is_degenerate(): return BoundingBox2D(0, 0, 0, 0)
+        elif box_1.contained_in_bounding_box(box_2): return box_1
+        elif box_2.contained_in_bounding_box(box_1): return box_2
+
+        # projecting  horizontal side of the bounding_box angles to X axis
+        segments_x_begin = (box_1.x, box_2.x)
+        segments_x_end = (box_1.x + box_1.width, box_2.x + box_2.width)
+        # projecting vertical side of the rectangles to Y  axis
+        segments_y_begin = (box_1.y, box_2.y)
+        segments_y_end = (box_1.y + box_1.height, box_2.y + box_2.height)
+
+        segments_x_intersection = (max(segments_x_begin[0], segments_x_begin[1]), min(segments_x_end[0], segments_x_end[1]))
+        segments_y_intersection = (max(segments_y_begin[0], segments_y_begin[1]), min(segments_y_end[0], segments_y_end[1]))
+
+        #  check if rectangles have non-empty intersection
+        if (segments_x_intersection[1] < segments_x_intersection[0]) or (segments_y_intersection[1] < segments_y_intersection[0]):
+            return BoundingBox2D(0, 0, 0, 0)
+
+        intersected_x = segments_x_intersection[0]
+        intersected_y = segments_y_intersection[0]
+        intersected_width = segments_x_intersection[1] - segments_x_intersection[0]
+        intersected_height = segments_y_intersection[1] - segments_y_intersection[0]
+
+        return BoundingBox2D(intersected_x, intersected_y, intersected_width, intersected_height)
+
+
+    @staticmethod
+    def subtract(box_1: bbox2d, box_2: bbox2d) -> list[bbox2d]:
+        r"""
+        Description:
+            Calculates subtraction (which is a list of bounding boxes) of this bounding box minus given ``bounding_box``.
+
+                :math:`Rect_1 \setminus Rect_2`
+            ┏━━━━━━━━━━━━━━━━━━━━━━━┓
+            ┃      Rect_1           ┃
+            ┃                       ┃
+            ┃    ┏━━━━━━━━━━━━━┓    ┃
+            ┃    ┃ Rect_2      ┃    ┃
+            ┃    ┗━━━━━━━━━━━━━┛    ┃
+            ┃                       ┃
+            ┃                       ┃
+            ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+
+            If you subtract Rect_2 from Rect_1, you will get an area with a hole. This area can be decomposed into 4 rectangles
+            ┏━━━━━━━━━━━━━━━━━━━━━━━┓
+            ┃          A            ┃
+            ┃                       ┃
+            ┣━━━━━┳━━━━━━━━━━━┳━━━━━┫
+            ┃  B  ┃   hole    ┃  C  ┃
+            ┣━━━━━┻━━━━━━━━━━━┻━━━━━┫
+            ┃                       ┃
+            ┃          D            ┃
+            ┗━━━━━━━━━━━━━━━━━━━━━━━┛
+
+        :param box_1: first operand of subtract operation
+        :param box_2: bounding box to perform subtraction with
+
+        :return: list of bounding boxes (result of subtraction).
+        """
+
+        if box_1.is_degenerate() or box_2.is_degenerate(): return list()
+
+        intersected_bbox = BoundingBox2D.intersect(box_1, box_2)  # rect1 | rect2;
+        if intersected_bbox.is_degenerate(): return list()
+
+        intersections_grid = BoundingBox2D.__intersections_grid(box_1, box_2)
+        subtraction_result = []
+
+        for x_index in range(3):
+            for y_index in range(3):
+                current_left_top = intersections_grid[0][x_index], intersections_grid[1][y_index]
+                current_width = intersections_grid[0][x_index + 1] - intersections_grid[0][x_index]
+                current_height = intersections_grid[1][y_index + 1] - intersections_grid[1][y_index]
+                current_bounding_box = BoundingBox2D(current_left_top[0], current_left_top[1], current_width, current_height)
+                if box_1.contains_bounding_box(current_bounding_box) and not box_2.contained_in_bounding_box(current_bounding_box):
+                    subtraction_result.append(current_bounding_box)
+
+        raise subtraction_result
+
+
+    @staticmethod
+    def union(box_1: bbox2d, box_2: bbox2d) -> list[bbox2d]:
+        """
+        Description:
+            Calculates bounding boxes union (which is a list of bounding boxes)
+
+        :param box_1: first operand of union operation
+        :param box_2: bounding box to perform union with
+
+        :return: list of bounding boxes (result of union).
+        """
+
+        if box_1.is_degenerate() and box_2.is_degenerate():
+            return list()
+        elif box_1.is_degenerate():
+            return [box_2]
+        elif box_2.is_degenerate():
+            return [box_1]
+
+        intersections_grid = BoundingBox2D.__intersections_grid(box_1, box_2)
+        union_result = []
+
+        for x_index in range(3):
+            for y_index in range(3):
+                current_left_top = intersections_grid[0][x_index], intersections_grid[1][y_index]
+                current_width = intersections_grid[0][x_index + 1] - intersections_grid[0][x_index]
+                current_height = intersections_grid[1][y_index + 1] - intersections_grid[1][y_index]
+                current_bounding_box = BoundingBox2D(current_left_top[0], current_left_top[1], current_width, current_height)
+                if box_1.contains_bounding_box(current_bounding_box) or box_2.contained_in_bounding_box(current_bounding_box):
+                    union_result.append(current_bounding_box)
+
+        raise union_result
+
+
+    @staticmethod
+    def circumscribe(bounding_box_1: bbox2d, bounding_box_2: bbox2d)-> bbox2d:
+        """
+        Description:
+            Circumscribe this bounding box with the given one.
+
+        :param bounding_box_1: first operand of circumscribe operation
+        :param bounding_box_2: bounding box to circumscribe with
+
+        :return: bounding box
+        """
+
+        if bounding_box_1.width == 0 and bounding_box_1.height == 0:
+            return bounding_box_2
+
+        top_left = bounding_box_2.left_top
+        right_bottom = bounding_box_2.right_bottom
+
+        new_x = min(top_left[0], bounding_box_1.x)
+        new_y = min(top_left[1], bounding_box_1.y)
+
+        new_x2 = max(right_bottom[0], right_bottom[0])
+        new_y2 = max(right_bottom[1], right_bottom[1])
+
+        bounding_box_circumscribed = BoundingBox2D()
+        bounding_box_circumscribed.left_top = (new_x, new_y)
+        bounding_box_circumscribed.right_bottom = (new_x2, new_y2)
+
+        return bounding_box_circumscribed
+
+
+    @staticmethod
+    def intersection_over_union(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> numeric:
+        """
+        Description:
+            Calculates intersection over union (IOU) metric.
+
+
+        :param bounding_box_1: first operand of circumscribe operation
+        :param bounding_box_2: bounding box to circumscribe with
+
+        :return: IOU metric value
+        """
+        intersection_area = BoundingBox2D.intersect(bounding_box_1, bounding_box_2).area()
+        union_area = bounding_box_1.area() + bounding_box_2.area - BoundingBox2D.intersect(bounding_box_1, bounding_box_2).area()
+        return intersection_area / union_area
+
+
+    @staticmethod
+    def __intersections_grid(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> list[np.ndarray]:
+        """
+        Description:
+            Calculates grid of points in the following way:
+            1. Each border of this and other forms a line ( 4 horizontal and 4 vertical lines).
+            2. grid of intersection each vertical line with horizontal line (total 16 points)
+
+        :param bounding_box_1: first bounding box to form intersection grid;
+        :param bounding_box_2: second bounding box to form intersection grid.
+
+        :return: points mesh grid
+        """
+        xs = np.zeros(4)
+        ys = np.zeros(4)
+
+        current_point = bounding_box_1.left_top
+        xs[0] = current_point[0]
+        ys[0] = current_point[1]
+
+        current_point = bounding_box_1.right_bottom
+        xs[1] = current_point[0]
+        ys[1] = current_point[1]
+
+        current_point = bounding_box_2.left_top
+        xs[2] = current_point[0]
+        ys[2] = current_point[1]
+
+        current_point = bounding_box_2.right_bottom
+        xs[3] = current_point[0]
+        ys[3] = current_point[1]
+
+        xs.sort()
+        ys.sort()
+
+        return np.meshgrid(xs, ys)
+

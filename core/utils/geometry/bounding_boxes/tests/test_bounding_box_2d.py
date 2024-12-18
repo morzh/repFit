@@ -78,7 +78,7 @@ class TestBoundingBox(unittest.TestCase):
             self.assertTrue(box.contains_single_point(generate_inner_point(vertices), use_border=False))
 
 
-    def test_enlarge_vertically_visually(self):
+    def test_enlarge_visually(self):
         number_boxes = 15
         for _ in range(self.number_checks):
             random_range = (-10_000, 10_000)
@@ -100,7 +100,7 @@ class TestBoundingBox(unittest.TestCase):
             rect = Rectangle((current_box_to_enlarge.x, current_box_to_enlarge.y), width=current_box_to_enlarge.width, height=current_box_to_enlarge.height,
                              edgecolor='red', facecolor=(1, 1, 1, 0), linewidth=3)
             ax.add_patch(rect)
-            rect = Rectangle((current_box_enlarged.x, current_box_enlarged.y), width=current_box_enlarged.width, height=current_box_enlarged.height, edgecolor='orange', facecolor=(1, 1, 1, 0))
+            rect = Rectangle((current_box_enlarged.x, current_box_enlarged.y), width=current_box_enlarged.width, height=current_box_enlarged.height, edgecolor='black', facecolor=(1, 1, 1, 0))
             ax.add_patch(rect)
 
             plt.axvline(x=random_range[0], color=(1, 0, 0, 0.25), label='axvline - full height')
@@ -113,5 +113,44 @@ class TestBoundingBox(unittest.TestCase):
             plt.tight_layout()
             plt.show()
 
-    def test_enlarge_horizontally(self):
-        pass
+
+    def test_intersect(self):
+        for _ in range(self.number_checks):
+            box = generate_bounding_box()
+
+            offset_value = np.random.randint(1, 10_000)
+            offset_bounding_box = box.offset(offset_value)
+
+            vertices = box.corners()
+            outer_points = generate_outer_points(vertices, number_points=2)
+            outer_bounding_box = BoundingBox2D.from_two_points(outer_points[0], outer_points[1])
+
+            self.assertTrue(box == BoundingBox2D.intersect(box, offset_bounding_box))
+            self.assertTrue(box == BoundingBox2D.intersect(offset_bounding_box, box))
+            self.assertTrue(box == BoundingBox2D.intersect(box, box.extend(left=offset_value)))
+            self.assertTrue(box == BoundingBox2D.intersect(box, box.extend(bottom=offset_value)))
+            self.assertTrue(box == BoundingBox2D.intersect(box, box.extend(left=offset_value, right=offset_value)))
+            self.assertTrue(box == BoundingBox2D.intersect(box, box.extend(top=offset_value, right=offset_value)))
+            self.assertTrue(box == BoundingBox2D.intersect(box, box.extend(bottom=offset_value, right=offset_value)))
+            self.assertTrue(BoundingBox2D.intersect(box, outer_bounding_box).is_degenerate())
+
+
+    def test_intersect_visually(self):
+        for _ in range(self.number_checks):
+            box_1 = generate_bounding_box()
+            corner_number = np.random.randint(0,4)
+            box_2_center = box_1.corners()[corner_number]
+            box_2_dimensions =  np.random.randint(1, box_1.maximum_dimension_value(), 2)
+            box_2 = BoundingBox2D.from_center_and_dimensions(box_2_center, box_2_dimensions[0], box_2_dimensions[1])
+            boxes_intersection = BoundingBox2D.intersect(box_1, box_2)
+
+            fig, ax = plt.subplots()
+            fig.set_size_inches(22.5, 14.5)
+            rect_1 = Rectangle((box_1.x, box_1.y), width=box_1.width, height=box_1.height, edgecolor='blue', facecolor=(1, 1, 1, 0))
+            rect_2 = Rectangle((box_2.x, box_2.y), width=box_2.width, height=box_2.height, edgecolor='blue', facecolor=(1, 1, 1, 0))
+            rect = Rectangle((boxes_intersection.x, boxes_intersection.y), width=boxes_intersection.width, height=boxes_intersection.height, edgecolor='yellow', facecolor=(1, 1, 1, 0))
+            ax.add_patch(rect_1)
+            ax.add_patch(rect_2)
+            ax.add_patch(rect)
+            ax.plot()
+            plt.show()
