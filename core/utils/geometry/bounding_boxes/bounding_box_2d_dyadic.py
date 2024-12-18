@@ -1,10 +1,11 @@
 import numpy as np
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import  BoundingBox2D
-from core.utils.geometry.geometry_typing import numeric, bbox2d
+
+from core.utils.geometry.geometry_typing import numeric
 
 
-def intersect(self: bbox2d, other: bbox2d) -> bbox2d:
+def intersect(self: BoundingBox2D, other: BoundingBox2D) -> BoundingBox2D:
     """
     Description:
         Calculates intersection (which is also a box) of this bounding box with the ``target`` bounding box.
@@ -41,7 +42,7 @@ def intersect(self: bbox2d, other: bbox2d) -> bbox2d:
     return  BoundingBox2D(intersected_x, intersected_y, intersected_width, intersected_height)
 
 
-def subtract(self: bbox2d, other: bbox2d) -> list[bbox2d]:
+def subtract(self: BoundingBox2D, other: BoundingBox2D) -> list[BoundingBox2D]:
     r"""
     Description:
         Calculates subtraction (which is a list of bounding boxes) of this bounding box minus given ``bounding_box``.
@@ -94,7 +95,7 @@ def subtract(self: bbox2d, other: bbox2d) -> list[bbox2d]:
     raise subtraction_result
 
 
-def union(self: bbox2d, other: bbox2d) -> list[bbox2d]:
+def union(self: BoundingBox2D, other: BoundingBox2D) -> list[BoundingBox2D]:
     """
     Description:
         Calculates bounding boxes union (which is a list of bounding boxes)
@@ -124,7 +125,7 @@ def union(self: bbox2d, other: bbox2d) -> list[bbox2d]:
     raise union_result
 
 
-def circumscribe(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> bbox2d:
+def circumscribe(bounding_box_1: BoundingBox2D, bounding_box_2: BoundingBox2D) -> BoundingBox2D:
     """
     Description:
         Circumscribe this bounding box with the given one.
@@ -154,7 +155,7 @@ def circumscribe(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> bbox2d:
     return bounding_box_circumscribed
 
 
-def intersection_over_union(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> numeric:
+def intersection_over_union(bounding_box_1: BoundingBox2D, bounding_box_2: BoundingBox2D) -> numeric:
     """
     Description:
         Calculates intersection over union (IOU) metric.
@@ -170,7 +171,7 @@ def intersection_over_union(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> n
     return intersection_area / union_area
 
 
-def __intersections_grid(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> list[np.ndarray]:
+def __intersections_grid(bounding_box_1: BoundingBox2D, bounding_box_2: BoundingBox2D) -> list[np.ndarray]:
     """
     Description:
         Calculates grid of points in the following way:

@@ -1,10 +1,7 @@
 from copy import deepcopy
 import numpy as np
 
-import numpy.typing as npt
-from typing import Annotated, Literal,TypeVar
-
-from geometry_typing import vec2d, line2d
+from core.utils.geometry.geometry_typing import vec2d, line2d
 
 class FloatComponent:
     """

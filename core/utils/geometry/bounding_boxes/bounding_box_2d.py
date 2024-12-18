@@ -3,10 +3,10 @@ from enum import Enum
 from loguru import logger
 import numpy as np
 
-import core.utils.geometry.bounding_boxes.bounding_box_2d_dyadic as bbox_dyadic
+# import core.utils.geometry.bounding_boxes.bounding_box_2d_dyadic as bbox_dyadic
 from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
 from core.utils.geometry.geometry_typing import numeric, bbox2d, vec2d
-from core.utils.geometry.segments.aligned_segment import AlignedSegment2D, AlignedSegmentType
+from core.utils.geometry.segments.aligned_segment_2d import AlignedSegment2D, AlignedSegmentType
 
 
 class BoundingBox2D:
@@ -120,6 +120,12 @@ class BoundingBox2D:
         return BoundingBox2D(top_left[0], top_left[1], width_height[0], width_height[1])
 
 
+    @staticmethod
+    def from_center_and_dimensions(center: vec2d, width: numeric, height: numeric):
+        center = center.flatten()
+        return BoundingBox2D(center[0] - 0.5 * width, center[1] - 0.5 * height, width, height)
+
+
     def aspect_ratio(self) -> numeric:
         """
         Description:
@@ -190,7 +196,7 @@ class BoundingBox2D:
 
         :return: True if bounding box is degenerate, False otherwise.
         """
-        return self.area < numeric(threshold)
+        return self.area() < threshold
 
 
     def contains_single_point(self, point: vec2d, use_border=True) -> bool:
@@ -300,6 +306,33 @@ class BoundingBox2D:
         return BoundingBox2D(self._x - value, self._y - value, self._width + 2 * value, self._height + 2 * value)
 
 
+    def extend(self, left: numeric | None = None, top: numeric | None = None, right: numeric | None = None, bottom: numeric | None = None) -> bbox2d:
+        """
+        Description:
+            Offset bounding box in selected directions.
+
+        :param left: if not None offsets left side of the bounding box
+        :param top: if not None offsets top side of the bounding box
+        :param right: if not None offsets right side of the bounding box
+        :param bottom: if not None offsets bottom side of the bounding box
+
+        :return: augmented bounding bbx
+        """
+        box = self.copy()
+        if left is not None:
+            box.x -= left
+            box.width += left
+        elif top is not None:
+            box.y -= top
+            box.height += top
+        elif right is not None:
+            box.width += right
+        elif bottom is not None:
+            box.width += bottom
+
+        return box
+
+
     def left_segment(self) -> AlignedSegment2D:
         """
         Description:
@@ -345,9 +378,7 @@ class BoundingBox2D:
         Description:
 
             1. All obstacle boxes (obstacles) are outside this box.
-            2. This box is inside bounding_box
-            3. For each line which goes along box border find minimal distance to obstacle boxes (-1 if not found).
-            4. Offset each this box border by a value from step 3.
+            2. This box is inside ``borderline_bounding_box``
 
         :param obstacle_bounding_boxes:
         :param borderline_bounding_box:
@@ -362,18 +393,18 @@ class BoundingBox2D:
         for obstacle in obstacle_bounding_boxes:
             obstacles_point_cloud = np.vstack((obstacles_point_cloud, obstacle.corners()))
 
-        enlarged_box: BoundingBox2D = self.copy()
+        enlarged_box = self.copy()
         if order == self.Order.RANDOM:
             order = np.random.randint(0, 2)
 
         if order == self.Order.VERTICAL:
-            enlarged_box.__enlarge_vertically(obstacle_bounding_boxes)
-            enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes)
+            enlarged_box.__enlarge_vertically(obstacle_bounding_boxes, borderline_bounding_box)
+            enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes, borderline_bounding_box)
         elif order == self.Order.HORIZONTAL:
-            enlarged_box.__enlarge_horizontally(obstacles_point_cloud)
-            enlarged_box.__enlarge_vertically(obstacles_point_cloud)
+            enlarged_box.__enlarge_horizontally(obstacles_point_cloud, borderline_bounding_box)
+            enlarged_box.__enlarge_vertically(obstacles_point_cloud, borderline_bounding_box)
 
-        return bbox_dyadic.intersect(enlarged_box, borderline_bounding_box)
+        return enlarged_box
 
 
     def maximum_dimension_value(self) -> numeric:
@@ -426,15 +457,49 @@ class BoundingBox2D:
         return self._width * self._height
 
 
-    def __enlarge_vertically(self, obstacles: list[bbox2d]) -> None:
+    def __enlarge_horizontally(self, obstacles: list[bbox2d], borderline_bounding_box: bbox2d) -> None:
+        """
+        Description:
+            Enlarge this bounding box in horizontal direction.
+
+        :param obstacles:
+        :param borderline_bounding_box:
+        """
+        left_side_segments = [segment.right_segment() for segment in obstacles]
+        left_side_segments.append(borderline_bounding_box.left_segment())
+
+        right_side_segments = [segment.left_segment() for segment in obstacles]
+        right_side_segments.append(borderline_bounding_box.right_segment())
+
+        left_side_segments = AlignedSegment2D.out_of_range(left_side_segments, self.left_top[1], self.left_bottom[1])
+        right_side_segments = AlignedSegment2D.out_of_range(right_side_segments, self.left_top[1], self.left_bottom[1])
+
+        left_side_segments_x = [segment.x for segment in left_side_segments]
+        right_side_segments_x = [segment.x for segment in right_side_segments]
+
+        left_side_segments_x_maximum = max(left_side_segments_x)
+        right_side_segments_x_minimum = min(right_side_segments_x)
+
+        if left_side_segments_x_maximum < self._x:
+            self.extend(left=self._x - left_side_segments_x_maximum)
+
+        if right_side_segments_x_minimum > self._x + self._width:
+            self.extend(right=right_side_segments_x_minimum - self._x - self._width)
+
+
+    def __enlarge_vertically(self, obstacles: list[bbox2d], borderline_bounding_box: bbox2d) -> None:
         """
         Description:
             Enlarge this bounding box in vertical direction.
 
-        :param  obstacles:
+        :param obstacles:
+        :param borderline_bounding_box:
         """
-        top_side_segments = [segment.top_segment() for segment in obstacles]
-        bottom_side_segments = [segment.bottom_segment() for segment in obstacles]
+        top_side_segments = [segment.bottom_segment() for segment in obstacles]
+        top_side_segments.append(borderline_bounding_box.top_segment())
+
+        bottom_side_segments = [segment.top_segment() for segment in obstacles]
+        bottom_side_segments.append(borderline_bounding_box.bottom_segment())
 
         top_side_segments = AlignedSegment2D.out_of_range(top_side_segments, self.left_top[0], self.right_top[0])
         bottom_side_segments = AlignedSegment2D.out_of_range(bottom_side_segments, self.left_top[0], self.right_top[0])
@@ -442,28 +507,14 @@ class BoundingBox2D:
         top_side_segments_y = [segment.x for segment in top_side_segments]
         bottom_side_segments_y = [segment.x for segment in bottom_side_segments]
 
-        self._y = min(top_side_segments_y)
-        self._height = min(bottom_side_segments_y) - self._y
+        top_side_segments_y_maximum = max(top_side_segments_y)
+        bottom_side_segments_y_minimum = min(bottom_side_segments_y)
 
+        if top_side_segments_y_maximum < self._y:
+            self.extend(top=self._y - top_side_segments_y_maximum)
 
-    def __enlarge_horizontally(self, obstacles: list[bbox2d]) -> None:
-        """
-        Description:
-            Enlarge this bounding box in horizontal direction.
-
-        :param  obstacles:
-        """
-        left_side_segments = [segment.right_segment() for segment in obstacles]
-        right_side_segments = [segment.left_segment() for segment in obstacles]
-
-        left_side_segments = AlignedSegment2D.out_of_range(left_side_segments, self.left_top[1], self.left_bottom[1])
-        right_side_segments = AlignedSegment2D.out_of_range(right_side_segments, self.left_top[1], self.left_bottom[1])
-
-        left_side_segments_x= [segment.x for segment in left_side_segments]
-        right_side_segments_x = [segment.x for segment in right_side_segments]
-
-        self._x = min(left_side_segments_x)
-        self._width = min(right_side_segments_x) - self._x
+        if bottom_side_segments_y_minimum > self._y + self._height:
+            self.extend(right=bottom_side_segments_y_minimum - self._y - self._height)
 
 
     def perimeter(self) -> numeric:
@@ -481,9 +532,20 @@ class BoundingBox2D:
         return self._x
 
 
+    @x.setter
+    def x(self, value) -> None:
+        self._x  = value
+
+
     @property
     def y(self) -> numeric:
         return self._y
+
+
+    @y.setter
+    def y(self, value) -> None:
+        self._y = value
+
 
     @property
     def width(self) -> numeric:

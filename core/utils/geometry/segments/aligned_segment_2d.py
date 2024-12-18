@@ -1,11 +1,11 @@
-import enum
+from enum import Enum
 import numpy as np
 from copy import deepcopy
 from core.utils.geometry.line_2d import Line2D
 from core.utils.geometry.geometry_typing import vec2d, segment2d, alignedsegment2d, numeric
 
 
-class AlignedSegmentType(enum):
+class AlignedSegmentType(Enum):
     VERTICAL = 0
     HORIZONTAL = 1
 
@@ -14,6 +14,12 @@ class AlignedSegment2D:
     """
     Description:
         Class, representing 2D segment, collinear with vector [1, 0] or [0, 1] .
+
+    :ivar _x: segment start x component
+    :ivar _y: segment start y component
+    :ivar _length: segment length
+    :ivar __type: segment type (horizontal or vertical)
+
     """
     def __init__(self, x, y, length, segment_type = AlignedSegmentType.VERTICAL):
         self._x = x
@@ -23,11 +29,17 @@ class AlignedSegment2D:
 
 
     def is_less_than(self, value: numeric) -> bool:
-        return self._x + self._length < value
+        if self.__type == AlignedSegmentType.HORIZONTAL:
+            return self._x + self._length < value
+        else:
+            return self._y + self._length < value
 
 
     def is_greater_than(self, value: numeric) -> bool:
-        return self._x > value
+        if self.__type == AlignedSegmentType.HORIZONTAL:
+            return self._x > value
+        else:
+            return self._y > value
 
 
     @property
@@ -58,6 +70,11 @@ class AlignedSegment2D:
     @length.setter
     def length(self, value: numeric) -> None:
         self._length = abs(value)
+
+
+    @property
+    def type(self) -> AlignedSegmentType:
+        return self.__type
 
 
     @staticmethod
