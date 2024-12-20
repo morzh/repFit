@@ -1,8 +1,10 @@
 import numpy as np
-from sqlalchemy.testing.plugin.plugin_base import warnings
+import warnings
+
+from pyqtgraph.examples.MultiDataPlot import values
 
 
-class StrictlyIncreasingSequence:
+class FramesIndicesSequence:
     """
     Description:
         Class storage for strictly increasing sequence of numbers.
@@ -47,7 +49,6 @@ class StrictlyIncreasingSequence:
             self._values = np.append(self._values, element)
         else:
             raise warnings.warn(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
-            # raise ValueError(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
 
 
     @staticmethod

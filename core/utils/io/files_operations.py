@@ -70,7 +70,7 @@ def check_filename_entry_in_folder(folder, filename_entry) -> bool:
     return False
 
 
-def extract_extension_from_filepath(input_filepath) -> tuple[str, str]:
+def extract_name_extension_from_filepath(input_filepath) -> tuple[str, str]:
     """
     Description:
         Extract file name without extension and file extension from file pathname.
@@ -93,7 +93,7 @@ def filter_filepath_segment(input_filepath: os.PathLike, output_folder: os.PathL
 
     :return: filename
     """
-    video_filename_base, _ = extract_extension_from_filepath(input_filepath)
+    video_filename_base, _ = extract_name_extension_from_filepath(input_filepath)
     start_frame = str(segment[0]).zfill(5)
     end_frame = str(segment[1]).zfill(5)
     video_filename = f'{video_filename_base}__{suffix}_{start_frame}-{end_frame}__.mp4'

@@ -2,7 +2,7 @@ import copy
 import unittest
 import numpy as np
 
-from core.filters.single_person.core.strictly_increasing_sequence import StrictlyIncreasingSequence
+from core.filters.single_person.core.frames_indices_sequence import FramesIndicesSequence
 
 
 class TestStrictlyIncreasingSequence(unittest.TestCase):
@@ -16,18 +16,18 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
         # correct input sequence case
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(1, self.maximum_sequence_length)
-            _ = StrictlyIncreasingSequence(correct_sequence)
+            _ = FramesIndicesSequence(correct_sequence)
         # incorrect input sequence case
         for _ in range(self.number_checks):
             incorrect_sequence = self.incorrect_sequence(4, self.maximum_sequence_length)
             with self.assertRaises(ValueError):
-                _ = StrictlyIncreasingSequence(incorrect_sequence)
+                _ = FramesIndicesSequence(incorrect_sequence)
 
 
     def test_append_correct(self):
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(1, self.maximum_sequence_length)
-            sequence = StrictlyIncreasingSequence(correct_sequence)
+            sequence = FramesIndicesSequence(correct_sequence)
             last_element = int(sequence.values[-1])
             addon = np.random.randint(1, 50)
             sequence.append(last_element + addon)
@@ -36,7 +36,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
     def test_append_incorrect(self):
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(1, self.maximum_sequence_length)
-            sequence = StrictlyIncreasingSequence(correct_sequence)
+            sequence = FramesIndicesSequence(correct_sequence)
             last_element = int(sequence.values[-1])
             addon = np.random.randint(-10, 0)
             with self.assertRaises(ValueError):
@@ -46,7 +46,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
     def test_getitem(self):
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(2, self.maximum_sequence_length)
-            sequence = StrictlyIncreasingSequence(correct_sequence)
+            sequence = FramesIndicesSequence(correct_sequence)
             index = np.random.randint(0, len(sequence) - 1)
             _ = sequence[index]
 
@@ -54,7 +54,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
     def test_setitem(self):
         for _ in range(self.number_checks):
             correct_sequence = self.correct_sequence(2, self.maximum_sequence_length)
-            sequence = StrictlyIncreasingSequence(correct_sequence)
+            sequence = FramesIndicesSequence(correct_sequence)
             index = np.random.randint(0, len(sequence) - 1)
             with self.assertRaises(PermissionError):
                 sequence[index] = 10
@@ -64,8 +64,8 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
             correct_sequence = self.correct_sequence(4, self.maximum_sequence_length)
             incorrect_sequence = self.incorrect_sequence(4, self.maximum_sequence_length)
 
-            is_consistent_false = StrictlyIncreasingSequence.is_consistent(incorrect_sequence)
-            is_consistent_true = StrictlyIncreasingSequence.is_consistent(correct_sequence)
+            is_consistent_false = FramesIndicesSequence.is_consistent(incorrect_sequence)
+            is_consistent_true = FramesIndicesSequence.is_consistent(correct_sequence)
 
             self.assertFalse(is_consistent_false)
             self.assertTrue(is_consistent_true)

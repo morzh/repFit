@@ -25,7 +25,7 @@ class BoundingBoxes2DArray:
                 raise ValueError('Bounding boxes dimensions should be positive.')
             self.values = bounding_boxes
         else:
-            self.values = np.empty((0, 4))
+            self.values = np.empty((0, 4), dtype=np.int32)
 
 
     def __getitem__(self, item):
@@ -230,7 +230,7 @@ class BoundingBoxes2DArray:
         if indices is None:
             return self.values
 
-        if not np.issubdtype(indices, np.int32):
+        if not np.issubdtype(indices.dtype, np.integer):
             raise ValueError('Indices should be an array of integers.')
         elif len(indices.shape) != 1:
             raise ValueError('Indices should be an 1D array.')
@@ -240,7 +240,7 @@ class BoundingBoxes2DArray:
             boxes_number = self.values.shape[0]
             indices = indices[:boxes_number]
 
-        indices = indices.sort()
+        indices = np.sort(indices)
         if indices[-1] > (self.values.shape[0] - 1):
             raise ValueError('Indices are not correct.')
 

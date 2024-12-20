@@ -1,7 +1,7 @@
 import numpy as np
 
 from core.utils.cv.frames_segments import FramesSegments
-from core.filters.single_person.core.strictly_increasing_sequence import StrictlyIncreasingSequence
+from core.filters.single_person.core.frames_indices_sequence import FramesIndicesSequence
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
@@ -19,7 +19,7 @@ class PersonTrackingData:
 
     def __init__(self):
         self._bounding_boxes = BoundingBoxes2DArray()
-        self._frames_indices = StrictlyIncreasingSequence()
+        self._frames_indices = FramesIndicesSequence()
         self._confidences = np.empty(0, )
         self._keypoints = np.empty((0, 17, 3))
 
@@ -167,7 +167,7 @@ class PersonTrackingData:
 
         :return: True if consistent, False otherwise.
         """
-        return StrictlyIncreasingSequence.is_consistent(self._frames_indices.values) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
+        return FramesIndicesSequence.is_consistent(self._frames_indices.values) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
 
 
     def _coco_keypoints_interpolation(self, frame_index: int, keypoints: np.ndarray) -> np.ndarray:
@@ -278,7 +278,7 @@ class PersonTrackingData:
 
 
     @property
-    def frames_indices(self) -> StrictlyIncreasingSequence:
+    def frames_indices(self) -> FramesIndicesSequence:
         """
         Description:
             Frames indices getter.

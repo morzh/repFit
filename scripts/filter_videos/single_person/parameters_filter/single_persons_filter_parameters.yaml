@@ -18,14 +18,12 @@ tracking:
 
 
 visualization:
-  do_visualization: true
+  do_visualization: false
   bounding_box_thickness: 2
   hsv_step: 20 # Hue step in degrees for HSV model
   draw_keypoints: true # draw skeleton joints
   keypoints_confidence_threshold: 0.2
   show_frame_delay: 10
-  write_video: true
-  video_suffix: 'viz_data'
 
 
 filtering:
@@ -41,17 +39,25 @@ filtering:
     ratio_threshold: 5
   segments_duration:
     apply: true
-    duration_threshold: 1.5 # duration in seconds
+    duration_threshold: 1.5 # duration time in seconds
   bridging_gaps:
     apply: true
-    gap_threshold: 1.0 # duration in second
+    gap_threshold: 1.0 # duration time in seconds
   partial_person:
     apply: true
-    joint_confidence_threshold: 0.65 # confidence in [0, 1] interval
-    joints_number: 5
+    joints_confidence_threshold: 0.65 # confidence in [0, 1] interval
+    joints_number_threshold: 5
   whole_person:
-    apply: false
-    joint_confidence_minimum: 0.7 # confidence in [0, 1] interval
-  bounding_box_enlarge:
-    apply: false
-    enlarge_direction: 'random' # value could be vertical, horizontal or random.
+    apply: true
+    joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
+    joints_number_threshold: 15
+
+
+video_segments_writer:
+  write_persons_tracks: true
+  video_suffix: 'single_person'
+  whole_person_duration_threshold: 1  # time in seconds
+  whole_person_gap_duration: 4  # time in seconds
+  enlarge_whole_person_bounding_boxes: true
+  enlarge_bounding_boxes_direction: 'random' # value could be vertical, horizontal or random.
+  verbose_output_filename: true

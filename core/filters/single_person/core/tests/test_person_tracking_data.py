@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from core.filters.single_person.core.strictly_increasing_sequence import StrictlyIncreasingSequence
+from core.filters.single_person.core.frames_indices_sequence import FramesIndicesSequence
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.filters.single_person.core.person_tracking_data import PersonTrackingData
@@ -116,7 +116,7 @@ class TestPersonTrackingData(unittest.TestCase):
         indices  = np.cumsum(indices)
 
         bounding_boxes_2d_array = BoundingBoxes2DArray(bounding_boxes)
-        frames_indices = StrictlyIncreasingSequence(indices)
+        frames_indices = FramesIndicesSequence(indices)
 
         tracking_data = PersonTrackingData()
         tracking_data._bounding_boxes = bounding_boxes_2d_array

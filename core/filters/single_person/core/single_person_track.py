@@ -14,12 +14,12 @@ class SinglePersonTrack:
 
     :ivar data: data, obtained from person's tracker
     :ivar segments: video frame segments
+    :ivar whole_person_frame_indices: whole person video frame indices
     """
-
     def __init__(self):
         self.data = PersonTrackingData()
         self.segments = FramesSegments()
-        self.is_whole_person_segment = np.array([])
+        self.whole_person_frame_indices: np.ndarray = np.empty(0)
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, keypoints: np.ndarray | None = None) -> None:
@@ -36,10 +36,37 @@ class SinglePersonTrack:
 
 
     def calculate_segments(self, stride):
+        """
+        Description:
+            Calculate frames segments from tracked data.
+
+        :param stride: frames stride
+        """
         self.segments = self.data.calculate_segments(stride)
 
 
-    def filter_by_time(self, fps: float, time_threshold: float = 5) -> None:
+    def calculate_whole_person_segments(self, stride) -> FramesSegments:
+        """
+        Description:
+            Calculate frames segments from tracked data and whole person index frames.
+
+        :return: whole person frame segments
+        """
+        segments_bins = np.hstack((self.whole_person_frame_indices.reshape(-1, 1), self.whole_person_frame_indices.reshape(-1, 1) + stride))
+
+        for index in range(segments_bins.shape[0] - 1):
+            if segments_bins[index, 1] == segments_bins[index + 1, 0]:
+                segments_bins[index + 1, 0] = segments_bins[index, 0]
+                segments_bins[index] = -1
+
+        mask = segments_bins[:, 0] != -1
+        segments = segments_bins[mask]
+        segments[:, 1] += 1
+
+        return FramesSegments(segments)
+
+
+    def filter_by_duration(self, fps: float, time_threshold: float = 5) -> None:
         """
         Description:
             Filter person's video segments by duration
@@ -94,7 +121,7 @@ class SinglePersonTrack:
         """
         if self.segments.size == 0: return np.array([])
 
-        indices_array = self.segments.as_frames_indices()
+        indices_array = self.segments.frames_indices()
         mean_areas = np.empty(len(indices_array))
         for index, indices in enumerate(indices_array):
             mean_areas[index] = self.data.bounding_boxes.mean_area(indices)
@@ -102,17 +129,22 @@ class SinglePersonTrack:
         return mean_areas
 
 
-    def bounding_boxes_per_segment(self) -> BoundingBoxes2DArray:
+    def bounding_boxes_per_segment(self, segments: FramesSegments) -> BoundingBoxes2DArray:
         """
         Description:
             Calculate overall bounding box for each segment.
 
+        :param segments: frames segments
+
         :return: segment's bounding boxes.
         """
         boxes = BoundingBoxes2DArray()
-        for segment in self.segments:
-            segment_indices = segment.as_frames_indices()
-            bounding_box = self.data.bounding_boxes.circumscribe(segment_indices)
+        for segment in segments:
+            current_upper_bound_indices = np.argwhere(self.data.frames_indices < segment[1]).flatten()
+            current_lower_bound_indices = np.argwhere(segment[0] <= self.data.frames_indices).flatten()
+            current_indices = np.intersect1d(current_upper_bound_indices, current_lower_bound_indices)
+            bounding_box = self.data.bounding_boxes.circumscribe(current_indices)
+            bounding_box = bounding_box.astype(np.int32)
             boxes.append(bounding_box)
         return boxes
 

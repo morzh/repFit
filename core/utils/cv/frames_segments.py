@@ -1,7 +1,8 @@
+
 import numpy as np
 import os
 import warnings
-
+from typing import Type
 
 class FramesSegments:
     """
@@ -203,7 +204,7 @@ class FramesSegments:
         return np.abs(self.values[:, 1] - self.values[:, 0])
 
 
-    def as_frames_indices(self) -> list[np.ndarray]:
+    def frames_indices(self) -> list[Type[np.ndarray]]:
         """
         Description:
             Calculates frames indices. If [f_start, f_end] is a frame segment, frames indices will be [f_start, f_start + 1, ..., f_end - 1]

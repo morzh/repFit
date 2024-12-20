@@ -30,6 +30,7 @@ class BoundingBox2D:
         VERTICAL = 0
         HORIZONTAL = 1
         RANDOM = 2
+        LARGEST = 3
 
     XYWH = BoundingBoxMode.XYWH.value
     XYXY = BoundingBoxMode.XYXY.value
@@ -937,4 +938,3 @@ class BoundingBox2D:
         ys.sort()
 
         return np.meshgrid(xs, ys)
-

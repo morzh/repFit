@@ -13,7 +13,7 @@ class VideoStrideReader(VideoReader):
 
     :ivar _stride: frames stride. After current frame read, next (stride - 1) frames will bw skipped.
     :ivar _stride_frames: Double queue with two stride frames. We need  this queue cause last read frame should not be yield.
-    The reason of such behaviour is FrameSegments class consideration and further frame segments calculation.
+    The reason of such behaviour is FramesSegments class consideration and further frame segments calculation.
     """
 
     def __init__(self, video_filepath: os.PathLike | str, **options):

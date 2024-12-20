@@ -1,3 +1,6 @@
+import shutil
+
+import numpy as np
 from loguru import logger
 import os
 import pickle
@@ -5,18 +8,19 @@ import time
 
 from core.filters.single_person.core.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
 from core.filters.single_person.core.filter_addons.partial_person_filter_addon import PartialPersonFilterAddon
-from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
-
+from core.filters.single_person.core.filter_addons.whole_person_filter_addon import WholePersonFilterAddon
 from core.filters.single_person.core.filter_addons.absolute_area_filter_addon import AbsoluteAreaFilterAddon
 from core.filters.single_person.core.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
 from core.filters.single_person.core.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
 from core.filters.single_person.core.filter_addons.segments_duration_filter_addon import SegmentsDurationFilterAddon
-from core.utils.cv.video_writer import VideoWriter
 
+from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
+from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
+
+from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
-from core.utils.io.files_operations import check_filename_entry_in_folder
-from core.utils.cv.video_tools import video_resolution_check
+from core.utils.io.files_operations import check_filename_entry_in_folder, extract_name_extension_from_filepath
+from core.utils.cv.video_tools import video_resolution_check,  VideoWriter
 
 
 @logger.catch
@@ -84,10 +88,11 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     tracking_parameters = parameters['tracking']
     filtering_parameters = parameters['filtering']
     visualization_parameters = parameters['visualization']
+    video_segments_writer_parameters = parameters['video_segments_writer']
 
     do_filtering = filtering_parameters.get('do_filtering', False)
     do_visualization = visualization_parameters['do_visualization']
-    write_tracks_to_videos = tracking_parameters.get('write_tracks', False)
+    write_tracks_to_videos = video_segments_writer_parameters.get('write_persons_tracks', False)
 
     video_processing_start_time = time.time()
     minimum_resolution = video_input_parameters.get('minimal_resolution', 200)
@@ -151,6 +156,10 @@ def filter_multiple_persons_tracks(tracks: MultiplePersonsTracks, **parameters) 
         bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
         tracks.apply_filter(bridge_gaps_filter_addon)
 
+    if parameters['whole_person']['apply']:
+        whole_person_filter_addon = WholePersonFilterAddon(**parameters['whole_person'])
+        tracks.apply_filter(whole_person_filter_addon)
+
     return tracks
 
 
@@ -176,12 +185,19 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     yolo_weights_filepath = os.path.join(str(yolo_weights_folder), str(yolo_model))
     persons_track_data_filepath = f'{video_source_filepath}.{tracked_data_suffix}.pickle'
     persons_tracker = PersonsTracker(weights_pathname=yolo_weights_filepath)
+    track_persons = False
 
-    if use_saved_data and os.path.exists(persons_track_data_filepath):
-        with open(persons_track_data_filepath, "rb") as input_file:
-            tracks = pickle.load(input_file)
-        return tracks
-    else:
+    if not use_saved_data:
+        track_persons = True
+    elif use_saved_data and os.path.exists(persons_track_data_filepath):
+        try:
+            with open(persons_track_data_filepath, "rb") as input_file:
+                tracks = pickle.load(input_file)
+            track_persons = False
+        except ModuleNotFoundError:
+            track_persons = True
+
+    if track_persons:
         tracks = persons_tracker.track(video_source_filepath, **parameters)
         if write_tracked_data:
             tracks.serialize(persons_track_data_filepath)
@@ -189,17 +205,44 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     return tracks
 
 
-def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, multiple_persons_tracks: MultiplePersonsTracks, **parameters) -> None:
+def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, tracks: MultiplePersonsTracks, **parameters) -> None:
     """
     Description:
-        Write video segments with bounding boxes
+        Write video segments with bounding boxes.
 
-    :param source_filepath:
-    :param target_folder:
-    :param multiple_persons_tracks:
+    :param source_filepath: source video filepath
+    :param target_folder: target folder to write videos to
+    :param tracks: multiple persons tracks
 
     :key key1: asdasdas
     """
+    output_video_suffix = parameters.get('video_suffix', 'single_person')
+    segment_duration_threshold = parameters.get('whole_person_duration_threshold', 1)
+    segments_gap_threshold = parameters.get('whole_person_gap_duration', 3)
 
-    video_writer = VideoWriter(source_filepath, target_folder)
-    video_writer.write_multiple_persons_tracks(multiple_persons_tracks)
+    # input_video_bounding_box = BoundingBox2D(0, 0, tracks.video_properties.width - 1, tracks.video_properties.height - 1)
+
+    for person_id, person_track in tracks.persons.items():
+        # current_other_persons_ids = [p_id for p_id in tracks.persons.keys() if p_id != person_id]
+        current_whole_person_segments = person_track.calculate_whole_person_segments(tracks.frames_stride)
+
+        current_gap_length_threshold = round(segments_gap_threshold * tracks.video_properties.fps)
+        current_whole_person_segments.bridge_gaps(current_gap_length_threshold)
+
+        current_segment_length_threshold = round(segment_duration_threshold * tracks.video_properties.fps)
+        current_whole_person_segments.filter_by_length(current_segment_length_threshold)
+
+        if not current_whole_person_segments.size:
+            continue
+
+        current_whole_person_boxes = person_track.bounding_boxes_per_segment(current_whole_person_segments)
+        video_filename_base, video_filename_extension = extract_name_extension_from_filepath(tracks.video_properties.filepath)
+        current_output_video_file_basename = f'{video_filename_base}__{output_video_suffix}-id{person_id}'
+
+        if person_track.is_track_equals_video(tracks.video_properties, tracks.frames_number):
+            output_filepath = os.path.join(target_folder, current_output_video_file_basename.join(['.', video_filename_extension]))
+            shutil.copy(source_filepath, output_filepath)
+            continue
+
+        video_writer = VideoWriter(source_filepath, target_folder, fps=tracks.video_properties.fps)
+        video_writer.write_segments_with_bounding_boxes(current_whole_person_segments, current_whole_person_boxes, current_output_video_file_basename)

@@ -23,7 +23,7 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
         """
         keys_to_delete = []
         for person_id, person in tracks.persons.items():
-            person.filter_by_time(tracks.video_properties.fps, self.duration_threshold)
+            person.filter_by_duration(tracks.video_properties.fps, self.duration_threshold)
             if len(person.segments) == 0:
                 keys_to_delete.append(person_id)
 

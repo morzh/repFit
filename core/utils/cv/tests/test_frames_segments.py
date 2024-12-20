@@ -220,7 +220,7 @@ class TestFramesSegments(unittest.TestCase):
         for _ in range(self.number_checks):
             number_segments = np.random.randint(1, 1_500)
             current_segments = FramesSegments(self.generate_consistent_segments(number_segments, low_value=1, high_value=10))
-            current_segments_frames_indices = current_segments.as_frames_indices()
+            current_segments_frames_indices = current_segments.frames_indices()
 
             for segments_index, segment_endpoints in enumerate(current_segments_frames_indices):
                 current_check_difference = segment_endpoints[1:] - segment_endpoints[:-1]
