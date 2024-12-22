@@ -1,8 +1,9 @@
-
+from __future__ import annotations
 import numpy as np
 import os
 import warnings
 from typing import Type
+
 
 class FramesSegments:
     """
@@ -38,6 +39,12 @@ class FramesSegments:
 
     def __len__(self) -> int:
         return self.values.shape[0]
+
+
+    def __copy__(self):
+        ...
+
+
 
 
     def append_segment(self, segment: np.ndarray) -> None:
@@ -139,6 +146,11 @@ class FramesSegments:
             Combine in place adjacent segments. E.g. segments [0, 200] and [200, 599] will be combined to [0, 599] segment.
         """
         self.bridge_gaps(0)
+    def clip(self, minimum, maximum) -> FramesSegments:
+        """
+        Description:
+
+        """
 
 
     def write(self, filepath: str) -> None:

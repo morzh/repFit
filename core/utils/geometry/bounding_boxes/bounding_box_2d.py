@@ -1,12 +1,13 @@
-import copy
+from __future__ import annotations
 from copy import deepcopy
 from enum import Enum
 from loguru import logger
 import numpy as np
 
 from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
-from core.utils.geometry.geometry_typing import numeric, bbox2d, vec2d
+from core.utils.geometry.geometry_typing import numeric, vec2d
 from core.utils.geometry.segments.aligned_segment_2d import AlignedSegment2D, AlignedSegmentType
+
 
 VISUAL_DEBUG = 0
 if VISUAL_DEBUG:
@@ -50,7 +51,7 @@ class BoundingBox2D:
             self._height = h_y2 - y
 
 
-    def __eq__(self, other: bbox2d) -> bool:
+    def __eq__(self, other: BoundingBox2D) -> bool:
         if not isinstance(other, BoundingBox2D):
             return False
         return (self._x == other._x) and (self._y == other._y) and (self._width == other._width) and (self._height == other._height)
@@ -61,7 +62,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def from_list(values: list[float], mode: BoundingBoxMode = XYWH) -> bbox2d:
+    def from_list(values: list[float], mode: BoundingBoxMode = XYWH) -> BoundingBox2D:
         """
         Description:
             Returns instance of the BoundingBox2D class from list of four values.
@@ -81,7 +82,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def from_numpy(values: np.ndarray, mode: BoundingBoxMode = XYWH) -> bbox2d:
+    def from_numpy(values: np.ndarray, mode: BoundingBoxMode = XYWH) -> BoundingBox2D:
         """
         Description:
             Returns instance of the BoundingBox2D class from list of four values.
@@ -102,7 +103,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def from_two_points(point_1, point_2) -> bbox2d:
+    def from_two_points(point_1, point_2) -> BoundingBox2D:
         """
         Description:
             Returns instance of the BoundingBox2D class from list of four values.
@@ -183,7 +184,7 @@ class BoundingBox2D:
             raise ValueError('Modes other than XYWH and XYXY are not supported')
 
 
-    def copy(self) -> bbox2d:
+    def copy(self) -> BoundingBox2D:
         """
         Description:
             Returns deep copy of this bounding box.
@@ -243,7 +244,7 @@ class BoundingBox2D:
                     np.all(self._y < points[:, 1]) and np.all(points[:, 1] < self._y + self._height))
 
 
-    def contains_bounding_box(self, bounding_box: bbox2d, use_border=True) -> bool:
+    def contains_bounding_box(self, bounding_box: BoundingBox2D, use_border=True) -> bool:
         """
         Description:
             Checks if this bounding box has another ``bounding_box`` inside of it.
@@ -259,7 +260,7 @@ class BoundingBox2D:
                 self.contains_single_point(bounding_box.left_bottom, use_border))
 
 
-    def contained_in_bounding_box(self, other: bbox2d, use_border=True) -> bool:
+    def contained_in_bounding_box(self, other: BoundingBox2D, use_border=True) -> bool:
         """
         Description:
             Checks if this bounding box has ``other`` outside of it.
@@ -273,7 +274,7 @@ class BoundingBox2D:
         return other.contains_multiple_points(points, use_border=use_border)
 
 
-    def shift(self, values: vec2d) -> bbox2d:
+    def shift(self, values: vec2d) -> BoundingBox2D:
         """
         Description:
             Shifts bounding box by a given value.
@@ -285,7 +286,7 @@ class BoundingBox2D:
         return BoundingBox2D(self._x + values[0], self._y + values[1], self._width, self._height)
 
 
-    def scale(self, values: vec2d) -> bbox2d:
+    def scale(self, values: vec2d) -> BoundingBox2D:
         """
         Description:
             Scales width and height. Top left corner remains the same.
@@ -297,7 +298,7 @@ class BoundingBox2D:
         return BoundingBox2D(self._x, self._y, self._width * values[0], self._height * values[1])
 
 
-    def offset(self, value: numeric) -> bbox2d:
+    def offset(self, value: numeric) -> BoundingBox2D:
         """
         Description:
             Offsets each border segment of this bounding box by a certain value. Positive values decreases box area, negative increases.
@@ -312,7 +313,7 @@ class BoundingBox2D:
         return BoundingBox2D(self._x - value, self._y - value, self._width + 2 * value, self._height + 2 * value)
 
 
-    def extend(self, left: numeric | None = None, top: numeric | None = None, right: numeric | None = None, bottom: numeric | None = None) -> bbox2d:
+    def extend(self, left: numeric | None = None, top: numeric | None = None, right: numeric | None = None, bottom: numeric | None = None) -> BoundingBox2D:
         """
         Description:
             Offset bounding box per side.
@@ -379,7 +380,7 @@ class BoundingBox2D:
         return AlignedSegment2D(self.left_bottom[0], self.left_bottom[1], self._width, AlignedSegmentType.HORIZONTAL)
 
 
-    def enlarge(self, obstacle_bounding_boxes: list[bbox2d], borderline_bounding_box: bbox2d, order = Order.RANDOM) -> bbox2d:
+    def enlarge(self, obstacle_bounding_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D, order = Order.RANDOM) -> BoundingBox2D:
         """
         Description:
             Enlarges bounding box to the edges of given bounding boxes.
@@ -457,7 +458,7 @@ class BoundingBox2D:
         return self._width * self._height
 
 
-    def __enlarge_horizontally(self, obstacle_boxes: list[bbox2d], borderline_bounding_box: bbox2d) -> bbox2d:
+    def __enlarge_horizontally(self, obstacle_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D) -> BoundingBox2D:
         """
         Description:
             Enlarge this bounding box in horizontal direction.
@@ -520,7 +521,7 @@ class BoundingBox2D:
         return enlarged_bounding_box
 
 
-    def __enlarge_vertically(self, obstacle_boxes: list[bbox2d], borderline_bounding_box: bbox2d) -> bbox2d:
+    def __enlarge_vertically(self, obstacle_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D) -> BoundingBox2D:
         """
         Description:
             Enlarge this bounding box in vertical direction.
@@ -698,7 +699,7 @@ class BoundingBox2D:
 
 
     @right_bottom.setter
-    def right_bottom(self, coordinates: vec2d):
+    def right_bottom(self, coordinates: vec2d) -> None:
         """
         Description:
             Set bottom right coordinates of the bounding box.
@@ -729,7 +730,7 @@ class BoundingBox2D:
     
     
     @staticmethod
-    def intersect(box_1: bbox2d, box_2: bbox2d)-> bbox2d:
+    def intersect(box_1: BoundingBox2D, box_2: BoundingBox2D)-> BoundingBox2D:
         """
         Description:
             Calculates intersection (which is also a box) of this bounding box with the ``target`` bounding box.
@@ -767,7 +768,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def subtract(box_1: bbox2d, box_2: bbox2d) -> list[bbox2d]:
+    def subtract(box_1: BoundingBox2D, box_2: BoundingBox2D) -> list[BoundingBox2D]:
         r"""
         Description:
             Calculates subtraction (which is a list of bounding boxes) of this bounding box minus given ``bounding_box``.
@@ -821,7 +822,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def union(box_1: bbox2d, box_2: bbox2d) -> list[bbox2d]:
+    def union(box_1: BoundingBox2D, box_2: BoundingBox2D) -> list[BoundingBox2D]:
         """
         Description:
             Calculates bounding boxes union (which is a list of bounding boxes)
@@ -855,7 +856,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def circumscribe(bounding_box_1: bbox2d, bounding_box_2: bbox2d)-> bbox2d:
+    def circumscribe(bounding_box_1: BoundingBox2D, bounding_box_2: BoundingBox2D)-> BoundingBox2D:
         """
         Description:
             Circumscribe this bounding box with the given one.
@@ -886,7 +887,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def intersection_over_union(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> numeric:
+    def intersection_over_union(bounding_box_1: BoundingBox2D, bounding_box_2: BoundingBox2D) -> numeric:
         """
         Description:
             Calculates intersection over union (IOU) metric.
@@ -903,7 +904,7 @@ class BoundingBox2D:
 
 
     @staticmethod
-    def __intersections_grid(bounding_box_1: bbox2d, bounding_box_2: bbox2d) -> list[np.ndarray]:
+    def __intersections_grid(bounding_box_1: BoundingBox2D, bounding_box_2: BoundingBox2D) -> list[np.ndarray]:
         """
         Description:
             Calculates grid of points in the following way:

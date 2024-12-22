@@ -56,7 +56,7 @@ filtering:
 video_segments_writer:
   write_persons_tracks: true
   video_suffix: 'single_person'
-  whole_person_duration_threshold: 1  # time in seconds
+  whole_person_duration_threshold: 3  # time in seconds
   whole_person_gap_duration: 4  # time in seconds
   enlarge_whole_person_bounding_boxes: true
   enlarge_bounding_boxes_direction: 'random' # value could be vertical, horizontal or random.

@@ -3,4 +3,4 @@
 'videos_target_subfolder': 'squats_2022_single_person'
 'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm']
 'number_processes': 2
-'use_multiprocessing': false
+'use_multiprocessing': true

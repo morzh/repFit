@@ -1,7 +1,8 @@
+from __future__ import annotations
 from copy import deepcopy
 import numpy as np
 
-from core.utils.geometry.geometry_typing import vec2d, line2d
+from core.utils.geometry.geometry_typing import vec2d
 
 class FloatComponent:
     """
@@ -60,7 +61,7 @@ class Line2D:
         raise ValueError('Argument for __call__ should be single argument of type tuple[float, float]')
 
     @staticmethod
-    def from_two_points(point_1: tuple[float, float] | np.ndarray, point_2: tuple[float, float] | np.ndarray) -> line2d:
+    def from_two_points(point_1: tuple[float, float] | np.ndarray, point_2: tuple[float, float] | np.ndarray) -> Line2D:
         """
         Description:
             Constructs ``Line2D`` class  from two points.
@@ -81,7 +82,7 @@ class Line2D:
 
 
     @staticmethod
-    def from_point_and_direction(point: vec2d, direction: vec2d) -> line2d:
+    def from_point_and_direction(point: vec2d, direction: vec2d) -> Line2D:
         r"""
         Description:
             Constructs ``Line2D`` class  from point and direction (2D vector).
@@ -104,7 +105,7 @@ class Line2D:
         return Line2D(a, b, c)
 
     @staticmethod
-    def from_slope_and_intercept(k: float, b: float) -> line2d:
+    def from_slope_and_intercept(k: float, b: float) -> Line2D:
         """
         Description:
             The constant term b indicates the point where the line intersects the y-axis.
@@ -119,7 +120,7 @@ class Line2D:
         return Line2D(k, -1, b)
 
     @staticmethod
-    def from_intercepts(a: float, b: float, threshold: float = 1e-6) -> line2d:
+    def from_intercepts(a: float, b: float, threshold: float = 1e-6) -> Line2D:
         """
         Description:
             The intercept form of the equation of a line has an equation x/a + y/b = 1,
@@ -136,7 +137,7 @@ class Line2D:
         else:
             return Line2D(0, 0, 0)
 
-    def intersection_point(self, other: line2d, threshold: float = 1e-6) -> vec2d | None:
+    def intersection_point(self, other: Line2D, threshold: float = 1e-6) -> vec2d | None:
         """
         Description:
             Calculates intersection point of this line and other line. Returns None is lines are parallel (within some threshold).
@@ -157,7 +158,7 @@ class Line2D:
             return np.array([intersection_point_x, intersection_point_y])
 
 
-    def is_intersecting_with(self, other: line2d, threshold = 1e-6) -> bool:
+    def is_intersecting_with(self, other: Line2D, threshold = 1e-6) -> bool:
         """
         Description:
         """
@@ -204,7 +205,7 @@ class Line2D:
         return np.array([closest_point_x, closest_point_y])
 
 
-    def distance_to_line(self, other_line: line2d) -> float:
+    def distance_to_line(self, other_line: Line2D) -> float:
         """
         Description:
             Calculates closest distance from every point of this line to every point of the  given ``line``.
@@ -231,7 +232,7 @@ class Line2D:
         """
         return np.array([-self.b, self.a])
 
-    def is_parallel_to(self, other: line2d, threshold: float = 1e-6) -> bool:
+    def is_parallel_to(self, other: Line2D, threshold: float = 1e-6) -> bool:
         """
         Description:
             Checks if this line is parallel to other line.
@@ -249,7 +250,7 @@ class Line2D:
         return False
 
 
-    def copy(self) -> line2d:
+    def copy(self) -> Line2D:
         """
         Description:
             Return a deep copy of the object.

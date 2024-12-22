@@ -1,8 +1,7 @@
+from __future__ import annotations
 from enum import Enum
-import numpy as np
-from copy import deepcopy
-from core.utils.geometry.line_2d import Line2D
-from core.utils.geometry.geometry_typing import vec2d, segment2d, alignedsegment2d, numeric
+
+from core.utils.geometry.geometry_typing import numeric
 
 
 class AlignedSegmentType(Enum):
@@ -181,7 +180,7 @@ class AlignedSegment2D:
 
 
     @staticmethod
-    def in_range(segments: list[alignedsegment2d], minimum, maximum, non_strict=True) -> list[alignedsegment2d]:
+    def in_range(segments: list[AlignedSegment2D], minimum, maximum, non_strict=True) -> list[AlignedSegment2D]:
         """
         Description:
             Selects segments which are in ``minimum`` - ``maximum`` range.

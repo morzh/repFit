@@ -1,8 +1,10 @@
+from __future__ import annotations
 import enum
 import numpy as np
 from copy import deepcopy
+
 from core.utils.geometry.line_2d import Line2D
-from core.utils.geometry.geometry_typing import vec2d, segment2d
+from core.utils.geometry.geometry_typing import vec2d
 
 
 class Segment2D:
@@ -32,7 +34,7 @@ class Segment2D:
         self.end = end
 
 
-    def __eq__(self, other: segment2d, threshold = 1e-6):
+    def __eq__(self, other: Segment2D, threshold = 1e-6):
         return (np.linalg.norm(self.start - other.start) < threshold and
                 np.linalg.norm(self.end - other.end) < threshold)
 
@@ -41,7 +43,7 @@ class Segment2D:
         return f"Segment2D({self.start}, {self.end})"
 
 
-    def has_intersecting_with(self, other: segment2d) -> bool:
+    def has_intersecting_with(self, other: Segment2D) -> bool:
         line_1 = Line2D.from_two_points(self.start, self.end)
         line_2 = Line2D.from_two_points(other.start, other.end)
 
@@ -50,7 +52,7 @@ class Segment2D:
         return False
 
 
-    def is_parallel_to(self, other: segment2d, threshold = 1e-6) -> bool:
+    def is_parallel_to(self, other: Segment2D, threshold = 1e-6) -> bool:
         """
         Description:
             Checks if segments are parallel
@@ -67,7 +69,7 @@ class Segment2D:
         return False
 
 
-    def is_degenerate(self, threshold = 1e-6):
+    def is_degenerate(self, threshold = 1e-6) -> bool:
         """
         Description:
         """
@@ -96,7 +98,7 @@ class Segment2D:
 
         return False
 
-    def intersection(self, other: segment2d) -> vec2d | None:
+    def intersection(self, other: Segment2D) -> vec2d | None:
         """
         Description:
             Calculates intersection point of this segment with the given onr.
@@ -113,7 +115,7 @@ class Segment2D:
             return None
 
 
-    def distance(self, other: segment2d) -> tuple[float, vec2d]:
+    def distance(self, other: Segment2D) -> tuple[float, vec2d]:
         """
         Description:
             Closest distance from this segment to the given one. THis method uses paper of
@@ -230,7 +232,7 @@ class Segment2D:
         return (self.start[0], self.start[1]), ([self.end[0], self.end[1]])
 
 
-    def copy(self) -> segment2d:
+    def copy(self) -> Segment2D:
         """
         Description:
             Return a deep copy of the object.

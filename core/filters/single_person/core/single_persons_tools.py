@@ -148,17 +148,16 @@ def filter_multiple_persons_tracks(tracks: MultiplePersonsTracks, **parameters) 
         partial_person_filter_addon = PartialPersonFilterAddon(**parameters['partial_person'])
         tracks.apply_filter(partial_person_filter_addon)
 
-    if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
-        tracks.apply_filter(duration_filter_addon)
-
     if parameters['bridging_gaps']['apply']:
         bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
         tracks.apply_filter(bridge_gaps_filter_addon)
 
-    if parameters['whole_person']['apply']:
-        whole_person_filter_addon = WholePersonFilterAddon(**parameters['whole_person'])
-        tracks.apply_filter(whole_person_filter_addon)
+    if parameters['segments_duration']['apply']:
+        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
+        tracks.apply_filter(duration_filter_addon)
+
+    whole_person_filter_addon = WholePersonFilterAddon(**parameters['whole_person'])
+    tracks.apply_filter(whole_person_filter_addon)
 
     return tracks
 
@@ -185,17 +184,15 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     yolo_weights_filepath = os.path.join(str(yolo_weights_folder), str(yolo_model))
     persons_track_data_filepath = f'{video_source_filepath}.{tracked_data_suffix}.pickle'
     persons_tracker = PersonsTracker(weights_pathname=yolo_weights_filepath)
-    track_persons = False
+    track_persons = True
 
-    if not use_saved_data:
-        track_persons = True
-    elif use_saved_data and os.path.exists(persons_track_data_filepath):
+    if use_saved_data and os.path.exists(persons_track_data_filepath):
         try:
             with open(persons_track_data_filepath, "rb") as input_file:
                 tracks = pickle.load(input_file)
             track_persons = False
-        except ModuleNotFoundError:
-            track_persons = True
+        except ModuleNotFoundError as e:
+            logger.warning(e.msg)
 
     if track_persons:
         tracks = persons_tracker.track(video_source_filepath, **parameters)
