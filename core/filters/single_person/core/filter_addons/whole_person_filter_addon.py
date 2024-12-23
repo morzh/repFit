@@ -36,3 +36,6 @@ class WholePersonFilterAddon(MultiPersonsFilterAddonBase):
             current_confident_joints_number_mask = current_joints_number_above_confidence_thresholds > self.joints_number_threshold
 
             person.whole_person_frame_indices = person.data.frames_indices[current_confident_joints_number_mask]
+
+            current_full_body_indices = person.data.frames_indices[current_confident_joints_number_mask]
+            person.full_body_segments = person.calculate_segments(current_full_body_indices, tracks.frames_stride)

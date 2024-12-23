@@ -229,6 +229,11 @@ class TestFramesSegments(unittest.TestCase):
                 self.assertEqual(current_segments_frames_indices[segments_index][-1], current_segments[segments_index, 1] - 1)
 
 
+    def test_clip(self):
+        for _ in range(self.number_checks):
+            ...
+
+
     @staticmethod
     def generate_consistent_segments_with_upper_length(length_threshold, number_segments) -> np.ndarray:
         apriori_lengths = np.random.randint(0, high=length_threshold, size=(number_segments,))

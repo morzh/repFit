@@ -3,7 +3,10 @@ import numpy as np
 import os
 import pickle
 
+from fiftyone.core.frame import Frames
+
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
+from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
 from core.utils.cv.video_reader import VideoReader
@@ -64,6 +67,14 @@ class MultiplePersonsTracks:
         filter_visitor.process(self)
 
 
+    def per_person_segments(self, minimum_frame_index: int, maximum_frame_index: int) -> dict[int, FramesSegments]:
+        ...
+
+
+    def per_person_bounding_boxes(self, minimum_frame_index: int, maximum_frame_index: int) -> dict[int, BoundingBoxes2DArray]:
+        ...
+
+
     def serialize(self, filepath: os.PathLike | str) -> None:
         """
         Description:
@@ -96,7 +107,7 @@ class MultiplePersonsTracks:
 
         for frame in video_reader:
             for person_id, person_track in self.persons.items():
-                person_track.calculate_segments(self.frames_stride)
+                person_track.segments = person_track.calculate_segments(person_track.data.frames_indices, self.frames_stride)
                 mean_boxes_area = self.persons[person_id].mean_height()
                 joints_radius = max(int(round(mean_boxes_area * 0.01)), 1)
                 bones_thickness = max(int(round(joints_radius / 2)), 1)

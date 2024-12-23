@@ -41,10 +41,8 @@ class FramesSegments:
         return self.values.shape[0]
 
 
-    def __copy__(self):
-        ...
-
-
+    def __copy__(self) -> FramesSegments:
+        return  FramesSegments(self.values.copy())
 
 
     def append_segment(self, segment: np.ndarray) -> None:
@@ -146,11 +144,25 @@ class FramesSegments:
             Combine in place adjacent segments. E.g. segments [0, 200] and [200, 599] will be combined to [0, 599] segment.
         """
         self.bridge_gaps(0)
+
+
     def clip(self, minimum, maximum) -> FramesSegments:
         """
         Description:
+            Clip segments to given ``minimum`` and ``maximum`` vales.
+            If the whole segment iii less than ``minimum`` or greater than ``maximum``value, it will not be included in the result.
 
+        :param minimum: minimum frame value
+        :param maximum: maximum frame value
+
+        :return: clipped frames segments
         """
+        minimum_mask = np.argwhere(self.values >= minimum)
+        maximum_mask = np.argwhere(self.values <= maximum)
+        clip_2d_mask = np.logical_and(minimum_mask, maximum_mask)
+        clip_mask = np.logical_or(clip_2d_mask[:, 0], clip_2d_mask[:, 1])
+        clipped_values = self.values[clip_mask]
+        return FramesSegments(clipped_values)
 
 
     def write(self, filepath: str) -> None:

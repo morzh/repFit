@@ -1,5 +1,8 @@
+from __future__ import annotations
+from enum import Enum
 import numpy as np
 from sqlalchemy.testing.plugin.plugin_base import warnings
+from torchvision.transforms import InterpolationMode
 
 from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
 
@@ -12,6 +15,11 @@ class BoundingBoxes2DArray:
 
     :ivar values: bounding boxes values (XYWH format).
     """
+
+    class IntersectionMode(Enum):
+        ONE_TO_ALL = 1
+        ONE_TO_ONE = 2
+
 
     XYWH = BoundingBoxMode.XYWH.value
     XYXY = BoundingBoxMode.XYXY.value
@@ -182,6 +190,29 @@ class BoundingBoxes2DArray:
         columns_number = bounding_boxes.shape[1]
         return np.alltrue(bounding_boxes[:, 2:] > 0) and columns_number == 4
 
+
+    @staticmethod
+    def intersect(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray, mode = IntersectionMode.ONE_TO_ALL) -> list[BoundingBoxes2DArray]:
+        """
+
+        """
+        if mode == BoundingBoxes2DArray.IntersectionMode.ONE_TO_ALL:
+            intersected_boxes = [BoundingBoxes2DArray] * len(boxes_1)
+            boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
+            boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
+
+            for box_1_index in range(boxes_1_xyxy.shape[0]):
+                current_box_1_xyxy = boxes_1_xyxy[box_1_index]
+                current_left_tops = np.vstack((current_box_1_xyxy[:2], boxes_2_xyxy[:, :2]))
+                current_right_bottoms = np.vstack((current_box_1_xyxy[2:], boxes_2_xyxy[:, 2:]))
+                current_left_top = np.minimum(current_left_tops, axis=0)
+                current_right_bottom = np.maximum(current_right_bottoms, axis=0)
+                current_xyxy = np.array([*current_left_top, *current_right_bottom])
+                current_xywh = BoundingBoxes2DArray.xyxy_to_xywh(current_xyxy)
+                intersected_boxes[box_1_index] = BoundingBoxes2DArray(current_xywh)
+            return intersected_boxes
+        else:
+            raise NotImplementedError('Intersection modes other than ONE_TO_ALL is not implemented yet.')
 
     @staticmethod
     def clamp(boxes, clamp_box):

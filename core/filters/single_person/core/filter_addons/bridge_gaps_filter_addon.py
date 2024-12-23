@@ -24,5 +24,3 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
         video_fps = tracks.video_properties.fps
         for person in tracks.persons.values():
             person.bridge_gaps(video_fps)
-            # person.information.filters_applied.append('bridge_gap')
-            # person.information.track_status = SinglePersonStatus.FILTERED

@@ -1,11 +1,11 @@
 import numpy as np
 
 from core.utils.cv.frames_segments import FramesSegments
-from core.filters.single_person.core.frames_indices_sequence import FramesIndicesSequence
+from core.filters.single_person.core.frames_indices import FramesIndices
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 
-class PersonTrackingData:
+class PersonTrackedData:
     """
     Description:
         Class for storing  data, obtained from person's tracker (neural network actually).
@@ -19,7 +19,7 @@ class PersonTrackingData:
 
     def __init__(self):
         self._bounding_boxes = BoundingBoxes2DArray()
-        self._frames_indices = FramesIndicesSequence()
+        self._frames_indices = FramesIndices()
         self._confidences = np.empty(0, )
         self._keypoints = np.empty((0, 17, 3))
 
@@ -167,7 +167,7 @@ class PersonTrackingData:
 
         :return: True if consistent, False otherwise.
         """
-        return FramesIndicesSequence.is_consistent(self._frames_indices.values) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
+        return FramesIndices.is_consistent(self._frames_indices.values) and BoundingBoxes2DArray.is_consistent(self._bounding_boxes.values)
 
 
     def _coco_keypoints_interpolation(self, frame_index: int, keypoints: np.ndarray) -> np.ndarray:
@@ -278,7 +278,7 @@ class PersonTrackingData:
 
 
     @property
-    def frames_indices(self) -> FramesIndicesSequence:
+    def frames_indices(self) -> FramesIndices:
         """
         Description:
             Frames indices getter.

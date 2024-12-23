@@ -24,7 +24,7 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
             if len(current_data) == 0:
                 keys_to_delete.append(person_key)
             else:
-                person.calculate_segments(tracks.frames_stride)
+                person.segments = person.calculate_segments(person.data.frames_indices, tracks.frames_stride)
 
 
         for key in keys_to_delete:

@@ -1,10 +1,10 @@
 import numpy as np
-# from enum import Enum
 
 from core.utils.cv.frames_segments import FramesSegments
-from core.filters.single_person.core.person_tracking_data import PersonTrackingData
+from core.filters.single_person.core.person_tracked_data import PersonTrackedData
 from core.utils.cv.video_properties import VideoProperties
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
+from person_data import PersonData
 
 
 class SinglePersonTrack:
@@ -17,9 +17,14 @@ class SinglePersonTrack:
     :ivar whole_person_frame_indices: whole person video frame indices
     """
     def __init__(self):
-        self.data = PersonTrackingData()
+        self.data = PersonTrackedData()
         self.segments = FramesSegments()
+        self.full_body_segments = FramesSegments()
         self.whole_person_frame_indices: np.ndarray = np.empty(0)
+
+
+        self.person_data = PersonData()
+        self.full_body_person_data = PersonData()
 
 
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, keypoints: np.ndarray | None = None) -> None:
@@ -35,14 +40,28 @@ class SinglePersonTrack:
         self.data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, keypoints=keypoints)
 
 
-    def calculate_segments(self, stride):
+    def calculate_segments(self, frame_indices, stride=1) -> FramesSegments:
         """
         Description:
-            Calculate frames segments from tracked data.
+            Calculate frames segments from given ``frames_indices'' and ``stride`` value.
 
+        :param frame_indices: frame indices
         :param stride: frames stride
+
+        :return: frame segments
         """
-        self.segments = self.data.calculate_segments(stride)
+        segments_bins = np.hstack((frame_indices.values.reshape(-1, 1), frame_indices.values.reshape(-1, 1) + stride))
+
+        for index in range(segments_bins.shape[0] - 1):
+            if segments_bins[index, 1] == segments_bins[index + 1, 0]:
+                segments_bins[index + 1, 0] = segments_bins[index, 0]
+                segments_bins[index] = -1
+
+        mask = segments_bins[:, 0] != -1
+        segments = segments_bins[mask]
+        segments[:, 1] += 1
+
+        return FramesSegments(segments)
 
 
     def calculate_whole_person_segments(self, stride) -> FramesSegments:

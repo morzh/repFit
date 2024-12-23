@@ -86,7 +86,7 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
 
     video_input_parameters = parameters['video_input']
     tracking_parameters = parameters['tracking']
-    filtering_parameters = parameters['filtering']
+    filtering_parameters = parameters['persons_data_filtering']
     visualization_parameters = parameters['visualization']
     video_segments_writer_parameters = parameters['video_segments_writer']
 
@@ -159,7 +159,12 @@ def filter_multiple_persons_tracks(tracks: MultiplePersonsTracks, **parameters) 
     whole_person_filter_addon = WholePersonFilterAddon(**parameters['whole_person'])
     tracks.apply_filter(whole_person_filter_addon)
 
+
     return tracks
+
+
+def filter_full_body_segments():
+    ...
 
 
 def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> MultiplePersonsTracks:
@@ -216,7 +221,6 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
     output_video_suffix = parameters.get('video_suffix', 'single_person')
     segment_duration_threshold = parameters.get('whole_person_duration_threshold', 1)
     segments_gap_threshold = parameters.get('whole_person_gap_duration', 3)
-
     # input_video_bounding_box = BoundingBox2D(0, 0, tracks.video_properties.width - 1, tracks.video_properties.height - 1)
 
     for person_id, person_track in tracks.persons.items():

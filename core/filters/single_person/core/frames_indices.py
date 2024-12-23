@@ -4,7 +4,7 @@ import warnings
 from pyqtgraph.examples.MultiDataPlot import values
 
 
-class FramesIndicesSequence:
+class FramesIndices:
     """
     Description:
         Class storage for strictly increasing sequence of numbers.

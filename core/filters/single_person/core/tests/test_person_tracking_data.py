@@ -1,10 +1,10 @@
 import unittest
 import numpy as np
 
-from core.filters.single_person.core.frames_indices_sequence import FramesIndicesSequence
+from core.filters.single_person.core.frames_indices import FramesIndices
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
-from core.filters.single_person.core.person_tracking_data import PersonTrackingData
+from core.filters.single_person.core.person_tracked_data import PersonTrackedData
 
 
 class TestPersonTrackingData(unittest.TestCase):
@@ -83,7 +83,7 @@ class TestPersonTrackingData(unittest.TestCase):
             frames = np.linspace(frame_1, frame_2, number_steps + 1).astype(int)
             confidences = np.random.rand(number_steps)
 
-            tracking_data = PersonTrackingData()
+            tracking_data = PersonTrackedData()
             tracking_data.append(bounding_boxes_interpolated[0], int(frames[0]), float(confidences[0]))
             tracking_data.append(bounding_boxes_interpolated[-1], int(frames[-1]), float(confidences[-1]))
 
@@ -104,7 +104,7 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     @staticmethod
-    def generate_tracking_data() -> PersonTrackingData:
+    def generate_tracking_data() -> PersonTrackedData:
         number_occurrences = 5_000
 
         top_lefts = np.random.randint(-500, 500, (number_occurrences, 2))
@@ -116,9 +116,9 @@ class TestPersonTrackingData(unittest.TestCase):
         indices  = np.cumsum(indices)
 
         bounding_boxes_2d_array = BoundingBoxes2DArray(bounding_boxes)
-        frames_indices = FramesIndicesSequence(indices)
+        frames_indices = FramesIndices(indices)
 
-        tracking_data = PersonTrackingData()
+        tracking_data = PersonTrackedData()
         tracking_data._bounding_boxes = bounding_boxes_2d_array
         tracking_data._frames_indices = frames_indices
         tracking_data._confidences = confidences
@@ -137,8 +137,8 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     @staticmethod
-    def generate_tracking_data_with_known_segments(segments: FramesSegments, stride=1) -> PersonTrackingData:
-        tracking_data = PersonTrackingData()
+    def generate_tracking_data_with_known_segments(segments: FramesSegments, stride=1) -> PersonTrackedData:
+        tracking_data = PersonTrackedData()
         for segment in segments:
             current_number_indices = int((segment[1] - segment[0] - 1 ) / stride)
             current_segment_indices = np.linspace(segment[0], segment[1] - 1, current_number_indices + 1, endpoint=True)
