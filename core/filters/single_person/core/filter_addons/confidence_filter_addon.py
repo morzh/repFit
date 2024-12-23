@@ -12,10 +12,10 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
         self.confidence_threshold = confidence_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
         keys_to_delete = [int]
         for person_key, person in tracks.persons.items():
-            current_data = person.data
+            current_data = person.tracked_data
             number_samples = len(current_data)
             for sample_index in reversed(range(number_samples)):
                 if current_data.confidences[sample_index] < self.confidence_threshold:
@@ -24,7 +24,7 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
             if len(current_data) == 0:
                 keys_to_delete.append(person_key)
             else:
-                person.segments = person.calculate_segments(person.data.frames_indices, tracks.frames_stride)
+                person.segments = person.calculate_segments(person.tracked_data.frames_indices, tracks.frames_stride)
 
 
         for key in keys_to_delete:

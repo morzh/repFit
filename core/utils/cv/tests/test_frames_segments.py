@@ -231,7 +231,20 @@ class TestFramesSegments(unittest.TestCase):
 
     def test_clip(self):
         for _ in range(self.number_checks):
-            ...
+            number_segments = np.random.randint(1, 1_500)
+            current_segments = FramesSegments(self.generate_consistent_segments(number_segments, low_value=1, high_value=10))
+
+            current_minimum = current_segments.values[0, 0]
+            current_maximum = current_segments.values[-1, -1]
+            current_range = current_maximum - current_minimum
+
+            current_minimum += np.random.randint(0, current_range)
+            current_maximum -= np.random.randint(0, current_maximum - current_minimum)
+
+            current_segments_clipped = current_segments.clip(current_minimum, current_maximum)
+
+            self.assertTrue(np.all(current_segments_clipped.values[:, 0] >= current_minimum))
+            self.assertTrue(np.all(current_segments_clipped.values[:, 1] <= current_maximum))
 
 
     @staticmethod

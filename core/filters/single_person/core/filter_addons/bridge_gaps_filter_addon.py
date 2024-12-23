@@ -14,7 +14,7 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
         self.gap_threshold = gap_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person) -> None:
         """
         Description:
             Fill the gap between neighbouring segments within the given threshold.

@@ -157,12 +157,13 @@ class FramesSegments:
 
         :return: clipped frames segments
         """
-        minimum_mask = np.argwhere(self.values >= minimum)
-        maximum_mask = np.argwhere(self.values <= maximum)
-        clip_2d_mask = np.logical_and(minimum_mask, maximum_mask)
+        highpass_mask = self.values >= minimum
+        lowpass_mask = self.values <= maximum
+        clip_2d_mask = np.logical_and(highpass_mask, lowpass_mask)
         clip_mask = np.logical_or(clip_2d_mask[:, 0], clip_2d_mask[:, 1])
-        clipped_values = self.values[clip_mask]
-        return FramesSegments(clipped_values)
+        masked_segments = self.values[clip_mask]
+        clipped_segments = np.clip(masked_segments, minimum, maximum)
+        return FramesSegments(clipped_segments)
 
 
     def write(self, filepath: str) -> None:

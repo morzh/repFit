@@ -12,12 +12,12 @@ class SinglePersonTrack:
     Description:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
-    :ivar data: data, obtained from person's tracker
+    :ivar tracked_data: data, obtained from person's tracker
     :ivar segments: video frame segments
     :ivar whole_person_frame_indices: whole person video frame indices
     """
     def __init__(self):
-        self.data = PersonTrackedData()
+        self.tracked_data = PersonTrackedData()
         self.segments = FramesSegments()
         self.full_body_segments = FramesSegments()
         self.whole_person_frame_indices: np.ndarray = np.empty(0)
@@ -37,7 +37,7 @@ class SinglePersonTrack:
         :param confidence: tracked bounding box confidence
         :param keypoints: tracked keypoints
         """
-        self.data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, keypoints=keypoints)
+        self.tracked_data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, keypoints=keypoints)
 
 
     def calculate_segments(self, frame_indices, stride=1) -> FramesSegments:
@@ -120,7 +120,7 @@ class SinglePersonTrack:
 
         :return: mean area of all person's bounding boxes.
         """
-        return self.data.bounding_boxes.mean_area()
+        return self.tracked_data.bounding_boxes.mean_area()
 
 
     def mean_height(self) -> float:
@@ -128,7 +128,7 @@ class SinglePersonTrack:
         Description:
             Calculates mean height of all person's bounding boxes.
         """
-        return self.data.bounding_boxes.mean_height()
+        return self.tracked_data.bounding_boxes.mean_height()
 
 
     def mean_area_per_segment(self) -> np.ndarray:
@@ -143,7 +143,7 @@ class SinglePersonTrack:
         indices_array = self.segments.frames_indices()
         mean_areas = np.empty(len(indices_array))
         for index, indices in enumerate(indices_array):
-            mean_areas[index] = self.data.bounding_boxes.mean_area(indices)
+            mean_areas[index] = self.tracked_data.bounding_boxes.mean_area(indices)
 
         return mean_areas
 
@@ -159,10 +159,10 @@ class SinglePersonTrack:
         """
         boxes = BoundingBoxes2DArray()
         for segment in segments:
-            current_upper_bound_indices = np.argwhere(self.data.frames_indices < segment[1]).flatten()
-            current_lower_bound_indices = np.argwhere(segment[0] <= self.data.frames_indices).flatten()
+            current_upper_bound_indices = np.argwhere(self.tracked_data.frames_indices < segment[1]).flatten()
+            current_lower_bound_indices = np.argwhere(segment[0] <= self.tracked_data.frames_indices).flatten()
             current_indices = np.intersect1d(current_upper_bound_indices, current_lower_bound_indices)
-            bounding_box = self.data.bounding_boxes.circumscribe(current_indices)
+            bounding_box = self.tracked_data.bounding_boxes.circumscribe(current_indices)
             bounding_box = bounding_box.astype(np.int32)
             boxes.append(bounding_box)
         return boxes
@@ -179,7 +179,7 @@ class SinglePersonTrack:
         :returns: True is track concise with video, False otherwise.
         """
         is_single_segment_equals_video_range = len(self.segments) == 1 and self.segments[0, 0] == 0 and self.segments[0, -1] == (frames_number - 1)
-        bounding_box = self.data.bounding_boxes.circumscribe()
+        bounding_box = self.tracked_data.bounding_boxes.circumscribe()
         is_single_bounding_box_matches_video_resolution = bounding_box[2:] == video_properties.resolution
         return is_single_segment_equals_video_range and is_single_bounding_box_matches_video_resolution
 
@@ -188,7 +188,7 @@ class SinglePersonTrack:
         """
 
         """
-        if not len(self.data.bounding_boxes) and not self.data.keypoints.shape[0] and not self.data.confidences.shape[0]:
+        if not len(self.tracked_data.bounding_boxes) and not self.tracked_data.keypoints.shape[0] and not self.tracked_data.confidences.shape[0]:
             return True
         return False
 

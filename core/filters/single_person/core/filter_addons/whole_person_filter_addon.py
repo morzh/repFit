@@ -4,7 +4,7 @@ from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_ba
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 
 
-class WholePersonFilterAddon(MultiPersonsFilterAddonBase):
+class FullBodyPersonFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Filter frames at which there are at least given amount of  confident joints.
@@ -17,15 +17,17 @@ class WholePersonFilterAddon(MultiPersonsFilterAddonBase):
         self.joints_number_threshold = parameters.get('joints_number_threshold', 16)
 
 
-    def process(self, tracks: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
         """
         Description:
             Select frame with keypoints if number of confident within threshold joints is greater than the given joints number.
 
         :param tracks: person's track
+        :param filter_full_body_person: if True apply filter to full body person segments. If False apply filter to persons.
+
         """
         for person_id, person in tracks.persons.items():
-            current_keypoints = person.data.keypoints
+            current_keypoints = person.tracked_data.keypoints
             current_keypoints_confidences = current_keypoints[:, :, 2]
 
             current_keypoints_confidence_threshold = current_keypoints_confidences > self.joints_confidence_threshold
@@ -35,7 +37,11 @@ class WholePersonFilterAddon(MultiPersonsFilterAddonBase):
             current_joints_number_above_confidence_thresholds = np.sum(current_keypoints_above_confidence_thresholds, axis=1)
             current_confident_joints_number_mask = current_joints_number_above_confidence_thresholds > self.joints_number_threshold
 
-            person.whole_person_frame_indices = person.data.frames_indices[current_confident_joints_number_mask]
+            person.whole_person_frame_indices = person.tracked_data.frames_indices[current_confident_joints_number_mask]
 
-            current_full_body_indices = person.data.frames_indices[current_confident_joints_number_mask]
-            person.full_body_segments = person.calculate_segments(current_full_body_indices, tracks.frames_stride)
+            current_full_body_indices = person.tracked_data.frames_indices[current_confident_joints_number_mask]
+            if filter_full_body_person:
+                person.full_body_person_data.frames_indices = current_full_body_indices
+            else:
+                person.person_data.frames_indices = current_full_body_indices
+            # person.full_body_segments = person.calculate_segments(current_full_body_indices, tracks.frames_stride)

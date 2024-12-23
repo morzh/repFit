@@ -14,10 +14,11 @@ class MultiPersonsFilterAddonBase(ABC):
     """
 
     @abstractmethod
-    def process(self, tracks: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
         """
         Description:
             Abstract method for filtering ``tracks`` using visitor pattern.
             
         :param tracks: tracks to filter.
+        :param filter_full_body_person: if True apply filter to full body person segments. If False apply filter to persons.
         """

@@ -13,23 +13,19 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
         self.area_threshold = area_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
         """
         Description:
             Filter out each person's track, whose mean bounding box area less than the given threshold.
             Mean area is given in pixels.
 
         :param tracks: person's tracks.
+        :param filter_full_body_person: filter full body person.
         """
-        keys_to_delete = []
         for person_id, person in tracks.persons.items():
-            current_mean_area = person.mean_area()
-            if current_mean_area < self.area_threshold:
-                keys_to_delete.append(person_id)
-
-            # person.information.filters_applied.append('absolute_area')
-            # person.information.track_status = SinglePersonStatus.FILTERED
-
-
-        for key in keys_to_delete:
-            tracks.persons.pop(key, None)
+            if person.mean_area() >= self.area_threshold:
+                current_frames_indices = person.tracked_data.frames_indices
+                if filter_full_body_person:
+                    person.full_body_person_data.frames_indices = current_frames_indices
+                else:
+                    person.person_data.frames_indices = current_frames_indices

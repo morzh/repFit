@@ -14,7 +14,7 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
         self.duration_threshold = duration
 
 
-    def process(self, tracks: MultiplePersonsTracks) -> None:
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person) -> None:
         """
         Description:
             Filter every frame segment of person track in ``tracks`` by time using threshold in seconds.
