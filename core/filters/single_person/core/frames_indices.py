@@ -52,7 +52,7 @@ class FramesIndices:
         elif self._values.size > 0 and element > self._values[-1]:
             self._values = np.append(self._values, element)
         else:
-            raise warnings.warn(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
+            raise ValueError(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
 
 
     @staticmethod

@@ -9,7 +9,7 @@ import time
 
 from core.filters.single_person.core.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
 from core.filters.single_person.core.filter_addons.partial_person_filter_addon import PartialPersonFilterAddon
-from core.filters.single_person.core.filter_addons.whole_person_filter_addon import FullBodyPersonFilterAddon
+from core.filters.single_person.core.filter_addons.full_body_person_filter_addon import FullBodyPersonFilterAddon
 from core.filters.single_person.core.filter_addons.absolute_area_filter_addon import AbsoluteAreaFilterAddon
 from core.filters.single_person.core.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
 from core.filters.single_person.core.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
@@ -19,6 +19,7 @@ from core.filters.single_person.core.multiple_persons_tracks import MultiplePers
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
 from core.utils.io.files_operations import check_filename_entry_in_folder, extract_name_extension_from_filepath
 from core.utils.cv.video_tools import video_resolution_check,  VideoWriter
@@ -234,6 +235,10 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
     return tracks
 
 
+def intersections_over_unions(current_full_body_person_boxes: BoundingBoxes2DArray, current_other_persons_boxes: list[BoundingBoxes2DArray]) -> np.ndarray:
+    ...
+
+
 def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, tracks: MultiplePersonsTracks, **parameters) -> None:
     """
     Description:
@@ -243,10 +248,10 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
     :param target_folder: target folder to write videos to
     :param tracks: multiple persons tracks
 
-    :key key1: asdasdas
+    :key input_video_bounding_box: output video suffix
     """
     output_video_suffix = parameters.get('video_suffix', 'single_person')
-    # input_video_bounding_box = BoundingBox2D(0, 0, tracks.video_properties.width - 1, tracks.video_properties.height - 1)
+    input_video_bounding_box = BoundingBox2D(0, 0, tracks.video_properties.width - 1, tracks.video_properties.height - 1)
 
     for person_id, person_track in tracks.persons.items():
         if not person_track.full_body_data.frames_indices.size:
@@ -254,14 +259,14 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
 
         current_full_body_person_segments = person_track.full_body_data.frames_segments
         current_full_body_person_boxes = person_track.bounding_boxes_per_segment(current_full_body_person_segments)
-        current_other_persons_segments = tracks.segments_intersection(current_full_body_person_segments, person_id)
-        current_other_persons_boxes = tracks.bounding_boxes_per_track(current_other_persons_segments, person_id)
+        current_other_persons_segments = tracks.persons_segments_intersection(current_full_body_person_segments, person_id)
+        current_other_persons_boxes = tracks.persons_bounding_boxes(current_other_persons_segments, person_id)
 
-        current_area_ratios = area_ratios(current_full_body_person_boxes, current_other_persons_boxes)
-        if np.max(current_area_ratios) > 0.3:
+        current_iou = intersections_over_unions(current_full_body_person_boxes, current_other_persons_boxes)
+        if np.max(current_iou) > 0.3:
             continue
 
-        current_full_body_person_boxes = enlarge_bounding_boxes(current_full_body_person_boxes, current_other_persons_boxes)
+        current_full_body_person_boxes = MultiplePersonsTracks.enlarge_bounding_boxes(current_full_body_person_boxes, current_other_persons_boxes, input_video_bounding_box)
 
         video_filename_base, video_filename_extension = extract_name_extension_from_filepath(tracks.video_properties.filepath)
         current_output_video_file_basename = f'{video_filename_base}__{output_video_suffix}-id{person_id}'

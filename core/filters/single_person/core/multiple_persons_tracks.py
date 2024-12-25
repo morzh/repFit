@@ -68,14 +68,6 @@ class MultiplePersonsTracks:
         filter_visitor.process(self, filter_full_body_person=apply_to_full_body)
 
 
-    def per_person_segments(self, minimum_frame_index: int, maximum_frame_index: int) -> dict[int, FramesSegments]:
-        ...
-
-
-    def per_person_bounding_boxes(self, minimum_frame_index: int, maximum_frame_index: int) -> dict[int, BoundingBoxes2DArray]:
-        ...
-
-
     def serialize(self, filepath: os.PathLike | str) -> None:
         """
         Description:
@@ -85,6 +77,14 @@ class MultiplePersonsTracks:
         """
         with open(filepath, mode='wb') as file:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
+
+
+    def persons_segments_intersection(self, current_full_body_person_segments, person_id):
+        pass
+
+
+    def persons_bounding_boxes(self, current_other_persons_segments, person_id):
+        pass
 
 
     def visualize(self, **options) -> None:
@@ -133,4 +133,9 @@ class MultiplePersonsTracks:
             cv2.waitKey(show_frame_delay)
 
         cv2.destroyAllWindows()
+
+
+    @staticmethod
+    def enlarge_bounding_boxes(boxes_to_enlarge, obstacles_boxes, borderline_bounding_box) -> BoundingBoxes2DArray:
+        return BoundingBoxes2DArray()
 

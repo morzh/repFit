@@ -83,6 +83,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
             incorrect_sequence[0] = correct_sequence[-1]
         return incorrect_sequence
 
+
     @staticmethod
     def correct_sequence(low, high) -> np.ndarray:
         sequence_length = np.random.randint(low, high)

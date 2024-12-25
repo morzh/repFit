@@ -18,9 +18,6 @@ class SinglePersonTrack:
     """
     def __init__(self):
         self.tracked_data = PersonTrackedData()
-        # self.segments = FramesSegments()
-        # self.full_body_segments = FramesSegments()
-        # self.whole_person_frame_indices: np.ndarray = np.empty(0)
         self.data = PersonData()
         self.full_body_data = PersonData()
 
@@ -38,14 +35,17 @@ class SinglePersonTrack:
         self.tracked_data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, keypoints=keypoints)
 
 
-    def calculate_whole_person_segments(self, stride) -> FramesSegments:
+    def calculate_full_body_person_segments(self, stride) -> FramesSegments:
         """
         Description:
             Calculate frames segments from tracked data and whole person index frames.
 
+        :param stride: input video frames stride
+
         :return: whole person frame segments
         """
-        segments_bins = np.hstack((self.whole_person_frame_indices.reshape(-1, 1), self.whole_person_frame_indices.reshape(-1, 1) + stride))
+        frames_indices = self.full_body_data.frames_indices.values
+        segments_bins = np.hstack((frames_indices.reshape(-1, 1), frames_indices.reshape(-1, 1) + stride))
 
         for index in range(segments_bins.shape[0] - 1):
             if segments_bins[index, 1] == segments_bins[index + 1, 0]:
@@ -59,32 +59,32 @@ class SinglePersonTrack:
         return FramesSegments(segments)
 
 
-    def filter_by_duration(self, fps: float, time_threshold: float = 5) -> None:
-        """
-        Description:
-            Filter person's video segments by duration
+    # def filter_by_duration(self, fps: float, time_threshold: float = 5) -> None:
+    #     """
+    #     Description:
+    #         Filter person's video segments by duration
+    #
+    #     :param fps: input video frames per second
+    #     :param time_threshold: time threshold in seconds, if segment's  duration is less the threshold it will be deleted
+    #     """
+    #     if self.segments.size == 0: return
+    #
+    #     frames_threshold = round(fps * time_threshold)
+    #     self.segments.filter_by_length(frames_threshold)
 
-        :param fps: input video frames per second
-        :param time_threshold: time threshold in seconds, if segment's  duration is less the threshold it will be deleted
-        """
-        if self.segments.size == 0: return
 
-        frames_threshold = round(fps * time_threshold)
-        self.segments.filter_by_length(frames_threshold)
-
-
-    def bridge_gaps(self, fps: float, time_threshold: float = 5) -> None:
-        """
-        Description:
-            If there is a gap between two adjacent frame segments, just fill it out.
-            Two given segments [t1, t2] [t3, t4] will be combined in to one [t1, t4] segment if a gap [t2, t3] less than a threshold.
-
-        :param fps: input video frames per second
-        :param time_threshold: time threshold of the gap in seconds
-        """
-        if len(self.segments) <= 1: return
-        frames_gap_threshold = round(fps * time_threshold)
-        self.segments.bridge_gaps(frames_gap_threshold)
+    # def bridge_gaps(self, fps: float, time_threshold: float = 5) -> None:
+    #     """
+    #     Description:
+    #         If there is a gap between two adjacent frame segments, just fill it out.
+    #         Two given segments [t1, t2] [t3, t4] will be combined in to one [t1, t4] segment if a gap [t2, t3] less than a threshold.
+    #
+    #     :param fps: input video frames per second
+    #     :param time_threshold: time threshold of the gap in seconds
+    #     """
+    #     if len(self.segments) <= 1: return
+    #     frames_gap_threshold = round(fps * time_threshold)
+    #     self.segments.bridge_gaps(frames_gap_threshold)
 
 
     def mean_area(self) -> float:
@@ -101,25 +101,27 @@ class SinglePersonTrack:
         """
         Description:
             Calculates mean height of all person's bounding boxes.
+
+        :return: mean heights
         """
         return self.tracked_data.bounding_boxes.mean_height()
 
 
-    def mean_area_per_segment(self) -> np.ndarray:
-        """
-        Description:
-            Calculates mean of bounding boxes areas of a person per frame segment.
-
-        :return: mean bounding boxes area per fame segment
-        """
-        if self.segments.size == 0: return np.array([])
-
-        indices_array = self.segments.frames_indices()
-        mean_areas = np.empty(len(indices_array))
-        for index, indices in enumerate(indices_array):
-            mean_areas[index] = self.tracked_data.bounding_boxes.mean_area(indices)
-
-        return mean_areas
+    # def mean_area_per_segment(self) -> np.ndarray:
+    #     """
+    #     Description:
+    #         Calculates mean of bounding boxes areas of a person per frame segment.
+    #
+    #     :return: mean bounding boxes area per fame segment
+    #     """
+    #     if self.segments.size == 0: return np.array([])
+    #
+    #     indices_array = self.segments.frames_indices()
+    #     mean_areas = np.empty(len(indices_array))
+    #     for index, indices in enumerate(indices_array):
+    #         mean_areas[index] = self.tracked_data.bounding_boxes.mean_area(indices)
+    #
+    #     return mean_areas
 
 
     def bounding_boxes_per_segment(self, segments: FramesSegments) -> BoundingBoxes2DArray:
@@ -152,7 +154,8 @@ class SinglePersonTrack:
 
         :returns: True is track concise with video, False otherwise.
         """
-        is_single_segment_equals_video_range = len(self.segments) == 1 and self.segments[0, 0] == 0 and self.segments[0, -1] == (frames_number - 1)
+        segments = self.full_body_data.frames_segments
+        is_single_segment_equals_video_range = len(segments) == 1 and segments[0, 0] == 0 and segments[0, -1] == (frames_number - 1)
         bounding_box = self.tracked_data.bounding_boxes.circumscribe()
         is_single_bounding_box_matches_video_resolution = bounding_box[2:] == video_properties.resolution
         return is_single_segment_equals_video_range and is_single_bounding_box_matches_video_resolution
