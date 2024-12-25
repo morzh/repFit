@@ -1,3 +1,6 @@
+import numpy as np
+from ordered_set import OrderedSet
+
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 
@@ -5,27 +8,26 @@ from core.filters.single_person.core.multiple_persons_tracks import MultiplePers
 class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
+        Filter out person's frames, whose (bounding box) confidence less than given threshold.
 
+
+    :ivar confidence_threshold: confidence threshold
     """
-
     def __init__(self, confidence_threshold=0.25):
         self.confidence_threshold = confidence_threshold
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
-        keys_to_delete = [int]
-        for person_key, person in tracks.persons.items():
-            current_data = person.tracked_data
-            number_samples = len(current_data)
-            for sample_index in reversed(range(number_samples)):
-                if current_data.confidences[sample_index] < self.confidence_threshold:
-                    del current_data[sample_index]
-
-            if len(current_data) == 0:
-                keys_to_delete.append(person_key)
+        for person_id, person in tracks.persons.items():
+            # confidence_mask = person.tracked_data.confidences < self.confidence_threshold
+            current_frames_indices_set = OrderedSet(person.tracked_data.frames_indices.tolist())
+            if filter_full_body_person:
+                person_full_body_frames_keys = current_frames_indices_set.index(person.full_body_data.frames_indices)
+                full_body_persons_confidences = person.full_body_data.frames_indices[person_full_body_frames_keys]
+                confidences_mask = full_body_persons_confidences < self.confidence_threshold
+                person.full_body_data.frames_indices = person.tracked_data.frames_indices[confidences_mask]
             else:
-                person.segments = person.calculate_segments(person.tracked_data.frames_indices, tracks.frames_stride)
-
-
-        for key in keys_to_delete:
-            tracks.persons.pop(key, None)
+                person_frames_keys = current_frames_indices_set.index(person.data.frames_indices)
+                persons_confidences = person.full_body_data.frames_indices[person_frames_keys]
+                confidences_mask = persons_confidences < self.confidence_threshold
+                person.data.frames_indices = person.tracked_data.frames_indices[confidences_mask]

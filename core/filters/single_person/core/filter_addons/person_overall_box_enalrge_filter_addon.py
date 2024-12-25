@@ -11,7 +11,5 @@ class PersonOverallBoxEnlarge(MultiPersonsFilterAddonBase, ABC):
     # def __init__(self):
     #     ...
 
-    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person) -> None:
-        """
-        Description:
-        """
+    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+        ...

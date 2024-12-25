@@ -36,6 +36,10 @@ class FramesIndices:
         return self._values.shape[0]
 
 
+    def __copy__(self):
+        return FramesIndices(np.copy(self._values))
+
+
     def append(self, element: int) -> None:
         """
         Description:

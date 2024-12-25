@@ -1,3 +1,4 @@
+import copy
 import shutil
 
 import numpy as np
@@ -121,68 +122,6 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
         tracks.visualize(**visualization_parameters)
 
 
-def filter_persons_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
-    """
-    Description:
-        Filter persons data in multiple persons track by predefined set of filters.
-
-    :param tracks: persons tracks
-
-    :keyword confidence:
-    :keyword absolute_area:
-    :keyword area_ratio:
-    :keyword partial_person:
-    :keyword segments_duration:
-    :keyword bridging_gaps:
-
-    :return: tracks with filtered persons data
-    """
-    partial_person_filter_addon = PartialPersonFilterAddon(**parameters['partial_person'])
-    tracks.apply_filter(partial_person_filter_addon)
-
-    if parameters['confidence']['apply']:
-        confidence_filter_addon = ConfidenceFilterAddon(parameters['confidence']['confidence_threshold'])
-        tracks.apply_filter(confidence_filter_addon, apply_to_full_body=False)
-
-    if parameters['absolute_area']['apply']:
-        area_filter_addon = AbsoluteAreaFilterAddon(parameters['absolute_area']['area_threshold'])
-        tracks.apply_filter(area_filter_addon, apply_to_full_body=False)
-
-    if parameters['area_ratio']['apply']:
-        area_ratio_filter_addon = AreaRatioFilterAddon(parameters['area_ratio']['ratio_threshold'])
-        tracks.apply_filter(area_ratio_filter_addon, apply_to_full_body=False)
-
-    if parameters['bridging_gaps']['apply']:
-        bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
-        tracks.apply_filter(bridge_gaps_filter_addon, apply_to_full_body=False)
-
-    if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
-        tracks.apply_filter(duration_filter_addon, apply_to_full_body=False)
-
-    return tracks
-
-
-def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
-    """
-    Description:
-        Filter full body persons data in multiple persons track by predefined set of filters.
-
-    :return: tracks with filtered full body persons data.
-    """
-    whole_person_filter_addon = FullBodyPersonFilterAddon(**parameters['full_body'])
-    tracks.apply_filter(whole_person_filter_addon)
-
-    if parameters['bridging_gaps']['apply']:
-        bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
-        tracks.apply_filter(bridge_gaps_filter_addon, apply_to_full_body=True)
-
-    if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
-        tracks.apply_filter(duration_filter_addon, apply_to_full_body=True)
-
-    return tracks
-
 def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> MultiplePersonsTracks:
     """
      Description:
@@ -223,6 +162,78 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     return tracks
 
 
+def filter_persons_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
+    """
+    Description:
+        Filter persons data in multiple persons track by predefined set of filters.
+
+    :param tracks: persons tracks
+
+    :keyword confidence:
+    :keyword absolute_area:
+    :keyword area_ratio:
+    :keyword partial_person:
+    :keyword segments_duration:
+    :keyword bridging_gaps:
+
+    :return: tracks with filtered persons data
+    """
+
+    for person in tracks.persons.values():
+        person.data.frames_indices = copy.copy(person.tracked_data.frames_indices)
+
+    if parameters['partial_person']['apply']:
+        partial_person_filter_addon = PartialPersonFilterAddon(**parameters['partial_person'])
+        tracks.apply_filter(partial_person_filter_addon)
+
+    if parameters['confidence']['apply']:
+        confidence_filter_addon = ConfidenceFilterAddon(parameters['confidence']['confidence_threshold'])
+        tracks.apply_filter(confidence_filter_addon, apply_to_full_body=False)
+
+    if parameters['absolute_area']['apply']:
+        area_filter_addon = AbsoluteAreaFilterAddon(parameters['absolute_area']['area_threshold'])
+        tracks.apply_filter(area_filter_addon, apply_to_full_body=False)
+
+    if parameters['area_ratio']['apply']:
+        area_ratio_filter_addon = AreaRatioFilterAddon(parameters['area_ratio']['ratio_threshold'])
+        tracks.apply_filter(area_ratio_filter_addon, apply_to_full_body=False)
+
+    if parameters['bridging_gaps']['apply']:
+        bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
+        tracks.apply_filter(bridge_gaps_filter_addon, apply_to_full_body=False)
+
+    if parameters['segments_duration']['apply']:
+        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
+        tracks.apply_filter(duration_filter_addon, apply_to_full_body=False)
+
+    return tracks
+
+
+def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
+    """
+    Description:
+        Filter full body persons data in multiple persons track by predefined set of filters.
+
+    :return: tracks with filtered full body persons data.
+    """
+    for person in tracks.persons.values():
+        person.full_body_data.frames_indices = copy.copy(person.tracked_data.frames_indices)
+
+    if parameters['full_body']['apply']:
+        whole_person_filter_addon = FullBodyPersonFilterAddon(**parameters['full_body'])
+        tracks.apply_filter(whole_person_filter_addon)
+
+    if parameters['bridging_gaps']['apply']:
+        bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
+        tracks.apply_filter(bridge_gaps_filter_addon, apply_to_full_body=True)
+
+    if parameters['segments_duration']['apply']:
+        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
+        tracks.apply_filter(duration_filter_addon, apply_to_full_body=True)
+
+    return tracks
+
+
 def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, tracks: MultiplePersonsTracks, **parameters) -> None:
     """
     Description:
@@ -241,6 +252,7 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
 
     for person_id, person_track in tracks.persons.items():
         # current_other_persons_ids = [p_id for p_id in tracks.persons.keys() if p_id != person_id]
+        '''
         current_whole_person_segments = person_track.calculate_whole_person_segments(tracks.frames_stride)
 
         current_gap_length_threshold = round(segments_gap_threshold * tracks.video_properties.fps)
@@ -248,7 +260,9 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
 
         current_segment_length_threshold = round(segment_duration_threshold * tracks.video_properties.fps)
         current_whole_person_segments.filter_by_length(current_segment_length_threshold)
+        '''
 
+        current_whole_person_segments = person_track.full_body_data.frames_segments
         if not current_whole_person_segments.size:
             continue
 

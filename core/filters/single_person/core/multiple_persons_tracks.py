@@ -108,7 +108,7 @@ class MultiplePersonsTracks:
 
         for frame in video_reader:
             for person_id, person_track in self.persons.items():
-                person_track.segments = person_track.calculate_segments(person_track.tracked_data.frames_indices, self.frames_stride)
+                person_track.segments = person_track.data.calculate_segments(self.frames_stride)
                 mean_boxes_area = self.persons[person_id].mean_height()
                 joints_radius = max(int(round(mean_boxes_area * 0.01)), 1)
                 bones_thickness = max(int(round(joints_radius / 2)), 1)
