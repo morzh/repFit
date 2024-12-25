@@ -246,27 +246,23 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
     :key key1: asdasdas
     """
     output_video_suffix = parameters.get('video_suffix', 'single_person')
-    segment_duration_threshold = parameters.get('whole_person_duration_threshold', 1)
-    segments_gap_threshold = parameters.get('whole_person_gap_duration', 3)
     # input_video_bounding_box = BoundingBox2D(0, 0, tracks.video_properties.width - 1, tracks.video_properties.height - 1)
 
     for person_id, person_track in tracks.persons.items():
-        # current_other_persons_ids = [p_id for p_id in tracks.persons.keys() if p_id != person_id]
-        '''
-        current_whole_person_segments = person_track.calculate_whole_person_segments(tracks.frames_stride)
-
-        current_gap_length_threshold = round(segments_gap_threshold * tracks.video_properties.fps)
-        current_whole_person_segments.bridge_gaps(current_gap_length_threshold)
-
-        current_segment_length_threshold = round(segment_duration_threshold * tracks.video_properties.fps)
-        current_whole_person_segments.filter_by_length(current_segment_length_threshold)
-        '''
-
-        current_whole_person_segments = person_track.full_body_data.frames_segments
-        if not current_whole_person_segments.size:
+        if not person_track.full_body_data.frames_indices.size:
             continue
 
-        current_whole_person_boxes = person_track.bounding_boxes_per_segment(current_whole_person_segments)
+        current_full_body_person_segments = person_track.full_body_data.frames_segments
+        current_full_body_person_boxes = person_track.bounding_boxes_per_segment(current_full_body_person_segments)
+        current_other_persons_segments = tracks.segments_intersection(current_full_body_person_segments, person_id)
+        current_other_persons_boxes = tracks.bounding_boxes_per_track(current_other_persons_segments, person_id)
+
+        current_area_ratios = area_ratios(current_full_body_person_boxes, current_other_persons_boxes)
+        if np.max(current_area_ratios) > 0.3:
+            continue
+
+        current_full_body_person_boxes = enlarge_bounding_boxes(current_full_body_person_boxes, current_other_persons_boxes)
+
         video_filename_base, video_filename_extension = extract_name_extension_from_filepath(tracks.video_properties.filepath)
         current_output_video_file_basename = f'{video_filename_base}__{output_video_suffix}-id{person_id}'
 
@@ -276,4 +272,4 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
             continue
 
         video_writer = VideoWriter(source_filepath, target_folder, fps=tracks.video_properties.fps)
-        video_writer.write_segments_with_bounding_boxes(current_whole_person_segments, current_whole_person_boxes, current_output_video_file_basename)
+        video_writer.write_segments_with_bounding_boxes(current_full_body_person_segments, current_full_body_person_boxes, current_output_video_file_basename)
