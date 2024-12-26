@@ -214,6 +214,7 @@ class BoundingBoxes2DArray:
         else:
             raise NotImplementedError('Intersection modes other than ONE_TO_ALL is not implemented yet.')
 
+
     @staticmethod
     def clamp(boxes, clamp_box):
         """

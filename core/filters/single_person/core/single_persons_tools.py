@@ -1,10 +1,9 @@
 import copy
-import shutil
-
-import numpy as np
 from loguru import logger
+import numpy as np
 import os
 import pickle
+import shutil
 import time
 
 from core.filters.single_person.core.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
@@ -92,11 +91,9 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     full_body_persons_filtering_parameters = parameters['persons_full_body_data_filtering']
     visualization_parameters = parameters['visualization']
     video_segments_writer_parameters = parameters['video_segments_writer']
-
-    persons_data_filtering = persons_filtering_parameters.get('persons_data_filtering', False)
-    persons_full_body_data_filtering = persons_filtering_parameters.get('persons_full_body_data_filtering', False)
+    persons_data_filtering = persons_filtering_parameters['persons_data_filtering']
+    persons_full_body_data_filtering = persons_filtering_parameters['persons_full_body_data_filtering']
     do_visualization = visualization_parameters['do_visualization']
-    write_tracks_to_videos = video_segments_writer_parameters.get('write_persons_tracks', False)
 
     video_processing_start_time = time.time()
     minimum_resolution = video_input_parameters.get('minimal_resolution', 200)
@@ -112,7 +109,7 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     if persons_full_body_data_filtering['do_filtering']:
         filter_full_body_persons_data(tracks, **full_body_persons_filtering_parameters)
 
-    if write_tracks_to_videos:
+    if video_segments_writer_parameters.get('write_persons_tracks', False):
         write_multiple_persons_tracks(video_source_filepath, videos_target_folder, tracks, **parameters['video_segments_writer'])
 
     video_processing_end_time = time.time()
@@ -168,16 +165,16 @@ def filter_persons_data(tracks: MultiplePersonsTracks, **parameters) -> Multiple
     Description:
         Filter persons data in multiple persons track by predefined set of filters.
 
-    :param tracks: persons tracks
+    :param tracks: persons tracks.
 
-    :keyword confidence:
-    :keyword absolute_area:
-    :keyword area_ratio:
-    :keyword partial_person:
-    :keyword segments_duration:
-    :keyword bridging_gaps:
+    :keyword confidence: confidence filter parameters;
+    :keyword absolute_area: absolute area filter parameters;
+    :keyword area_ratio: ario ratio filter parameters;
+    :keyword partial_person: partial person filter parameters;
+    :keyword segments_duration: segments duration filter parameters;
+    :keyword bridging_gaps: bridging gap filter parameters.
 
-    :return: tracks with filtered persons data
+    :return: tracks with filtered persons data.
     """
 
     for person in tracks.persons.values():
@@ -215,6 +212,11 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
     Description:
         Filter full body persons data in multiple persons track by predefined set of filters.
 
+
+    :keyword full_body:
+    :keyword bridging_gaps:
+    :keyword segments_duration:
+
     :return: tracks with filtered full body persons data.
     """
     for person in tracks.persons.values():
@@ -233,10 +235,6 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
         tracks.apply_filter(duration_filter_addon, apply_to_full_body=True)
 
     return tracks
-
-
-def intersections_over_unions(current_full_body_person_boxes: BoundingBoxes2DArray, current_other_persons_boxes: list[BoundingBoxes2DArray]) -> np.ndarray:
-    ...
 
 
 def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, tracks: MultiplePersonsTracks, **parameters) -> None:
@@ -259,12 +257,13 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
 
         current_full_body_person_segments = person_track.full_body_data.frames_segments
         current_full_body_person_boxes = person_track.bounding_boxes_per_segment(current_full_body_person_segments)
-        current_other_persons_segments = tracks.persons_segments_intersection(current_full_body_person_segments, person_id)
+        current_other_persons_segments = tracks.clip_persons_segments(current_full_body_person_segments, person_id)
         current_other_persons_boxes = tracks.persons_bounding_boxes(current_other_persons_segments, person_id)
 
-        current_iou = intersections_over_unions(current_full_body_person_boxes, current_other_persons_boxes)
-        if np.max(current_iou) > 0.3:
-            continue
+        current_iou = MultiplePersonsTracks.intersections_over_unions(current_full_body_person_boxes, current_other_persons_boxes)
+        current_maximum_iou = np.array([np.maximum(area) for area in current_iou])
+        current_data_mask = current_maximum_iou > 0.3
+
 
         current_full_body_person_boxes = MultiplePersonsTracks.enlarge_bounding_boxes(current_full_body_person_boxes, current_other_persons_boxes, input_video_bounding_box)
 

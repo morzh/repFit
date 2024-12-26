@@ -15,8 +15,8 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
-        for person_id, person in tracks.persons.items():
+        for person_id, person_track in tracks.persons.items():
             if filter_full_body_person:
-                person.full_body_data.filter_by_duration(tracks.video_properties.fps, self.duration_threshold)
+                person_track.full_body_data.filter_by_duration(tracks.video_properties.fps, self.duration_threshold)
             else:
-                person.data.filter_by_duration(tracks.video_properties.fps, self.duration_threshold)
+                person_track.data.filter_by_duration(tracks.video_properties.fps, self.duration_threshold)

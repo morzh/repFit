@@ -7,7 +7,10 @@ from core.filters.single_person.core.frames_indices import FramesIndices
 
 class PersonData:
     """
+    Description:
 
+    :ivar frames_segments:
+    :ivar frames_indices:
     """
     def __init__(self):
         self.frames_segments = FramesSegments()
@@ -17,11 +20,9 @@ class PersonData:
     def calculate_segments(self, stride=1) -> None:
         """
         Description:
-            Calculate frames segments using ``stride`` value.
+            Calculate frames segments using  video  frames``stride`` value.
 
-        :param stride: frames stride
-
-        :return: frame segments
+        :param stride: video frames stride
         """
         segments_bins = np.hstack((self.frames_indices.values.reshape(-1, 1), self.frames_indices.values.reshape(-1, 1) + stride))
 
@@ -35,3 +36,12 @@ class PersonData:
         segments[:, 1] += 1
 
         self.frames_segments.values = segments
+
+
+    def clip_segments(self, segments: FramesSegments) -> FramesSegments:
+        clipped_segments = FramesSegments()
+        for segment in segments:
+            current_segments = self.frames_segments.clip(segment[0], segment[1])
+            clipped_segments.append(current_segments)
+
+        return clipped_segments

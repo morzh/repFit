@@ -19,14 +19,14 @@ class FullBodyPersonFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
-        for person_id, person in tracks.persons.items():
-            current_frames_indices_set = OrderedSet(person.tracked_data.frames_indices.tolist())
+        for person_id, person_track in tracks.persons.items():
+            current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.tolist())
             if filter_full_body_person:
-                keypoints_indices = current_frames_indices_set.index(person.full_body_data.frames_indices)
+                keypoints_indices = current_frames_indices_set.index(person_track.full_body_data.frames_indices)
             else:
-                keypoints_indices = current_frames_indices_set.index(person.data.frames_indices)
+                keypoints_indices = current_frames_indices_set.index(person_track.data.frames_indices)
 
-            current_keypoints = person.tracked_data.keypoints[keypoints_indices]
+            current_keypoints = person_track.tracked_data.keypoints[keypoints_indices]
             current_keypoints_confidences = current_keypoints[:, :, 2]
 
             current_keypoints_confidence_threshold = current_keypoints_confidences > self.joints_confidence_threshold
@@ -36,11 +36,11 @@ class FullBodyPersonFilterAddon(MultiPersonsFilterAddonBase):
             current_joints_number_above_confidence_thresholds = np.sum(current_keypoints_above_confidence_thresholds, axis=1)
             current_confident_joints_number_mask = current_joints_number_above_confidence_thresholds > self.joints_number_threshold
 
-            person.whole_person_frame_indices = person.tracked_data.frames_indices[current_confident_joints_number_mask]
+            person_track.whole_person_frame_indices = person_track.tracked_data.frames_indices[current_confident_joints_number_mask]
 
             if filter_full_body_person:
-                current_filtered_indices = person.full_body_data.frames_indices[current_confident_joints_number_mask]
-                person.full_body_data.frames_indices = current_filtered_indices
+                current_filtered_indices = person_track.full_body_data.frames_indices[current_confident_joints_number_mask]
+                person_track.full_body_data.frames_indices = current_filtered_indices
             else:
-                current_filtered_indices = person.data.frames_indices[current_confident_joints_number_mask]
-                person.data.frames_indices = current_filtered_indices
+                current_filtered_indices = person_track.data.frames_indices[current_confident_joints_number_mask]
+                person_track.data.frames_indices = current_filtered_indices

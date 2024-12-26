@@ -4,7 +4,7 @@ video_input:
 
 
 tracking:
-  use_saved_data: true
+  use_saved_data: false
   yolo_weights_path: '/home/anton/work/fitMate/repFit/core/filters/single_person/weights'
   yolo_model: 'yolo11x-pose.pt'
   frames_stride: 3
@@ -27,7 +27,7 @@ visualization:
 
 
 persons_data_filtering:
-  do_filtering: true
+  do_filtering: false
   confidence:
     apply: true
     confidence_threshold: 0.4 # confidence in [0, 1] interval
@@ -49,9 +49,8 @@ persons_data_filtering:
     joints_number_threshold: 5
 
 
-
 persons_full_body_data_filtering:
-  do_filtering: true
+  do_filtering: false
   full_body:
     apply: true
     joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
@@ -62,16 +61,10 @@ persons_full_body_data_filtering:
   segments_duration:
     apply: true
     duration_threshold: 0.75 # duration time in seconds
-  intersection_over_union:
-    apply: true
-    iou_threshold: 0.3
-  inpaint:
-    apply: true
-
 
 
 video_segments_writer:
-  write_persons_tracks: true
+  write_persons_tracks: false
   video_suffix: 'single_person'
   whole_person_duration_threshold: 3  # time in seconds
   whole_person_gap_duration: 4  # time in seconds

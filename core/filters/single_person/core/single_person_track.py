@@ -1,10 +1,11 @@
 import numpy as np
 
-from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.core.person_tracked_data import PersonTrackedData
+from core.filters.single_person.core.person_data import PersonData
+
+from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
-from person_data import PersonData
 
 
 class SinglePersonTrack:
@@ -34,7 +35,7 @@ class SinglePersonTrack:
         """
         self.tracked_data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, keypoints=keypoints)
 
-
+    '''
     def calculate_full_body_person_segments(self, stride) -> FramesSegments:
         """
         Description:
@@ -57,6 +58,7 @@ class SinglePersonTrack:
         segments[:, 1] += 1
 
         return FramesSegments(segments)
+    '''
 
 
     # def filter_by_duration(self, fps: float, time_threshold: float = 5) -> None:

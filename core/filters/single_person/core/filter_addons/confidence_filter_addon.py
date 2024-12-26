@@ -18,16 +18,15 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
-        for person_id, person in tracks.persons.items():
-            # confidence_mask = person.tracked_data.confidences < self.confidence_threshold
-            current_frames_indices_set = OrderedSet(person.tracked_data.frames_indices.tolist())
+        for person_id, person_track in tracks.persons.items():
+            current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.tolist())
             if filter_full_body_person:
-                person_full_body_frames_keys = current_frames_indices_set.index(person.full_body_data.frames_indices)
-                full_body_persons_confidences = person.full_body_data.frames_indices[person_full_body_frames_keys]
+                person_full_body_frames_keys = current_frames_indices_set.index(person_track.full_body_data.frames_indices)
+                full_body_persons_confidences = person_track.full_body_data.frames_indices[person_full_body_frames_keys]
                 confidences_mask = full_body_persons_confidences < self.confidence_threshold
-                person.full_body_data.frames_indices = person.tracked_data.frames_indices[confidences_mask]
+                person_track.full_body_data.frames_indices = person_track.tracked_data.frames_indices[confidences_mask]
             else:
-                person_frames_keys = current_frames_indices_set.index(person.data.frames_indices)
-                persons_confidences = person.full_body_data.frames_indices[person_frames_keys]
+                person_frames_keys = current_frames_indices_set.index(person_track.data.frames_indices)
+                persons_confidences = person_track.full_body_data.frames_indices[person_frames_keys]
                 confidences_mask = persons_confidences < self.confidence_threshold
-                person.data.frames_indices = person.tracked_data.frames_indices[confidences_mask]
+                person_track.data.frames_indices = person_track.tracked_data.frames_indices[confidences_mask]

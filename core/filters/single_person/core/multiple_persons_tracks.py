@@ -10,6 +10,7 @@ from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
 from core.utils.cv.video_reader import VideoReader
+from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 import core.utils.visualization.tracks_visualizing_utils as viz
 
@@ -79,12 +80,40 @@ class MultiplePersonsTracks:
             pickle.dump(self, file, pickle.HIGHEST_PROTOCOL)
 
 
-    def persons_segments_intersection(self, current_full_body_person_segments, person_id):
-        pass
+    def clip_persons_segments(self, person_segments: FramesSegments, active_person_id: int) -> dict[int, FramesSegments]:
+        """
+        Description:
+
+        :param person_segments:
+        :param active_person_id:
+
+        :return:
+        """
+        clipped_persons_segments = {}
+        for person_id, person_track in self.persons.items():
+            if person_id == active_person_id: continue
+            current_clipped_frame_segments = person_track.data.clip_segemnts(person_segments)
+            clipped_persons_segments[person_id] = current_clipped_frame_segments
+
+        return clipped_persons_segments
 
 
-    def persons_bounding_boxes(self, current_other_persons_segments, person_id):
-        pass
+    def persons_bounding_boxes(self, persons_segments: dict[int, FramesSegments], active_person_id: int) -> dict[int, BoundingBoxes2DArray]:
+        """
+        Description:
+            Bounding boxes per person ID except  of person with ``active_person_id``.
+
+        :param persons_segments: per person frame segments;
+        :param active_person_id: person id, excluded from result.
+
+        :return: bounding boxes array per person id.
+        """
+        bounding_boxes = {}
+        for person_id, person_track in self.persons.items():
+            if person_id == active_person_id: continue
+            bounding_boxes[person_id] = person_track.bounding_boxes_per_segment(persons_segments[person_id])
+
+        return  bounding_boxes
 
 
     def visualize(self, **options) -> None:
@@ -136,6 +165,38 @@ class MultiplePersonsTracks:
 
 
     @staticmethod
-    def enlarge_bounding_boxes(boxes_to_enlarge, obstacles_boxes, borderline_bounding_box) -> BoundingBoxes2DArray:
-        return BoundingBoxes2DArray()
+    def enlarge_bounding_boxes(boxes_to_enlarge, obstacles_boxes, borderline_bounding_box: BoundingBox2D) -> BoundingBoxes2DArray:
+        """
+        Description:
+            Enlarge ``boxes_to_enlarge`` bounding boxes to the borders of ``obstacles_boxes`` and ``borderline_bounding_box``.
 
+        :param boxes_to_enlarge: bounding boxes to enlarge;
+        :param obstacles_boxes: obstacles bounding boxes;
+        :param borderline_bounding_box: borderline (maximum possible) bounding box.
+
+        :return: enlarged bounding boxes array
+        """
+        for box in boxes_to_enlarge:
+            current_box = BoundingBox2D.from_numpy(box)
+            current_box = current_box.enlarge(obstacles_boxes, borderline_bounding_box)
+            box.values = current_box.to_numpy()
+        return boxes_to_enlarge
+
+
+    @staticmethod
+    def intersections_over_unions(active_person_boxes: BoundingBoxes2DArray, other_persons_boxes: dict[int, BoundingBoxes2DArray]) -> dict[int, list[np.ndarray]]:
+        """
+        Description:
+
+        :param active_person_boxes:
+        :param other_persons_boxes:
+
+        :return:
+        """
+        result_intersection_areas = {}
+        for person_id, person_boxes in other_persons_boxes.items():
+            current_intersection_boxes = BoundingBoxes2DArray.intersect(active_person_boxes, person_boxes)
+            current_intersection_areas = [boxes.areas() for boxes in current_intersection_boxes]
+            result_intersection_areas[person_id] = current_intersection_areas
+
+        return result_intersection_areas

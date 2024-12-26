@@ -45,6 +45,10 @@ class FramesSegments:
         return  FramesSegments(self.values.copy())
 
 
+    def append(self, frames_segments: FramesSegments):
+        self.values = np.vstack((self.values, frames_segments.values))
+
+
     def append_segment(self, segment: np.ndarray) -> None:
         """
         Description:
