@@ -17,8 +17,12 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+        if len(tracks.persons) <= 1:
+            return
+
         persons_areas = []
         persons_keys = []
+
         for person_id, person in tracks.persons.items():
             persons_areas.append(person.mean_area())
             persons_keys.append(person_id)
@@ -33,6 +37,3 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
                 tracks.persons[persons_keys[key[0]]].full_body_data.frames_indices = np.empty(0, )
             else:
                 tracks.persons[persons_keys[key[0]]].data.frames_indices = np.empty(0, )
-
-        # for key in area_threshold_persons_indices:
-        #     del tracks.persons[persons_keys[key[0]]]

@@ -17,8 +17,10 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
         video_fps = tracks.video_properties.fps
-        for person in tracks.persons.values():
+        for person_track in tracks.persons.values():
             if filter_full_body_person:
-                person.full_body_data.bridge_gaps(video_fps)
+                person_track.full_body_data.calculate_segments(tracks.frames_stride)
+                person_track.full_body_data.bridge_gaps(video_fps, self.gap_threshold)
             else:
-                person.data.bridge_gaps(video_fps)
+                person_track.data.calculate_segments(tracks.frames_stride)
+                person_track.data.bridge_gaps(video_fps, self.gap_threshold)

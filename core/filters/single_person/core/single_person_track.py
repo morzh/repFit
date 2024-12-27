@@ -23,7 +23,7 @@ class SinglePersonTrack:
         self.full_body_data = PersonData()
 
 
-    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, keypoints: np.ndarray | None = None) -> None:
+    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, joints: np.ndarray | None = None) -> None:
         """
         Description:
             Update information about video segments at which person is considered to be presented.
@@ -31,9 +31,9 @@ class SinglePersonTrack:
         :param bounding_box: tracked bounding box of a person at frame_number
         :param frame_index: frame number
         :param confidence: tracked bounding box confidence
-        :param keypoints: tracked keypoints
+        :param joints: tracked keypoints
         """
-        self.tracked_data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, keypoints=keypoints)
+        self.tracked_data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, joints=joints)
 
     '''
     def calculate_full_body_person_segments(self, stride) -> FramesSegments:

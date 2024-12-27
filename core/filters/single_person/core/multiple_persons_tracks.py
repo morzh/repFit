@@ -6,6 +6,7 @@ import pickle
 from fiftyone.core.frame import Frames
 
 from core.filters.single_person.core.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
+from core.filters.single_person.core.frames_indices import FramesIndices
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.core.single_person_track import SinglePersonTrack
@@ -53,9 +54,9 @@ class MultiplePersonsTracks:
             current_bounding_box = bounding_boxes[index, :4]
 
             if keypoints is not None:
-                current_keypoints = keypoints[index]
+                current_joints = keypoints[index]
 
-            self.persons[current_person_id].append(current_bounding_box, frame_index, confidence=current_confidence, keypoints=current_keypoints)
+            self.persons[current_person_id].append(current_bounding_box, frame_index, confidence=current_confidence, joints=current_joints)
 
 
     def apply_filter(self, filter_visitor: MultiPersonsFilterAddonBase, apply_to_full_body=False) -> None:
@@ -92,7 +93,7 @@ class MultiplePersonsTracks:
         clipped_persons_segments = {}
         for person_id, person_track in self.persons.items():
             if person_id == active_person_id: continue
-            current_clipped_frame_segments = person_track.data.clip_segemnts(person_segments)
+            current_clipped_frame_segments = person_track.data.clip_segments(person_segments)
             clipped_persons_segments[person_id] = current_clipped_frame_segments
 
         return clipped_persons_segments
@@ -116,7 +117,7 @@ class MultiplePersonsTracks:
         return  bounding_boxes
 
 
-    def visualize(self, **options) -> None:
+    def visualize_tracked_data(self, **options) -> None:
         """
         Description:
             Visualize multiple persons tracks.
@@ -125,11 +126,28 @@ class MultiplePersonsTracks:
         :keyword show_frame_delay: gap between gaps in milliseconds
         :keyword hsv_step: HSV format hue circle step (in degrees)
         """
+        def calculate_segments(frames_indices: FramesIndices, stride=1) -> FramesSegments:
+            """
+            Description:
+                Calculate frames segments using  video  frames``stride`` value.
+
+            :param frames_indices: video frames indices;
+            :param stride: video frames stride
+            """
+            segments_bins = np.hstack((frames_indices.values.reshape(-1, 1), frames_indices.values.reshape(-1, 1) + stride))
+            for index in range(segments_bins.shape[0] - 1):
+                if segments_bins[index, 1] == segments_bins[index + 1, 0]:
+                    segments_bins[index + 1, 0] = segments_bins[index, 0]
+                    segments_bins[index] = -1
+
+            mask = segments_bins[:, 0] != -1
+            segments = segments_bins[mask]
+            segments[:, 1] += 1
+            return FramesSegments(segments)
+
         boxes_thickness = options.get('frames_thickness', 2)
         show_frame_delay = options.get('show_frame_delay', 10)
         hsv_step = options.get('hsv_step', 20)
-        # confidence_transparent = options.get('transparent_threshold', 0.1)
-        # confidence_opaque = options.get('opaque_threshold', 0.95)
 
         video_reader = VideoReader(self.video_properties.filepath)
         video_filename = os.path.basename(self.video_properties.filepath)
@@ -137,18 +155,16 @@ class MultiplePersonsTracks:
 
         for frame in video_reader:
             for person_id, person_track in self.persons.items():
-                person_track.segments = person_track.data.calculate_segments(self.frames_stride)
                 mean_boxes_area = self.persons[person_id].mean_height()
                 joints_radius = max(int(round(mean_boxes_area * 0.01)), 1)
                 bones_thickness = max(int(round(joints_radius / 2)), 1)
-                for segment in person_track.segments:
-                    if segment[0] <= video_reader.current_frame_index < segment[1]:
+                current_segments = calculate_segments(person_track.tracked_data.frames_indices, self.frames_stride)
 
+                for segment in current_segments:
+                    if segment[0] <= video_reader.current_frame_index < segment[1]:
                         current_bounding_box = self.persons[person_id].tracked_data.bounding_box(video_reader.current_frame_index)
                         current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.astype(np.int64))[0]
-
                         current_keypoints = self.persons[person_id].tracked_data.frame_keypoints(video_reader.current_frame_index)
-
                         current_confidence = self.persons[person_id].tracked_data.confidence(video_reader.current_frame_index)
                         current_color = viz.stepped_color(hsv_step, person_id)
                         current_boxes_overlay = viz.draw_bounding_boxes(person_id, frame, current_bounding_box, current_color, boxes_thickness)
@@ -196,7 +212,7 @@ class MultiplePersonsTracks:
         result_intersection_areas = {}
         for person_id, person_boxes in other_persons_boxes.items():
             current_intersection_boxes = BoundingBoxes2DArray.intersect(active_person_boxes, person_boxes)
-            current_intersection_areas = [boxes.areas() for boxes in current_intersection_boxes]
-            result_intersection_areas[person_id] = current_intersection_areas
+            current_intersection_areas = [boxes.areas() for boxes in current_intersection_boxes if len(boxes)]
+            result_intersection_areas[person_id] = current_intersection_areas if len(current_intersection_areas) else np.zeros(1,)
 
         return result_intersection_areas

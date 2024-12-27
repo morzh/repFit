@@ -15,13 +15,13 @@ class PersonTrackedData:
     :ivar _confidences: person tracking confidences.
     :ivar _keypoints: person 2D keypoints with confidences
     """
-    __slots__ = ['_bounding_boxes', '_frames_indices', '_confidences', '_keypoints']
+    __slots__ = ['_bounding_boxes', '_frames_indices', '_confidences', '_joints']
 
     def __init__(self):
         self._bounding_boxes = BoundingBoxes2DArray()
         self._frames_indices = FramesIndices()
         self._confidences = np.empty(0, )
-        self._keypoints = np.empty((0, 17, 3))
+        self._joints = np.empty((0, 17, 3))
 
 
     def __len__(self):
@@ -32,10 +32,10 @@ class PersonTrackedData:
         self._confidences =np.delete(self._confidences, index)
         self._bounding_boxes.values = np.delete(self._bounding_boxes.values, index, axis=0)
         self._frames_indices._values = np.delete(self._frames_indices.values, index)
-        self._keypoints = np.delete(self._keypoints, index, axis=0)
+        self._joints = np.delete(self._joints, index, axis=0)
 
 
-    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, bounding_box_mode=BoundingBoxes2DArray.XYWH, keypoints: np.ndarray | None = None) -> None:
+    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, bounding_box_mode=BoundingBoxes2DArray.XYWH, joints: np.ndarray | None = None) -> None:
         """
         Description:
             Append new tracked data.
@@ -44,15 +44,15 @@ class PersonTrackedData:
         :param frame_index: frame index to append
         :param confidence: confidence to append
         :param bounding_box_mode: bounding box mode (XYWH or XYXY)
-        :param keypoints: key points to append
+        :param joints: joints to append
 
         :raise ValueError: if one of ``bounding_box`` or ``frame_index`` or ``confidence`` values is incorrect.
         """
         self._bounding_boxes.append(bounding_box, mode=bounding_box_mode)
         self._frames_indices.append(frame_index)
 
-        if keypoints is not None:
-            self._keypoints = np.vstack((self._keypoints, np.expand_dims(keypoints, axis=0)))
+        if joints is not None:
+            self._joints = np.vstack((self._joints, np.expand_dims(joints, axis=0)))
 
         if confidence >= 0:
             self._confidences = np.append(self._confidences, confidence)
@@ -72,7 +72,7 @@ class PersonTrackedData:
         elif not mask.dtype == bool:
             raise ValueError('Mask values should be boolean.')
 
-        self._keypoints = self._keypoints[mask]
+        self._joints = self._joints[mask]
         self._bounding_boxes.values = self._bounding_boxes[mask]
         self._confidences = self._confidences[mask]
         self._frames_indices._values = self._frames_indices[mask]
@@ -131,11 +131,11 @@ class PersonTrackedData:
         if len(self._frames_indices) == 0:
             return np.empty((17, 3))
         elif len(self._frames_indices) == 1:
-            return self._keypoints[0]
+            return self._joints[0]
         elif frame_index <= self._frames_indices.values[-1]:
-            return self._coco_keypoints_interpolation(frame_index, self._keypoints)
+            return self._coco_keypoints_interpolation(frame_index, self._joints)
         else:
-            return self._extrapolation(frame_index, self._keypoints)
+            return self._extrapolation(frame_index, self._joints)
 
 
     def calculate_segments(self, stride=1) -> FramesSegments:
@@ -306,7 +306,7 @@ class PersonTrackedData:
 
         :return: keypoints
         """
-        return self._keypoints
+        return self._joints
 
     @property
     def keypoints_confidences(self) -> np.ndarray:
@@ -316,8 +316,8 @@ class PersonTrackedData:
 
         :return: keypoints confidences
         """
-        return self._keypoints[:, 2]
+        return self._joints[:, 2]
 
     @property
     def joints_number(self):
-        return self._keypoints.shape[1]
+        return self._joints.shape[1]

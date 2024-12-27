@@ -13,9 +13,11 @@ from core.filters.single_person.core.filter_addons.absolute_area_filter_addon im
 from core.filters.single_person.core.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
 from core.filters.single_person.core.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
 from core.filters.single_person.core.filter_addons.segments_duration_filter_addon import SegmentsDurationFilterAddon
+from core.filters.single_person.core.frames_indices import FramesIndices
 
 from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.core.multiple_persons_tracker import PersonsTracker
+from core.utils.cv.frames_segments import FramesSegments
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
@@ -80,20 +82,18 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     :param video_source_filepath: source video filepath
     :param videos_target_folder: output folder for segmented videos
     """
-    video_source_filename = os.path.basename(video_source_filepath)
-    video_source_filename_base = video_source_filename.split('.')[0]
-    if check_filename_entry_in_folder(videos_target_folder, video_source_filename_base):
-        return
-
     video_input_parameters = parameters['video_input']
     tracking_parameters = parameters['tracking']
     persons_filtering_parameters = parameters['persons_data_filtering']
     full_body_persons_filtering_parameters = parameters['persons_full_body_data_filtering']
     visualization_parameters = parameters['visualization']
     video_segments_writer_parameters = parameters['video_segments_writer']
-    persons_data_filtering = persons_filtering_parameters['persons_data_filtering']
-    persons_full_body_data_filtering = persons_filtering_parameters['persons_full_body_data_filtering']
     do_visualization = visualization_parameters['do_visualization']
+
+    video_source_filename = os.path.basename(video_source_filepath)
+    video_source_filename_base = video_source_filename.split('.')[0]
+    # if check_filename_entry_in_folder(videos_target_folder, video_source_filename_base) and tracking_parameters['use_saved_data']:
+    #     return
 
     video_processing_start_time = time.time()
     minimum_resolution = video_input_parameters.get('minimal_resolution', 200)
@@ -104,9 +104,9 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
 
     tracks = obtain_multiple_persons_tracks(video_source_filepath, **tracking_parameters)
 
-    if persons_data_filtering['do_filtering']:
+    if persons_filtering_parameters['do_filtering']:
         filter_persons_data(tracks, **persons_filtering_parameters)
-    if persons_full_body_data_filtering['do_filtering']:
+    if full_body_persons_filtering_parameters['do_filtering']:
         filter_full_body_persons_data(tracks, **full_body_persons_filtering_parameters)
 
     if video_segments_writer_parameters.get('write_persons_tracks', False):
@@ -117,7 +117,7 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
                 f'video duration is {(tracks.video_properties.approximate_frames_number / tracks.video_properties.fps):.2f} seconds.')
 
     if do_visualization:
-        tracks.visualize(**visualization_parameters)
+        tracks.visualize_tracked_data(**visualization_parameters)
 
 
 def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> MultiplePersonsTracks:
@@ -171,12 +171,11 @@ def filter_persons_data(tracks: MultiplePersonsTracks, **parameters) -> Multiple
     :keyword absolute_area: absolute area filter parameters;
     :keyword area_ratio: ario ratio filter parameters;
     :keyword partial_person: partial person filter parameters;
-    :keyword segments_duration: segments duration filter parameters;
     :keyword bridging_gaps: bridging gap filter parameters.
+    :keyword segments_duration: segments duration filter parameters;
 
     :return: tracks with filtered persons data.
     """
-
     for person in tracks.persons.values():
         person.data.frames_indices = copy.copy(person.tracked_data.frames_indices)
 
@@ -213,9 +212,9 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
         Filter full body persons data in multiple persons track by predefined set of filters.
 
 
-    :keyword full_body:
-    :keyword bridging_gaps:
-    :keyword segments_duration:
+    :keyword full_body: full bode filter parameters;
+    :keyword bridging_gaps: bridging gap filter parameters;
+    :keyword segments_duration: segments duration filter parameters;
 
     :return: tracks with filtered full body persons data.
     """
@@ -224,7 +223,7 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
 
     if parameters['full_body']['apply']:
         whole_person_filter_addon = FullBodyPersonFilterAddon(**parameters['full_body'])
-        tracks.apply_filter(whole_person_filter_addon)
+        tracks.apply_filter(whole_person_filter_addon, apply_to_full_body=True)
 
     if parameters['bridging_gaps']['apply']:
         bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
@@ -252,7 +251,7 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
     input_video_bounding_box = BoundingBox2D(0, 0, tracks.video_properties.width - 1, tracks.video_properties.height - 1)
 
     for person_id, person_track in tracks.persons.items():
-        if not person_track.full_body_data.frames_indices.size:
+        if not len(person_track.full_body_data.frames_segments):
             continue
 
         current_full_body_person_segments = person_track.full_body_data.frames_segments
@@ -261,9 +260,8 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
         current_other_persons_boxes = tracks.persons_bounding_boxes(current_other_persons_segments, person_id)
 
         current_iou = MultiplePersonsTracks.intersections_over_unions(current_full_body_person_boxes, current_other_persons_boxes)
-        current_maximum_iou = np.array([np.maximum(area) for area in current_iou])
+        current_maximum_iou = np.array([np.max(area) for area in current_iou.values()])
         current_data_mask = current_maximum_iou > 0.3
-
 
         current_full_body_person_boxes = MultiplePersonsTracks.enlarge_bounding_boxes(current_full_body_person_boxes, current_other_persons_boxes, input_video_bounding_box)
 
