@@ -167,7 +167,7 @@ class SinglePersonTrack:
         """
 
         """
-        if not len(self.tracked_data.bounding_boxes) and not self.tracked_data.keypoints.shape[0] and not self.tracked_data.confidences.shape[0]:
+        if not len(self.tracked_data.bounding_boxes) and not self.tracked_data.joints.shape[0] and not self.tracked_data.confidences.shape[0]:
             return True
         return False
 

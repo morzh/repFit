@@ -13,7 +13,7 @@ class PersonTrackedData:
     :ivar _bounding_boxes: person's bounding boxes;
     :ivar _frames_indices: frame indices at which person was tracked;
     :ivar _confidences: person tracking confidences.
-    :ivar _keypoints: person 2D keypoints with confidences
+    :ivar _joints: person 2D keypoints with confidences
     """
     __slots__ = ['_bounding_boxes', '_frames_indices', '_confidences', '_joints']
 
@@ -299,7 +299,7 @@ class PersonTrackedData:
         return self._confidences
 
     @property
-    def keypoints(self) -> np.ndarray:
+    def joints(self) -> np.ndarray:
         """
         Description:
             Person keypoints getter

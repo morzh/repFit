@@ -268,7 +268,7 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
         video_filename_base, video_filename_extension = extract_name_extension_from_filepath(tracks.video_properties.filepath)
         current_output_video_file_basename = f'{video_filename_base}__{output_video_suffix}-id{person_id}'
 
-        if person_track.is_track_equals_video(tracks.video_properties, tracks.frames_number):
+        if person_track.is_track_equals_video(tracks.video_properties, tracks.exact_frames_number):
             output_filepath = os.path.join(target_folder, current_output_video_file_basename.join(['.', video_filename_extension]))
             shutil.copy(source_filepath, output_filepath)
             continue

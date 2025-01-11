@@ -1,3 +1,7 @@
+import os.path
+import pickle
+import time
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
@@ -79,6 +83,14 @@ class TestBoundingBox(unittest.TestCase):
 
 
     def test_enlarge_visually(self):
+        def on_key_press(event):
+            if event.key == 'd':
+                data = {'box_to_enlarge': current_box_to_enlarge, 'obstacle_boxes': current_boxes}
+                filename = str(time.time()) + '.pickle'
+                filepath = os.path.join('box_enlarge_dump', filename)
+                with open(filepath, 'wb') as f:
+                    pickle.dump(data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
         number_boxes = 15
         for _ in range(self.number_checks):
             random_range = (-10_000, 10_000)
@@ -93,6 +105,7 @@ class TestBoundingBox(unittest.TestCase):
             current_box_enlarged = current_box_to_enlarge.enlarge(current_boxes, borderline_box)
 
             fig, ax = plt.subplots()
+            cid = fig.canvas.mpl_connect('key_press_event', on_key_press)
             fig.set_size_inches(22.5, 14.5)
             for box in current_boxes:
                 rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor='blue', facecolor=(1, 1, 1, 0))

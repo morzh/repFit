@@ -24,11 +24,11 @@ class MultiplePersonsTracks:
     :ivar persons: person_id -> person data mapping
     :ivar video_properties:  video properties data
     """
-    def __init__(self, video_properties: VideoProperties, stride=1):
+    def __init__(self, video_properties: VideoProperties, stride=1, exact_frames_number=-1):
         self.persons: dict[int, SinglePersonTrack] = {}
         self.video_properties = video_properties
-        self.frames_number: int  = -1
-        self.frames_stride = stride
+        self.exact_frames_number = exact_frames_number
+        self._frames_stride = stride
 
 
     def update(self, frame_index: int, bounding_boxes: np.ndarray, keypoints: np.ndarray | None = None) -> None:
@@ -170,7 +170,7 @@ class MultiplePersonsTracks:
                         current_boxes_overlay = viz.draw_bounding_boxes(person_id, frame, current_bounding_box, current_color, boxes_thickness)
 
                         frame = cv2.addWeighted(current_boxes_overlay, current_confidence, frame, 1 - current_confidence, 0)
-                        if person_track.tracked_data.keypoints is not None:
+                        if person_track.tracked_data.joints is not None:
                             frame = viz.draw_skeleton_joints(frame, current_color, joints_radius, current_keypoints)
                             frame = viz.draw_skeleton_bones(frame, current_color, bones_thickness, current_keypoints)
 
@@ -178,6 +178,11 @@ class MultiplePersonsTracks:
             cv2.waitKey(show_frame_delay)
 
         cv2.destroyAllWindows()
+
+
+    @property
+    def frames_stride(self):
+        return self._frames_stride
 
 
     @staticmethod

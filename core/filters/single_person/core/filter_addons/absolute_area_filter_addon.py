@@ -17,9 +17,23 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+        if filter_full_body_person:
+            self.filter_person_track_full_body_data(tracks)
+        else:
+            self.filter_person_track_data(tracks)
+
+
+    def filter_person_track_data(self, tracks: MultiplePersonsTracks):
+        for person_track in tracks.persons.values():
+            if person_track.mean_area() < self.area_threshold:
+                person_track.data.frames_indices = np.empty(0, )
+            elif not len(person_track.data.frames_indices):
+                person_track.data.frames_indices = person_track.tracked_data.frames_indices
+
+
+    def filter_person_track_full_body_data(self, tracks: MultiplePersonsTracks):
         for person_id, person_track in tracks.persons.items():
             if person_track.mean_area() < self.area_threshold:
-                if filter_full_body_person:
-                    person_track.full_body_data.frames_indices = np.empty(0, )
-                else:
-                    person_track.data.frames_indices = np.empty(0, )
+                person_track.full_body_data.frames_indices = np.empty(0, )
+            elif not len(person_track.data.frames_indices):
+                person_track.full_body_data.frames_indices = person_track.tracked_data.frames_indices

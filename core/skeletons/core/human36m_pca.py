@@ -37,6 +37,7 @@ class Human36mPca:
         """
         if not self.use_neutral_pose:
             self.skeletons_pca = PCA(n_components=self.number_components)
+            skeleton_animation = skeleton_animation[1:9]
             self.skeletons_pca.fit(skeleton_animation)
         else:
             raise NotImplementedError('Code for true use_neutral_pose value is not implemented yet.')

@@ -27,7 +27,7 @@ class PartialPersonFilterAddon(MultiPersonsFilterAddonBase):
             else:
                 joints_indices = current_frames_indices_set.index(person_track.data.frames_indices.values)
 
-            current_joints = person_track.tracked_data.keypoints[joints_indices]
+            current_joints = person_track.tracked_data.joints[joints_indices]
             current_keypoints_confidences = current_joints[:, :, 2]
 
             current_keypoints_confidence_threshold = current_keypoints_confidences > self.joints_confidence_threshold

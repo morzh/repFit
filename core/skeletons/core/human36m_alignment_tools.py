@@ -88,12 +88,14 @@ class Human36mAlignmentTools:
 
         return so3_matrices
 
+
     @staticmethod
     def align_animated_skeletons_to_global_frame(animated_skeletons: list[joints_batch], keep_root_unchanged: bool = True) -> list[joints_batch]:
         aligned_skeletons = [joints_batch] * len(animated_skeletons)
         for index in range(len(animated_skeletons)):
             aligned_skeletons[index] = Human36mAlignmentTools.align_animated_skeleton_to_global_frame(animated_skeletons[index], keep_root_unchanged)
         return aligned_skeletons
+
 
     @staticmethod
     def align_animated_skeleton_to_global_frame(animated_skeleton: joints_batch, keep_root_unchanged: bool = True) -> joints_batch:
@@ -118,18 +120,15 @@ class Human36mAlignmentTools:
         animated_root = animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
         skeletons_shifted_to_origin = animated_skeleton - animated_root
         skeletons_coordinate_frames = Human36mAlignmentTools.root_joints_coordinate_frames(skeletons_shifted_to_origin)
-        # alignment_to_global_frame_rotations = np.linalg.inv(skeletons_coordinate_frames)
 
         aligned_skeletons = np.matmul(np.transpose(skeletons_coordinate_frames, axes=(0, 2, 1)), np.transpose(skeletons_shifted_to_origin, axes=(0, 2, 1)))
         aligned_skeletons = np.transpose(aligned_skeletons, axes=(0, 2, 1))
-
-        # aligned_skeletons = np.matmul(alignment_to_global_frame_rotations, np.transpose(skeletons_shifted_to_origin, axes=(0, 2, 1)))
-        # aligned_skeletons = np.transpose(aligned_skeletons, axes=(0, 2, 1))
 
         if keep_root_unchanged:
             aligned_skeletons[:, 0] = animated_root.reshape((aligned_skeletons.shape[0], 3))
 
         return aligned_skeletons
+
 
     @staticmethod
     def shift_skeleton_to_origin(animated_skeleton: joints_batch) -> joints_batch:
@@ -143,6 +142,7 @@ class Human36mAlignmentTools:
         :return: skeleton animation with root joint at origin.
         """
         return animated_skeleton - animated_skeleton[:, 0].reshape(animated_skeleton.shape[0], 1, 3)
+
 
     @staticmethod
     def skeleton_features(animated_skeleton: joints_batch, alignment_vector: vector3) -> (vector3, float):
@@ -163,6 +163,38 @@ class Human36mAlignmentTools:
 
         return feature_1, feature_2
 
+
+    @staticmethod
+    def set_feet_to_zero_level(animated_skeletons: list[joints_batch]) -> list[joints_batch]:
+        """
+        Description:
+            Shift each skeletons so that feet are on the ground.
+            "On the ground" means average of y-coordinates of joints with indices 6 and 3 equals to zero.
+
+        :param animated_skeletons: skeletons array with [N, 17, 3] shape
+
+        :return: shifted per frame skeletons.
+        """
+        set_feet_skeletons = [joints_batch] * len(animated_skeletons)
+        for index, skeletons in  enumerate(animated_skeletons):
+            feet_average_positions = Human36mAlignmentTools.average_feet_positions(skeletons)
+            set_feet_skeletons[index] = skeletons - np.expand_dims(feet_average_positions[:, 1], axis=(1,2))
+
+        return set_feet_skeletons
+
+
+    @staticmethod
+    def average_feet_positions(animated_skeleton: joints_batch) -> joints_batch:
+        """
+        Description:
+            Calculate average feet position.
+        """
+        left_foot_position = animated_skeleton[:, 3]
+        right_foot_position = animated_skeleton[:, 6]
+
+        return 0.5 * (left_foot_position + right_foot_position)
+
+
     @staticmethod
     def align_skeletons_heights(animated_skeletons_set: list[joints_batch], in_average: bool = True, verbose: bool = False) -> list[joints_batch]:
         """
@@ -180,6 +212,7 @@ class Human36mAlignmentTools:
             return Human36mAlignmentTools.align_skeletons_heights_in_average(animated_skeletons_set, verbose)
         else:
             return Human36mAlignmentTools.align_skeletons_heights_per_animation_frame(animated_skeletons_set, verbose)
+
 
     @staticmethod
     def align_skeletons_heights_in_average(animated_skeletons_set: list[joints_batch], verbose: bool = False) -> list[joints_batch]:
@@ -211,7 +244,6 @@ class Human36mAlignmentTools:
             animated_skeletons_set[index_skeleton] *= scale_factors[index_skeleton]
 
         if verbose:
-
             for index_skeleton in range(number_skeletons):
                 average_heights[index_skeleton] = Human36mStatistics.mean_skeletons_height(animated_skeletons_set[index_skeleton])
             mean_height = np.mean(average_heights)
