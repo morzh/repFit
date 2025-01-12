@@ -8,7 +8,8 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Filter out every person's track, whose mean bounding box area less than the given threshold.
-        Mean area threshold is given in pixels.
+        Mean area threshold is given in pixels. Filter taking into account only tracked data.
+        So it should be used as one of the first filter in filtering pipeline.
 
     :ivar area_threshold: threshold area in pixels
     """
@@ -17,6 +18,9 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+        if not len(tracks.persons):
+            return
+
         if filter_full_body_person:
             self.filter_person_track_full_body_data(tracks)
         else:

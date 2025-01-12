@@ -26,17 +26,18 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
         self.joints_number = 17
 
 
-    def test_area_filter(self):
+    def test_area_filter_non_full_body(self):
         for _ in range(self.number_checks):
             current_persons_number = np.random.randint(1, self.number_persons_in_tracks)
             current_exact_frames_number = np.random.randint(self.minimum_frames_number, self.maximum_number_of_video_frames)
             current_stride = np.random.randint(1, self.maximum_frames_stride_value)
-            current_number_bounding_boxes_areas = np.random.randint(1, int(current_exact_frames_number / current_stride))
-            current_bounding_boxes_areas = [np.random.randint(self.minimum_box_area, self.maximum_box_area, current_number_bounding_boxes_areas) for _ in range(current_persons_number)]
-            current_absolute_area_threshold = np.percentile(np.array(current_bounding_boxes_areas), 50.0)
+            current_number_bounding_boxes_areas = np.random.randint(2, int(current_exact_frames_number / current_stride))
+            current_bounding_boxes_areas = [np.random.randint(self.minimum_box_area, self.maximum_box_area, np.random.randint(1, current_number_bounding_boxes_areas))
+                                            for _ in range(current_persons_number)]
             current_tracks = self.generate_tracks(self.video_width, self.video_height, current_exact_frames_number, current_stride, current_bounding_boxes_areas)
 
-            current_boxes_mean = np.mean(np.array(current_bounding_boxes_areas), axis=1)
+            current_boxes_mean = np.array([np.mean(box) for box in current_bounding_boxes_areas])
+            current_absolute_area_threshold = np.percentile(current_boxes_mean, 50.0)
             current_boxes_mean_mask = current_boxes_mean >= current_absolute_area_threshold
 
             current_filter = AbsoluteAreaFilterAddon(area_threshold=current_absolute_area_threshold)
@@ -44,6 +45,27 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
 
             for person_id, person_track in current_tracks.persons.items():
                 self.assertTrue(bool(len(person_track.data.frames_indices)) == current_boxes_mean_mask[person_id])
+
+
+    def test_area_filter_full_body(self):
+        for _ in range(self.number_checks):
+            current_persons_number = np.random.randint(1, self.number_persons_in_tracks)
+            current_exact_frames_number = np.random.randint(self.minimum_frames_number, self.maximum_number_of_video_frames)
+            current_stride = np.random.randint(1, self.maximum_frames_stride_value)
+            current_number_bounding_boxes_areas = np.random.randint(2, int(current_exact_frames_number / current_stride))
+            current_bounding_boxes_areas = [np.random.randint(self.minimum_box_area, self.maximum_box_area, np.random.randint(1, current_number_bounding_boxes_areas))
+                                            for _ in range(current_persons_number)]
+            current_tracks = self.generate_tracks(self.video_width, self.video_height, current_exact_frames_number, current_stride, current_bounding_boxes_areas)
+
+            current_boxes_mean = np.array([np.mean(box) for box in current_bounding_boxes_areas])
+            current_absolute_area_threshold = np.percentile(current_boxes_mean, 50.0)
+            current_boxes_mean_mask = current_boxes_mean >= current_absolute_area_threshold
+
+            current_filter = AbsoluteAreaFilterAddon(area_threshold=current_absolute_area_threshold)
+            current_filter.process(current_tracks, filter_full_body_person=True)
+
+            for person_id, person_track in current_tracks.persons.items():
+                self.assertTrue(bool(len(person_track.full_body_data.frames_indices)) == current_boxes_mean_mask[person_id])
 
 
     def generate_tracks(self, video_width: int, video_height: int, exact_video_frames_number: int, video_frames_stride: int, bounding_boxes_areas: list[np.ndarray]) -> MultiplePersonsTracks:
@@ -80,11 +102,7 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
         for box_index, frame_index in enumerate(masked_frames_indices):
             current_bounding_box_left = np.random.randint(0, int(video_width / 2))
             current_bounding_box_top = np.random.randint(0, int(video_height / 2))
-            '''
-            current_bounding_boxes_areas_divisors = self.find_divisors(int(bounding_boxes_areas[box_index]))
-            current_bounding_box_width = current_bounding_boxes_areas_divisors[np.random.randint(0, current_bounding_boxes_areas_divisors.shape[0] - 1)]
-            current_bounding_box_height = int(bounding_boxes_areas[box_index] / current_bounding_box_width)
-            '''
+
             current_bounding_box_width = bounding_boxes_areas[box_index]
             current_bounding_box_height = 1
             current_bounding_box = np.array([current_bounding_box_left, current_bounding_box_top, current_bounding_box_width, current_bounding_box_height])

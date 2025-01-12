@@ -7,3 +7,7 @@ class TestConfidenceFilterAddon(unittest.TestCase):
 
     def setUp(self):
         self.number_checks = 1_500
+
+
+    def test_confidence_filter(self):
+        ...

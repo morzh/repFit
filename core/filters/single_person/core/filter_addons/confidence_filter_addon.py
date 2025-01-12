@@ -17,15 +17,28 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+        if not len(tracks.persons):
+            return
+
+        if filter_full_body_person:
+            self.filter_person_track_full_body_data(tracks)
+        else:
+            self.filter_person_track_data(tracks)
+
+
+    def filter_person_track_data(self, tracks: MultiplePersonsTracks):
         for person_id, person_track in tracks.persons.items():
             current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.values)
-            if filter_full_body_person:
-                person_full_body_frames_keys = current_frames_indices_set.index(person_track.full_body_data.frames_indices.values)
-                full_body_persons_confidences = person_track.tracked_data.confidences[person_full_body_frames_keys]
-                confidences_mask = full_body_persons_confidences > self.confidence_threshold
-                person_track.full_body_data.frames_indices = FramesIndices(person_track.full_body_data.frames_indices.values[confidences_mask])
-            else:
-                person_frames_keys = current_frames_indices_set.index(person_track.data.frames_indices.values)
-                persons_confidences = person_track.tracked_data.confidences[person_frames_keys]
-                confidences_mask = persons_confidences > self.confidence_threshold
-                person_track.data.frames_indices = FramesIndices(person_track.data.frames_indices.values[confidences_mask])
+            person_frames_keys = current_frames_indices_set.index(person_track.data.frames_indices.values)
+            persons_confidences = person_track.tracked_data.confidences[person_frames_keys]
+            confidences_mask = persons_confidences > self.confidence_threshold
+            person_track.data.frames_indices = FramesIndices(person_track.data.frames_indices.values[confidences_mask])
+
+
+    def filter_person_track_full_body_data(self, tracks: MultiplePersonsTracks):
+        for person_id, person_track in tracks.persons.items():
+            current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.values)
+            person_full_body_frames_keys = current_frames_indices_set.index(person_track.full_body_data.frames_indices.values)
+            full_body_persons_confidences = person_track.tracked_data.confidences[person_full_body_frames_keys]
+            confidences_mask = full_body_persons_confidences > self.confidence_threshold
+            person_track.full_body_data.frames_indices = FramesIndices(person_track.full_body_data.frames_indices.values[confidences_mask])
