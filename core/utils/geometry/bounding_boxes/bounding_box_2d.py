@@ -9,7 +9,7 @@ from core.utils.geometry.geometry_typing import numeric, vec2d
 from core.utils.geometry.segments.aligned_segment_2d import AlignedSegment2D, AlignedSegmentType
 
 
-VISUAL_DEBUG = 0
+VISUAL_DEBUG = False
 if VISUAL_DEBUG:
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
@@ -398,10 +398,10 @@ class BoundingBox2D:
         if order == self.Order.RANDOM:
             order = np.random.randint(0, 2)
 
-        if order == self.Order.VERTICAL.value:
+        if order == self.Order.VERTICAL:
             enlarged_box = enlarged_box.__enlarge_vertically(obstacle_bounding_boxes, borderline_bounding_box)
             enlarged_box = enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes, borderline_bounding_box)
-        elif order == self.Order.HORIZONTAL.value:
+        elif order == self.Order.HORIZONTAL:
             enlarged_box = enlarged_box.__enlarge_horizontally(obstacle_bounding_boxes, borderline_bounding_box)
             enlarged_box = enlarged_box.__enlarge_vertically(obstacle_bounding_boxes, borderline_bounding_box)
 
@@ -458,7 +458,7 @@ class BoundingBox2D:
         return self._width * self._height
 
 
-    def __enlarge_horizontally(self, obstacle_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D) -> BoundingBox2D:
+    def __enlarge_horizontally(self, obstacle_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D, numerical_tolerance=1e-6) -> BoundingBox2D:
         """
         Description:
             Enlarge this bounding box in horizontal direction.
@@ -474,9 +474,9 @@ class BoundingBox2D:
         right_side_segments = [segment.left_segment() for segment in obstacle_boxes]
         right_side_segments.append(borderline_bounding_box.right_segment())
 
-        left_side_segments = AlignedSegment2D.in_range(left_side_segments, self.left_top[1], self.left_bottom[1])
+        left_side_segments = AlignedSegment2D.in_range(left_side_segments, self.left_top[1] + numerical_tolerance, self.left_bottom[1] - numerical_tolerance)
         left_side_segments = [segment for segment in left_side_segments if segment.x <= self._x + self._width]
-        right_side_segments = AlignedSegment2D.in_range(right_side_segments, self.left_top[1], self.left_bottom[1])
+        right_side_segments = AlignedSegment2D.in_range(right_side_segments, self.left_top[1] + numerical_tolerance, self.left_bottom[1] - numerical_tolerance)
         right_side_segments = [segment for segment in right_side_segments if segment.x >= self._x]
 
         left_side_segments_x = [segment.x for segment in left_side_segments]
@@ -521,7 +521,7 @@ class BoundingBox2D:
         return enlarged_bounding_box
 
 
-    def __enlarge_vertically(self, obstacle_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D) -> BoundingBox2D:
+    def __enlarge_vertically(self, obstacle_boxes: list[BoundingBox2D], borderline_bounding_box: BoundingBox2D, numerical_tolerance=1e-6) -> BoundingBox2D:
         """
         Description:
             Enlarge this bounding box in vertical direction.
@@ -537,9 +537,9 @@ class BoundingBox2D:
         bottom_side_segments = [segment.top_segment() for segment in obstacle_boxes]
         bottom_side_segments.append(borderline_bounding_box.bottom_segment())
 
-        top_side_segments = AlignedSegment2D.in_range(top_side_segments, self.left_top[0], self.right_top[0])
+        top_side_segments = AlignedSegment2D.in_range(top_side_segments, self.left_top[0] + numerical_tolerance, self.right_top[0] - numerical_tolerance)
         top_side_segments = [segment for segment in top_side_segments if segment.y <= self._y + self._height]
-        bottom_side_segments = AlignedSegment2D.in_range(bottom_side_segments, self.left_top[0], self.right_top[0])
+        bottom_side_segments = AlignedSegment2D.in_range(bottom_side_segments, self.left_top[0] + numerical_tolerance, self.right_top[0] - numerical_tolerance)
         bottom_side_segments = [segment for segment in bottom_side_segments if segment.y >= self._y]
 
         top_side_segments_y = [segment.y for segment in top_side_segments]

@@ -85,7 +85,7 @@ class TestBoundingBox(unittest.TestCase):
     def test_enlarge_visually(self):
         def on_key_press(event):
             if event.key == 'd':
-                data = {'box_to_enlarge': current_box_to_enlarge, 'obstacle_boxes': current_boxes}
+                data = {'box_to_enlarge': current_box_to_enlarge, 'obstacle_boxes': current_boxes, 'borderline_box': borderline_box}
                 filename = str(time.time()) + '.pickle'
                 filepath = os.path.join('box_enlarge_dump', filename)
                 with open(filepath, 'wb') as f:
@@ -102,7 +102,7 @@ class TestBoundingBox(unittest.TestCase):
 
             current_box_pop_index = np.random.randint(0, len(current_boxes))
             current_box_to_enlarge = current_boxes.pop(current_box_pop_index)
-            current_box_enlarged = current_box_to_enlarge.enlarge(current_boxes, borderline_box)
+            current_box_enlarged = current_box_to_enlarge.enlarge(current_boxes, borderline_box, order=BoundingBox2D.Order.HORIZONTAL)
 
             fig, ax = plt.subplots()
             cid = fig.canvas.mpl_connect('key_press_event', on_key_press)
@@ -123,6 +123,42 @@ class TestBoundingBox(unittest.TestCase):
             plt.axhline(y=random_range[1], color=(0, 0, 1, 0.25), label='axhline - full width')
 
             plt.scatter(current_points[:, 0], current_points[:, 1], s=2)
+            plt.tight_layout()
+            plt.show()
+
+
+    def test_enlarge_dumped(self):
+        dumped_files_folder = 'box_enlarge_dump'
+        dumped_files = [f for f in os.listdir(dumped_files_folder) if f.endswith('pickle')]
+
+        for file in dumped_files:
+            current_filepath = os.path.join(os.path.split(__file__)[0], dumped_files_folder, file)
+            with open(current_filepath, 'rb') as f:
+                current_dumped_data = pickle.load(f)
+
+            current_box_to_enlarge = current_dumped_data['box_to_enlarge']
+            current_box_obstacles = current_dumped_data['obstacle_boxes']
+            current_borderline_box = current_dumped_data['borderline_box']
+            current_box_enlarged = current_box_to_enlarge.enlarge(current_box_obstacles, current_borderline_box, order=BoundingBox2D.Order.HORIZONTAL)
+
+            fig, ax = plt.subplots()
+            fig.set_size_inches(22.5, 14.5)
+            for box in current_box_obstacles:
+                rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor='blue', facecolor=(1, 1, 1, 0))
+                ax.add_patch(rect)
+
+            rect = Rectangle((current_box_to_enlarge.x, current_box_to_enlarge.y), width=current_box_to_enlarge.width, height=current_box_to_enlarge.height,
+                             edgecolor='red', facecolor=(1, 1, 1, 0), linewidth=3)
+            ax.add_patch(rect)
+            rect = Rectangle((current_box_enlarged.x, current_box_enlarged.y), width=current_box_enlarged.width, height=current_box_enlarged.height, edgecolor='black', facecolor=(1, 1, 1, 0))
+            ax.add_patch(rect)
+
+            plt.axvline(x=current_borderline_box.x, color=(1, 0, 0, 0.25), label='axvline - full height')
+            plt.axvline(x=current_borderline_box.x + current_borderline_box.width, color=(0, 0, 1, 0.25), label='axvline - full height')
+
+            plt.axhline(y=current_borderline_box.y, color=(1, 0, 0, 0.25), label='axhline - full width')
+            plt.axhline(y=current_borderline_box.y + current_borderline_box.height, color=(0, 0, 1, 0.25), label='axhline - full width')
+
             plt.tight_layout()
             plt.show()
 

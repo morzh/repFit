@@ -29,9 +29,9 @@ class TestConfidenceFilterAddon(unittest.TestCase):
 
     def test_confidence_filter_full_body(self):
         for _ in range(self.number_checks):
-            current_tracks, current_confidences = self.generate_tracks(full_body_confidences=True)
-            current_confidence_threshold = np.percentile(current_confidences, 50.0)
-            current_confidences_mask = current_confidences >= current_confidence_threshold
+            current_tracks, current_full_body_data_confidences = self.generate_tracks(full_body_confidences=True)
+            current_confidence_threshold = np.percentile(current_full_body_data_confidences, 50.0)
+            current_confidences_mask = current_full_body_data_confidences >= current_confidence_threshold
 
             current_filter = ConfidenceFilterAddon(confidence_threshold=current_confidence_threshold)
             current_filter.process(current_tracks, filter_full_body_person=True)
@@ -42,9 +42,9 @@ class TestConfidenceFilterAddon(unittest.TestCase):
 
     def test_confidence_filter_non_full_body(self):
         for _ in range(self.number_checks):
-            current_tracks, current_confidences = self.generate_tracks(full_body_confidences=False)
-            current_confidence_threshold = np.percentile(current_confidences, 50.0)
-            current_confidences_mask = current_confidences >= current_confidence_threshold
+            current_tracks, current_data_confidences = self.generate_tracks(full_body_confidences=False)
+            current_confidence_threshold = np.percentile(current_data_confidences, 50.0)
+            current_confidences_mask = current_data_confidences >= current_confidence_threshold
 
             current_filter = ConfidenceFilterAddon(confidence_threshold=current_confidence_threshold)
             current_filter.process(current_tracks, filter_full_body_person=False)
@@ -97,17 +97,15 @@ class TestConfidenceFilterAddon(unittest.TestCase):
     def generate_person_tracked_data(self, frames_indices: np.ndarray, multiple_persons_tracks: MultiplePersonsTracks) -> PersonTrackedData:
         tracked_data = PersonTrackedData()
 
-        video_width = multiple_persons_tracks.video_properties.width
-        video_height = multiple_persons_tracks.video_properties.height
-
         for box_index, frame_index in enumerate(frames_indices):
-            current_bounding_box_left = np.random.randint(0, int(video_width / 2))
-            current_bounding_box_top = np.random.randint(0, int(video_height / 2))
+            current_bounding_box_left = np.random.randint(0, int(multiple_persons_tracks.video_properties.width / 2))
+            current_bounding_box_top = np.random.randint(0, int(multiple_persons_tracks.video_properties.height / 2))
             current_bounding_box_width = np.random.randint(self.bounding_box_minimal_width, self.video_width - current_bounding_box_left)
             current_bounding_box_height = np.random.randint(self.bounding_box_minimal_height, self.video_height - current_bounding_box_top)
             current_bounding_box = np.array([current_bounding_box_left, current_bounding_box_top, current_bounding_box_width, current_bounding_box_height])
 
             current_confidence = np.random.random()
+
             tracked_data.append(current_bounding_box, int(frame_index), current_confidence)
 
         return tracked_data
