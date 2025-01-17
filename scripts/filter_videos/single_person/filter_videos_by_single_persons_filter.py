@@ -1,6 +1,6 @@
 from loguru import logger
 from core.utils.io.files_operations import read_yaml
-from core.filters.single_person.core.single_persons_tools import process_videos_by_single_persons_filter
+from core.filters.single_person.source.single_persons_tools import process_videos_by_single_persons_filter
 
 
 if __name__ == '__main__':

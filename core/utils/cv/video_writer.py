@@ -6,8 +6,8 @@ import numpy as np
 
 from sqlalchemy.testing.plugin.plugin_base import warnings
 
-from core.filters.single_person.core.multiple_persons_tracks import MultiplePersonsTracks
-from core.filters.single_person.core.single_person_track import SinglePersonTrack
+from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
+from core.filters.single_person.source.single_person_track import SinglePersonTrack
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.utils.cv.video_stride_reader import VideoReader

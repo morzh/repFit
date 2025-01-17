@@ -1,0 +1,8 @@
+from core.filters.steady_camera.source.factory import Factory
+from core.filters.steady_camera.source.persons_mask.persons_mask_yolo_detector import PersonsMaskYoloDetector
+from core.filters.steady_camera.source.persons_mask.persons_mask_yolo_segmentation import PersonsMaskYoloSegmentation
+
+factory = Factory()
+
+factory.register_builder(PersonsMaskYoloDetector.alias, PersonsMaskYoloDetector.create_instance)
+factory.register_builder(PersonsMaskYoloSegmentation.alias, PersonsMaskYoloSegmentation.create_instance)
