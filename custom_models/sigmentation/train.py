@@ -3,8 +3,9 @@ import numpy as np
 import time
 import torch
 from torch import nn
-from model import SegmentationModel
+from model import SegmentationModel, SegmentationPCAModel
 from dataset import SegmentationDataset, SegmentationDatasetValidation
+from dataset import SegmentationPCADataset, SegmentationPCADatasetValidation
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -24,10 +25,12 @@ os.makedirs(models_dpath, exist_ok=True)
 # 6. Make training optimization for better GPU/CPU utilization
 
 
-def train(model_name: str = 'segmentation_v2.0', from_weights: str = None):
-    train_loader = SegmentationDataset(epoch_size=10, batch_size=1000)
-    val_loader = SegmentationDatasetValidation(sliding_window_length=10)
-    model = SegmentationModel()
+def train(from_weights: str = None):
+    model_name = 'segmentation_pca_v1.0'
+    train_loader = SegmentationPCADataset(epoch_size=10, batch_size=1000)
+    train_loader.load_dataset()
+    val_loader = SegmentationPCADatasetValidation(sliding_window_length=10)
+    model = SegmentationPCAModel()
     model = model.to(device)
     model.parameters()
     if from_weights:
@@ -68,13 +71,13 @@ def validation(model, val_loader, loss_fn, dpath: str, epoch: int = 0):
         y_pred = model(to_tensor(x_batch).cuda())
         y_pred = y_pred.detach().cpu()
         y_batch, y_pred = val_loader.join_results(y_batch, y_pred.numpy())
-        # save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{epoch}_{i}.png")
+        # save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{epoch}_{i}.png", legend=['train', 'predicted', 'pca'])
         val_loss = loss_fn(to_tensor(y_pred), to_tensor(y_batch)).item() / len(val_loader)
         avg_val_loss += val_loss
-
+    avg_val_loss = avg_val_loss/i
     os.makedirs(dpath, exist_ok=True)
     # save one example for check real progress
-    save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{epoch}_{i}.png")
+    save_fig([y_batch, y_pred, val_loader._last_batch_pca], fname=f"{dpath}/{epoch}_{i}.png", legend=['train', 'predicted', 'pca'])
     return avg_val_loss
 
 
@@ -100,13 +103,15 @@ def save_report_figs(name: str, x: np.ndarray, y: torch.Tensor, labels: list):
     save_fig(v1+v2, f'xy_{name}.png')
 
 
-def save_fig(vectors: list, fname: str):
+def save_fig(vectors: list, fname: str, legend: list = None):
     plt.gcf().set_size_inches(30, 10)
     plt.clf()
     for vector in vectors:
         if type(vector) != np.ndarray:
             vector = vector.detach().cpu().numpy()
         plt.plot(vector)
+    if legend:
+        plt.legend(legend)
     plt.savefig(fname, dpi=300)
     print(f"Save fig: {fname}")
 
@@ -122,5 +127,4 @@ def report(train_loader, y_pred):
 
 
 if __name__ == '__main__':
-    from_weights: str = 'segmentation_v2.2.pt'
-    train(from_weights=from_weights)
+    train()

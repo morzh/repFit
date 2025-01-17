@@ -4,7 +4,8 @@ import numpy as np
 from torch.utils.data import Dataset
 from custom_models.paths import PROJECT_ROOT, DATASETS_DPATH
 from pathlib import Path
-from scipy.interpolate import interp2d
+from scipy.interpolate import interp1d, interp2d
+from sklearn.preprocessing import normalize
 from utils.cv.video_reader import VideoReader
 
 min_distance_between_samples_frames: int = 3 # cut from both sides, real gab will be *2
@@ -12,6 +13,7 @@ sample_length: int = 200 # length of one data sample in frames. Calc it as fpt*s
 
 # 17 points by 3 axis + pca + y
 frame_length = 17 * 3 + 2
+frame_length = 2
 sample_shape = np.zeros((frame_length, sample_length))
 
 
@@ -24,13 +26,39 @@ def cut_continuous_mark(sample: list, gap_distance: int) -> List[tuple]:
     return points
 
 def speed_augmentation(data_array: np.ndarray, speed: float):
+    shape = 0
+    if len(data_array) < 4:
+        shape = len(data_array)
+        data_array = np.vstack((data_array, data_array))
+
     y = np.arange(data_array.shape[0])
     x = np.arange(data_array.shape[1])
     x2 = np.arange(data_array.shape[1] * speed) * speed
     sample = interp2d(x, y, data_array, kind='cubic')(x2, y)
+    if shape:
+        sample = sample[shape:, :]
     sample[-1, sample[-1, :] < 0.5] = 0
     sample[-1, sample[-1, :] >= 0.5] = 1
     return sample
+
+def load_pca(pca_dpath: Path, available_names: list):
+    pca = {}
+    max = 0
+    min = np.inf
+    for pca_fpath in pca_dpath.glob("*.npy"):
+        stem = pca_fpath.stem
+        if pca_fpath.stem not in available_names:
+            continue
+        pca[stem] = np.load(str(pca_fpath))
+        if pca[stem].max() > max:
+            max = pca[stem].max()
+        if pca[stem].min() < min:
+            min = pca[stem].min()
+
+    pca_norm = {}
+    for stem, pca_row in pca.items():
+        pca_norm[stem] = (pca_row - min) / max
+    return pca_norm
 
 
 class SegmentationDataset(Dataset):
@@ -59,10 +87,12 @@ class SegmentationDataset(Dataset):
         self.remove_class_labels = [7]
         self._boarder_template = np.zeros((frame_length, int(0.3 * sample_length)))
 
+    def load_dataset(self):
         self.dataset = self.load_data()
 
     def __len__(self):
         return self.epoch_size
+
 
     def load_data(self) -> list:
         """
@@ -83,11 +113,12 @@ class SegmentationDataset(Dataset):
         markup_files_list = list(markup.keys())
         original_data = []
 
+        pca = load_pca(self.pca_dpath, markup_files_list)
         for pca_fpath in self.pca_dpath.glob("*.npy"):
             stem = pca_fpath.stem
             if pca_fpath.stem not in markup_files_list:
                 continue
-            pca_row = np.load(str(pca_fpath))
+            pca_row = pca[stem]
             joints = np.load(self.skeleton_dpath / pca_fpath.name)
 
             print(f"Load {stem=}; {len(joints)=}; {len(pca_row)=}")
@@ -268,7 +299,7 @@ class SegmentationDatasetValidation(Dataset):
         assert sliding_window_length < sample_length
         self.equal_fps = equal_fps
         self.pca_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d_pca"
-        self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d"
+        self.skeleton_dpath = DATASETS_DPATH / "PCA_5.07.24" / "joints3d_aligned_to_global_frame"
         self.skeleton_info_dpath = DATASETS_DPATH / "PCA_5.07.24" / "results" / "joints2d_info"
         self.markup_fpath = PROJECT_ROOT / "markup" / "markup.json"
         self.video_dpath = DATASETS_DPATH / "PCA_5.07.24" / "filtered_final_video"
@@ -310,12 +341,14 @@ class SegmentationDatasetValidation(Dataset):
         # start in position:  -self.sample_length + self.sliding_window_length
         # because we need one number of sum values in each position
         print("Load validation dataset")
+        pca = load_pca(self.pca_dpath, markup_files_list)
+
         for pca_fpath in self.pca_dpath.glob("*.npy"):
             stem = pca_fpath.stem
             if pca_fpath.stem not in markup_files_list:
                 print(f"Skip loading {pca_fpath.stem}")
                 continue
-            pca_row = np.load(str(pca_fpath))
+            pca_row = pca[stem]
             joints = np.load(self.skeleton_dpath / pca_fpath.name)
             assert len(pca_row) == len(joints), "Something wrong with data. PCA and joints have different length"
             print(f"Load {stem=}; {len(joints)=}; {len(pca_row)=}")
@@ -418,3 +451,106 @@ class SegmentationDatasetValidation(Dataset):
         y_predicted_array = y_predicted_array/self.sum_k
 
         return y_train_array, y_predicted_array
+
+
+
+class SegmentationPCADataset(SegmentationDataset):
+    """Skeleton joints and PCA"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.frame_length = 2
+        self._boarder_template = np.zeros((self.frame_length, int(0.3 * sample_length)))
+
+    def load_data(self) -> list:
+        """
+        :param
+           files_list: files for witch need to load data
+
+        Load data arrays (PCA + joints). Final result array contains:
+            - first row: PCA vector
+            - other rows: joints points vectors if format - x1, y1, z1, x2, y2, z2....
+            - last row: y vector
+
+        :return:
+            list of 2d np.ndarray(float32) with different length
+        """
+
+        markup = self.load_markup()
+
+        markup_files_list = list(markup.keys())
+        original_data = []
+
+        pca = load_pca(self.pca_dpath, markup_files_list)
+
+        for stem, pca_row in pca.items():
+            y = self.make_y_sample(pca_row.shape[0], markup[stem])
+            data_sample = self.join_data_sample(pca_row, y)
+
+            if self.equal_fps:
+                video_reader = VideoReader(list(self.video_dpath.glob(stem+".*"))[0], use_tqdm=False)
+                d_speed = self.equal_fps / video_reader.fps
+                data_sample = speed_augmentation(data_sample, d_speed)
+
+            original_data.append(data_sample)
+        return original_data
+
+
+    def join_data_sample(self, pca, y):
+        data_sample = np.hstack((pca, y.reshape((len(y), 1))))
+        data_sample = data_sample.transpose()
+
+        # add extra zeros boarder for increase train progress
+        data_sample = np.hstack((self._boarder_template, data_sample, self._boarder_template))
+
+        if len(data_sample) < sample_length:
+            data_sample = np.hstack(
+                (data_sample, np.zeros((self.frame_length, sample_length - len(data_sample)))))
+
+        return data_sample
+
+
+class SegmentationPCADatasetValidation(SegmentationDatasetValidation):
+    """Skeleton joints and PCA"""
+
+    def load_data(self) -> list:
+        """
+        :param
+           files_list: files for witch need to load data
+
+        Load data arrays (PCA + joints). Final result array contains:
+            - first row: PCA vector
+            - other rows: joints points vectors if format - x1, y1, z1, x2, y2, z2....
+            - last row: y vector
+
+        :return:
+            list of 2d np.ndarray(float32) with different length
+        """
+
+        markup = self.load_markup()
+        markup_files_list = list(markup.keys())
+        original_data = []
+        # start in position:  -self.sample_length + self.sliding_window_length
+        # because we need one number of sum values in each position
+        print("Load validation dataset")
+        pca = load_pca(self.pca_dpath, markup_files_list)
+
+        for pca_fpath in self.pca_dpath.glob("*.npy"):
+            stem = pca_fpath.stem
+            if pca_fpath.stem not in markup_files_list:
+                print(f"Skip loading {pca_fpath.stem}")
+                continue
+            pca_row = pca[stem]
+
+            y = self.make_y_sample(pca_row.shape[0], markup[stem])
+            data_sample = np.hstack((pca_row, y.reshape((len(y), 1))))
+            data_sample = data_sample.transpose()
+
+
+            if self.equal_fps:
+                video_reader = VideoReader(list(self.video_dpath.glob(stem+".*"))[0], use_tqdm=False)
+                d_speed = self.equal_fps / video_reader.fps
+                data_sample = speed_augmentation(data_sample, d_speed)
+
+            original_data.append(data_sample)
+        return original_data
