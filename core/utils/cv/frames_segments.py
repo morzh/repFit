@@ -41,6 +41,10 @@ class FramesSegments:
         return self.values.shape[0]
 
 
+    def __eq__(self, other) -> bool:
+        return np.all(self.values == other.values)
+
+
     def __copy__(self) -> FramesSegments:
         return  FramesSegments(self.values.copy())
 

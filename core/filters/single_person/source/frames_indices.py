@@ -36,6 +36,10 @@ class FramesIndices:
         return self._values.shape[0]
 
 
+    def __eq__(self, other):
+        return np.all(self._values == other.values)
+
+
     def __copy__(self):
         return FramesIndices(np.copy(self._values))
 
@@ -53,6 +57,18 @@ class FramesIndices:
             self._values = np.append(self._values, element)
         else:
             raise ValueError(f'New frame index should be greater, than the previous one. Got {element} <= {self._values[-1]}')
+
+
+    def insert(self, new_frames_indices: np.ndarray) -> None:
+        """
+        Description:
+            Insert new ``frames_indices`` to existing ones.
+
+        :param new_frames_indices: frames indices
+        """
+        new_frames_indices = np.setdiff1d(new_frames_indices.flatten(), self._values)
+        self._values = np.append(self._values, new_frames_indices)
+        self._values = np.sort(self._values)
 
 
     @staticmethod

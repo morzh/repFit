@@ -23,6 +23,11 @@ class SinglePersonTrack:
         self.full_body_data = PersonData()
 
 
+    def __eq__(self, other):
+        return self.tracked_data == other.tracked_data and self.data == other.data and self.full_body_data == other.full_body_data
+
+
+    '''
     def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, joints: np.ndarray | None = None) -> None:
         """
         Description:
@@ -33,7 +38,8 @@ class SinglePersonTrack:
         :param confidence: tracked bounding box confidence
         :param joints: tracked keypoints
         """
-        self.tracked_data.append(bounding_box, frame_index, confidence, bounding_box_mode=BoundingBoxes2DArray.XYXY, joints=joints)
+        self.tracked_data.append(bounding_box, frame_index, confidence, joints=joints, bounding_box_mode=BoundingBoxes2DArray.XYXY)
+    '''
 
     '''
     def calculate_full_body_person_segments(self, stride) -> FramesSegments:

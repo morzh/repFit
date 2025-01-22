@@ -8,13 +8,23 @@ from core.filters.single_person.source.frames_indices import FramesIndices
 class PersonData:
     """
     Description:
+        Class containing frames indices and respective segments.
 
-    :ivar frames_segments:
-    :ivar frames_indices:
+    :ivar frames_segments: frames segments
+    :ivar frames_indices: frames indices
     """
     def __init__(self):
         self.frames_segments = FramesSegments()
         self.frames_indices = FramesIndices()
+
+
+    def __eq__(self, other):
+        return self.frames_segments == other.frames_segments and self.frames_indices == other.frames_indices
+
+
+    def insert(self, frames_indices: np.ndarray) -> None:
+        self.frames_indices.insert(frames_indices)
+        # self.frames_segments.update()
 
 
     def calculate_segments(self, stride=1) -> None:
@@ -40,6 +50,11 @@ class PersonData:
 
 
     def clip_segments(self, segments: FramesSegments) -> FramesSegments:
+        """
+        Description:
+
+        :param segments:
+        """
         clipped_segments = FramesSegments()
         for segment in segments:
             current_segments = self.frames_segments.clip(segment[0], segment[1])

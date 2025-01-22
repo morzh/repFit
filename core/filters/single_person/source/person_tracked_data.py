@@ -1,4 +1,5 @@
 import numpy as np
+from sympy import andre
 
 from core.utils.cv.frames_segments import FramesSegments
 from core.filters.single_person.source.frames_indices import FramesIndices
@@ -28,6 +29,13 @@ class PersonTrackedData:
         return self.frames_indices.values.shape[0]
 
 
+    def __eq__(self, other):
+        return (self._bounding_boxes == other.bounding_boxes and
+                self._frames_indices == other.frames_indices and
+                np.all(self._confidences == other.confidences) and
+                np.all(self._joints == other.joints))
+
+
     def __delitem__(self, index):
         self._confidences =np.delete(self._confidences, index)
         self._bounding_boxes.values = np.delete(self._bounding_boxes.values, index, axis=0)
@@ -35,7 +43,7 @@ class PersonTrackedData:
         self._joints = np.delete(self._joints, index, axis=0)
 
 
-    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, bounding_box_mode=BoundingBoxes2DArray.XYWH, joints: np.ndarray | None = None) -> None:
+    def append(self, bounding_box: np.ndarray, frame_index: int, confidence: float, joints: np.ndarray | None = None, bounding_box_mode=BoundingBoxes2DArray.XYWH) -> None:
         """
         Description:
             Append new tracked data.
@@ -58,6 +66,35 @@ class PersonTrackedData:
             self._confidences = np.append(self._confidences, confidence)
         else:
             raise ValueError('Confidence should be greater or equal zero')
+
+
+    def insert(self, indices, bounding_boxes, confidences, joints: np.ndarray | None = None) -> None:
+        """
+        Description:
+            Insert new data.
+
+        :param indices: new frames indices to insert
+        :param bounding_boxes: new bounding boxes to insert
+        :param confidences: new confidences to insert
+        :param joints: new joints to insert
+        """
+        frames_indices_values = self._frames_indices.values
+        frames_indices_values = np.append(frames_indices_values, indices.flatten())
+        sorting_indices_permutation = np.argsort(frames_indices_values)
+        frames_indices_values = frames_indices_values[sorting_indices_permutation]
+        self._frames_indices = FramesIndices(frames_indices_values)
+
+        bounding_boxes_values = self._bounding_boxes.values
+        bounding_boxes_values = np.append(bounding_boxes_values, bounding_boxes, axis=0)
+        bounding_boxes_values = bounding_boxes_values[sorting_indices_permutation]
+        self._bounding_boxes = BoundingBoxes2DArray(bounding_boxes_values)
+
+        self._confidences = np.append(self._confidences, confidences.flatten())
+        self._confidences = self._confidences[sorting_indices_permutation]
+
+        if joints is not None:
+            self._joints = np.append(self._joints, joints, axis=0)
+            self._joints = self._joints[sorting_indices_permutation]
 
 
     def apply_mask(self, mask: np.ndarray) -> None:

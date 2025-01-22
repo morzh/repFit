@@ -36,6 +36,10 @@ class BoundingBoxes2DArray:
             self.values = np.empty((0, 4), dtype=np.int32)
 
 
+    def __eq__(self, other):
+        return np.all(self.values == other.values)
+
+
     def __getitem__(self, item):
         return self.values[item]
     

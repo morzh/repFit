@@ -31,6 +31,13 @@ class MultiplePersonsTracks:
         self._frames_stride = stride
 
 
+    def __eq__(self, other):
+        return (self.video_properties == other.video_properties and
+                self.exact_frames_number == other.exact_frames_number and
+                self.frames_stride == other.frames_stride and
+                self.persons == other.persons)
+
+
     def update(self, frame_index: int, bounding_boxes: np.ndarray, keypoints: np.ndarray | None = None) -> None:
         """
         Description:
@@ -45,18 +52,16 @@ class MultiplePersonsTracks:
             current_person_id = int(bounding_boxes[index, 4])
 
             if current_person_id == 0:
-                """ No person ids tracked """
+                """ Case if no person ids tracked """
                 continue
             elif current_person_id not in self.persons:
                 self.persons[current_person_id] = SinglePersonTrack()
 
             current_confidence = float(bounding_boxes[index, 5])
             current_bounding_box = bounding_boxes[index, :4]
+            current_joints = keypoints[index] if keypoints is not None else None
 
-            if keypoints is not None:
-                current_joints = keypoints[index]
-
-            self.persons[current_person_id].append(current_bounding_box, frame_index, confidence=current_confidence, joints=current_joints)
+            self.persons[current_person_id].tracked_data.append(current_bounding_box, frame_index, current_confidence, joints=current_joints, bounding_box_mode=BoundingBoxes2DArray.XYXY)
 
 
     def apply_filter(self, filter_visitor: MultiPersonsFilterAddonBase, apply_to_full_body=False) -> None:
