@@ -68,13 +68,13 @@ class PersonTrackedData:
             raise ValueError('Confidence should be greater or equal zero')
 
 
-    def insert(self, indices, bounding_boxes, confidences, joints: np.ndarray | None = None) -> None:
+    def insert(self, indices, bounding_boxes: BoundingBoxes2DArray, confidences, joints: np.ndarray | None = None) -> None:
         """
         Description:
             Insert new data.
 
         :param indices: new frames indices to insert
-        :param bounding_boxes: new bounding boxes to insert
+        :param bounding_boxes: new bounding boxes array to insert
         :param confidences: new confidences to insert
         :param joints: new joints to insert
         """
@@ -84,8 +84,7 @@ class PersonTrackedData:
         frames_indices_values = frames_indices_values[sorting_indices_permutation]
         self._frames_indices = FramesIndices(frames_indices_values)
 
-        bounding_boxes_values = self._bounding_boxes.values
-        bounding_boxes_values = np.append(bounding_boxes_values, bounding_boxes, axis=0)
+        bounding_boxes_values = np.append(self._bounding_boxes.values, bounding_boxes.values, axis=0)
         bounding_boxes_values = bounding_boxes_values[sorting_indices_permutation]
         self._bounding_boxes = BoundingBoxes2DArray(bounding_boxes_values)
 

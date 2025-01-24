@@ -31,6 +31,9 @@ class BoundingBoxes2DArray:
                 bounding_boxes = self.xyxy_to_xywh(bounding_boxes)
             elif not self.is_consistent(bounding_boxes):
                 raise ValueError('Bounding boxes dimensions should be positive.')
+            elif len(bounding_boxes.shape) != 2:
+                raise ValueError('bounding_boxes should have two dimensions.')
+
             self.values = bounding_boxes
         else:
             self.values = np.empty((0, 4), dtype=np.int32)

@@ -33,6 +33,7 @@ class TestAreaRatioFilterAddon(unittest.TestCase):
 
             current_tracks_apriori = self.generate_tracks(current_bounding_boxes_area_mean)
             current_tracks_to_filter = self.add_data_to_tracks(current_tracks_apriori, current_bounding_boxes_area_mean * current_area_ratio_threshold)
+            # current_tracks_to_filter = copy.deepcopy(current_tracks_apriori)
 
             current_filter = AreaRatioFilterAddon(area_ratio_threshold=current_area_ratio_threshold)
             current_filter.process(current_tracks_to_filter, filter_full_body_person=True)

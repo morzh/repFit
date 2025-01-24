@@ -180,17 +180,17 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
     def test_areas(self):
         for _ in range(self.number_checks):
-            number_boxes = np.random.randint(1, 512)
-            apriori_known_widths = np.random.randint(1, 2048, (number_boxes,))
-            apriori_known_heights = np.random.randint(1, 2048, (number_boxes,))
-            apriori_known_areas = apriori_known_widths * apriori_known_heights
+            current_number_boxes = np.random.randint(1, 512)
+            current_apriori_known_widths = np.random.randint(1, 2048, (current_number_boxes,))
+            current_apriori_known_heights = np.random.randint(1, 2048, (current_number_boxes,))
+            current_apriori_known_areas = current_apriori_known_widths * current_apriori_known_heights
 
-            left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
-            boxes = np.hstack((left_tops, apriori_known_widths.reshape(-1, 1), apriori_known_heights.reshape(-1, 1)))
-            bounding_boxes = BoundingBoxes2DArray(boxes)
-            areas = bounding_boxes.areas()
+            current_left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
+            current_boxes = np.hstack((current_left_tops, current_apriori_known_widths.reshape(-1, 1), current_apriori_known_heights.reshape(-1, 1)))
+            current_bounding_boxes = BoundingBoxes2DArray(current_boxes)
+            current_areas = current_bounding_boxes.areas()
 
-            self.assertTrue(np.alltrue(apriori_known_areas == areas))
+            self.assertTrue(np.alltrue(current_apriori_known_areas == current_areas))
 
 
     def test_mean_area(self):
