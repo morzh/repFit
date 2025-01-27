@@ -32,8 +32,8 @@ class PersonTrackedData:
     def __eq__(self, other):
         return (self._bounding_boxes == other.bounding_boxes and
                 self._frames_indices == other.frames_indices and
-                np.all(self._confidences == other.confidences) and
-                np.all(self._joints == other.joints))
+                np.array_equal(self._confidences, other.confidences) and
+                np.array_equal(self._joints, other.joints))
 
 
     def __delitem__(self, index):
@@ -68,7 +68,7 @@ class PersonTrackedData:
             raise ValueError('Confidence should be greater or equal zero')
 
 
-    def insert(self, indices, bounding_boxes: BoundingBoxes2DArray, confidences, joints: np.ndarray | None = None) -> None:
+    def insert(self, indices: np.ndarray, bounding_boxes: BoundingBoxes2DArray, confidences: np.ndarray, joints: np.ndarray | None = None) -> None:
         """
         Description:
             Insert new data.
@@ -78,7 +78,7 @@ class PersonTrackedData:
         :param confidences: new confidences to insert
         :param joints: new joints to insert
         """
-        frames_indices_values = self._frames_indices.values
+        frames_indices_values = self._frames_indices.values.astype(np.int64)
         frames_indices_values = np.append(frames_indices_values, indices.flatten())
         sorting_indices_permutation = np.argsort(frames_indices_values)
         frames_indices_values = frames_indices_values[sorting_indices_permutation]

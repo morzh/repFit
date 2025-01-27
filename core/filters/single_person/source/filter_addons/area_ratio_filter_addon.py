@@ -19,7 +19,7 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
         self.area_ratio_threshold = area_ratio_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+    def process(self, tracks: MultiplePersonsTracks, **kwargs) -> None:
         if not len(tracks.persons):
             return
 
@@ -27,17 +27,17 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
         persons_keys = []
 
         for person_id, person in tracks.persons.items():
-            persons_areas.append(person.mean_area())
+            persons_areas.append(person.tracked_data.bounding_boxes.mean_area())
             persons_keys.append(person_id)
 
+        persons_keys = np.array(persons_keys)
         persons_areas = np.array(persons_areas)
         person_maximum_area = np.max(persons_areas)
-        area_threshold = person_maximum_area / self.area_ratio_threshold
-        persons_area_threshold_indices = np.argwhere(persons_areas < area_threshold)
+        absolute_area_threshold = person_maximum_area / self.area_ratio_threshold
 
-        for key in persons_area_threshold_indices:
-            if filter_full_body_person:
-                tracks.persons[persons_keys[key[0]]].full_body_data.frames_indices = np.empty(0, )
-            else:
-                tracks.persons[persons_keys[key[0]]].data.frames_indices = np.empty(0, )
+        persons_mask = persons_areas < absolute_area_threshold
+        keys_to_delete = persons_keys[persons_mask]
+
+        for key in keys_to_delete:
+            tracks.persons.pop(key, None)
 

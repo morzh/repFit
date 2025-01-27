@@ -42,7 +42,7 @@ class FramesSegments:
 
 
     def __eq__(self, other) -> bool:
-        return np.all(self.values == other.values)
+        return np.array_equal(self.values, other.values)
 
 
     def __copy__(self) -> FramesSegments:

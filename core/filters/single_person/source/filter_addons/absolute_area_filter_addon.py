@@ -17,27 +17,15 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
         self.area_threshold = area_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
+    def process(self, tracks: MultiplePersonsTracks, **kwargs) -> None:
         if not len(tracks.persons):
             return
 
-        if filter_full_body_person:
-            self.filter_person_track_full_body_data(tracks)
-        else:
-            self.filter_person_track_data(tracks)
+        keys_to_delete = []
+        for person_id, person in tracks.persons.items():
+            current_person_mean_area = person.mean_area()
+            if current_person_mean_area < self.area_threshold:
+                keys_to_delete.append(person_id)
 
-
-    def filter_person_track_data(self, tracks: MultiplePersonsTracks):
-        for person_track in tracks.persons.values():
-            if person_track.mean_area() < self.area_threshold:
-                person_track.data.frames_indices = np.empty(0, )
-            elif not len(person_track.data.frames_indices):
-                person_track.data.frames_indices = person_track.tracked_data.frames_indices
-
-
-    def filter_person_track_full_body_data(self, tracks: MultiplePersonsTracks):
-        for person_id, person_track in tracks.persons.items():
-            if person_track.mean_area() < self.area_threshold:
-                person_track.full_body_data.frames_indices = np.empty(0, )
-            elif not len(person_track.data.frames_indices):
-                person_track.full_body_data.frames_indices = person_track.tracked_data.frames_indices
+        for key in keys_to_delete:
+            tracks.persons.pop(key, None)

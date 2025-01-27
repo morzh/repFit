@@ -7,25 +7,25 @@ from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingB
 from core.filters.single_person.source.person_tracked_data import PersonTrackedData
 
 
-class TestPersonTrackingData(unittest.TestCase):
+class TestPersonTrackedData(unittest.TestCase):
 
     def setUp(self):
         self.number_checks = 1_500
 
     def test_append_correct(self):
-        tracking_data = self.generate_tracking_data()
+        person_tracked_data = self.generate_person_tracked_data()
         for index in range(self.number_checks):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(1, 500, (1, 2))
             bounding_box = np.hstack((top_lefts, width_heights)).reshape(4,)
-            frame_index = tracking_data._frames_indices._values[-1] + np.random.randint(1, 20)
+            frame_index = person_tracked_data._frames_indices._values[-1] + np.random.randint(1, 20)
             confidence = np.random.random((1,))
 
-            tracking_data.append(bounding_box, frame_index, confidence)
+            person_tracked_data.append(bounding_box, frame_index, confidence)
 
 
     def test_append_incorrect_bounding_box(self):
-        tracking_data = self.generate_tracking_data()
+        tracking_data = self.generate_person_tracked_data()
         for index in range(self.number_checks):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(-200, 220, (1, 2))
@@ -41,8 +41,9 @@ class TestPersonTrackingData(unittest.TestCase):
                 tracking_data.append(bounding_box, frame_index, confidence)
 
 
+
     def test_append_incorrect_frame_index(self):
-        tracking_data = self.generate_tracking_data()
+        tracking_data = self.generate_person_tracked_data()
         for index in range(self.number_checks):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(1, 220, (1, 2))
@@ -53,6 +54,22 @@ class TestPersonTrackingData(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 tracking_data.append(bounding_box, frame_index, confidence)
+
+
+    def test_insert(self):
+        person_tracked_data = self.generate_person_tracked_data()
+        for index in range(self.number_checks):
+            top_lefts = np.random.randint(-500, 500, (1, 2))
+            width_heights = np.random.randint(1, 500, (1, 2))
+            bounding_box = np.hstack((top_lefts, width_heights)).reshape(4,)
+            frame_index = person_tracked_data._frames_indices._values[-1] + np.random.randint(1, 20)
+            confidence = np.random.random((1,))
+
+            bounding_boxes = BoundingBoxes2DArray(np.expand_dims(bounding_box, axis=0))
+            frame_indices = np.expand_dims(frame_index, axis=0)
+            confidences = np.expand_dims(confidence, axis=0)
+
+            person_tracked_data.insert(frame_indices, bounding_boxes, confidences)
 
 
     def test_bounding_box(self):
@@ -104,7 +121,7 @@ class TestPersonTrackingData(unittest.TestCase):
 
 
     @staticmethod
-    def generate_tracking_data() -> PersonTrackedData:
+    def generate_person_tracked_data() -> PersonTrackedData:
         number_occurrences = 5_000
 
         top_lefts = np.random.randint(-500, 500, (number_occurrences, 2))
@@ -145,7 +162,7 @@ class TestPersonTrackingData(unittest.TestCase):
             current_segment_indices = current_segment_indices.astype(np.int64)
             current_segment_indices = current_segment_indices[:-1]
             current_number_boxes = len(current_segment_indices)
-            current_bounding_boxes = TestPersonTrackingData.bounding_boxes(current_number_boxes).astype(np.int64)
+            current_bounding_boxes = TestPersonTrackedData.bounding_boxes(current_number_boxes).astype(np.int64)
 
             current_confidences = 0.5 * np.ones(current_segment_indices.shape)
             tracking_data._bounding_boxes.extend(current_bounding_boxes)

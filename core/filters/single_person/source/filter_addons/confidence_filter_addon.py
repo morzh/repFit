@@ -21,34 +21,16 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
         if not len(tracks.persons):
             return
 
-        if filter_full_body_person:
-            self.filter_person_track_full_body_data(tracks)
-        else:
-            self.filter_person_track_data(tracks)
-
-
-    def filter_person_track_data(self, tracks: MultiplePersonsTracks):
-        for person_id, person_track in tracks.persons.items():
-            if not len(person_track.tracked_data):
-                continue
+        for person_track in tracks.persons.values():
+            if not len(person_track.tracked_data): continue
+            current_data_reference = person_track.full_body_data if filter_full_body_person else person_track.data
 
             current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.values)
-            person_frames_keys = current_frames_indices_set.index(person_track.data.frames_indices.values)
-            persons_confidences = person_track.tracked_data.confidences[person_frames_keys]
-            confidences_mask = persons_confidences > self.confidence_threshold
-            person_track.data.frames_indices = FramesIndices(person_track.data.frames_indices.values[confidences_mask])
+            current_frames_keys = current_frames_indices_set.index(current_data_reference.frames_indices.values)
+            if not len(current_frames_keys): continue
 
+            current_frames_keys = np.array(current_frames_keys)
+            current_persons_confidences = person_track.tracked_data.confidences[current_frames_keys]
 
-    def filter_person_track_full_body_data(self, tracks: MultiplePersonsTracks):
-        for person_id, person_track in tracks.persons.items():
-            if not len(person_track.tracked_data):
-                continue
-
-            current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.values)
-            person_full_body_frames_keys = current_frames_indices_set.index(person_track.full_body_data.frames_indices.values)
-            if not len(person_full_body_frames_keys): return
-            person_full_body_frames_keys = np.array(person_full_body_frames_keys)
-            full_body_persons_confidences = person_track.tracked_data.confidences[person_full_body_frames_keys]
-            confidences_mask = full_body_persons_confidences > self.confidence_threshold
-            filtered_keys = person_full_body_frames_keys[confidences_mask]
-            person_track.full_body_data.frames_indices = FramesIndices(person_track.tracked_data.frames_indices[filtered_keys])
+            confidences_mask = current_persons_confidences > self.confidence_threshold
+            current_data_reference.frames_indices = FramesIndices(current_data_reference.frames_indices.values[confidences_mask])

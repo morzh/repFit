@@ -14,7 +14,7 @@ from core.filters.single_person.source.filter_addons.area_ratio_filter_addon imp
 class TestAreaRatioFilterAddon(unittest.TestCase):
 
     def setUp(self):
-        self.number_checks = 1_500
+        self.number_checks = 2_500
         self.video_width = 1920
         self.video_height = 1080
         self.minimum_frames_number = 50
@@ -24,22 +24,20 @@ class TestAreaRatioFilterAddon(unittest.TestCase):
         self.maximum_number_persons_in_tracks = 20
         self.maximum_frames_stride_value = 5
         self.standard_deviation = 1.0
+        self.normal_error = 0.3
 
 
     def test_area_ratio_filter(self):
         for _ in range(self.number_checks):
-            current_area_ratio_threshold = self.area_ratio_range[0] + (self.area_ratio_range[1] - self.area_ratio_range[0]) * np.random.rand()
+            current_area_ratio_threshold = int(self.area_ratio_range[0] + (self.area_ratio_range[1] - self.area_ratio_range[0]) * np.random.rand())
             current_bounding_boxes_area_mean = int(self.area_base_values_range[0] + (self.area_base_values_range[1] - self.area_base_values_range[0]) * np.random.random())
 
-            current_tracks_apriori = self.generate_tracks(current_bounding_boxes_area_mean)
-            current_tracks_to_filter = self.add_data_to_tracks(current_tracks_apriori, current_bounding_boxes_area_mean * current_area_ratio_threshold)
-            # current_tracks_to_filter = copy.deepcopy(current_tracks_apriori)
+            current_tracks_with_boxes_areas_mean_below_threshold = self.generate_tracks(current_bounding_boxes_area_mean - 1)
+            current_tracks_to_filter = self.add_persons_to_tracks(current_tracks_with_boxes_areas_mean_below_threshold, current_bounding_boxes_area_mean * current_area_ratio_threshold)
 
             current_filter = AreaRatioFilterAddon(area_ratio_threshold=current_area_ratio_threshold)
-            current_filter.process(current_tracks_to_filter, filter_full_body_person=True)
-            current_filter.process(current_tracks_to_filter, filter_full_body_person=False)
-
-            self.assertTrue(current_tracks_apriori == current_tracks_to_filter)
+            current_filter.process(current_tracks_to_filter)
+            self.assertTrue(current_tracks_with_boxes_areas_mean_below_threshold == current_tracks_to_filter)
 
 
     def generate_tracks(self, bounding_boxes_area_mean: int) -> MultiplePersonsTracks:
@@ -75,7 +73,8 @@ class TestAreaRatioFilterAddon(unittest.TestCase):
         for box_index, frame_index in enumerate(frames_indices):
             current_bounding_box_left = np.random.randint(0, int(tracks.video_properties.width / 2))
             current_bounding_box_top = np.random.randint(0, int(tracks.video_properties.height / 2))
-            current_bounding_box_width = np.random.normal(bounding_boxes_mean, self.standard_deviation)
+            current_bounding_box_width = round(np.random.normal(bounding_boxes_mean, self.standard_deviation))
+            current_bounding_box_width = max(int(current_bounding_box_width), 1)
             current_bounding_box_height = 1
             current_bounding_box = np.array([current_bounding_box_left, current_bounding_box_top, current_bounding_box_width, current_bounding_box_height])
 
@@ -86,37 +85,26 @@ class TestAreaRatioFilterAddon(unittest.TestCase):
         return tracked_data
 
 
-    def add_data_to_tracks(self, tracks, bounding_boxes_area_mean) -> MultiplePersonsTracks:
+    def add_persons_to_tracks(self, tracks, bounding_boxes_area_mean) -> MultiplePersonsTracks:
         stride_frames_number = int(tracks.exact_frames_number / tracks.frames_stride)
         frames_indices = np.linspace(0, (tracks.exact_frames_number // tracks.frames_stride) * tracks.frames_stride, stride_frames_number + 1).astype(int)
+        new_persons_number = np.random.randint(0, 20)
 
+        new_persons_starting_index = len(tracks.persons)
+        for person_index in range(new_persons_starting_index, new_persons_starting_index + new_persons_number):
+            current_person_tracked_data = PersonTrackedData()
+            current_number_tracked_frames_indices = np.random.randint(1, frames_indices.shape[0])
+            current_tracked_frames_indices_mask = np.array(current_number_tracked_frames_indices * [True] + (frames_indices.shape[0] - current_number_tracked_frames_indices) * [False])
+            np.random.shuffle(current_tracked_frames_indices_mask)
 
-        for person in tracks.persons.values():
-            current_person_candidate_frame_indices = np.setdiff1d(frames_indices, person.tracked_data.frames_indices)
-            current_new_number_frames_indices = np.random.randint(int(frames_indices.shape[0] / 4), current_person_candidate_frame_indices.shape[0])
-            current_frames_indices_mask = np.array(current_new_number_frames_indices * [True] + (current_person_candidate_frame_indices.shape[0] - current_new_number_frames_indices) * [False])
-            np.random.shuffle(current_frames_indices_mask)
+            current_tracked_frames_indices = frames_indices[current_tracked_frames_indices_mask]
+            current_tracked_bounding_boxes = self.generate_bounding_boxes(current_number_tracked_frames_indices, tracks.video_properties, bounding_boxes_area_mean)
+            current_tracked_confidences = np.random.random((current_number_tracked_frames_indices,))
+            current_person_tracked_data.insert(current_tracked_frames_indices, current_tracked_bounding_boxes, current_tracked_confidences)
 
-            current_new_frames_indices = current_person_candidate_frame_indices[current_frames_indices_mask]
-            current_new_number_of_data_elements = current_new_frames_indices.shape[0]
-            current_new_bounding_boxes = self.generate_bounding_boxes(current_new_number_of_data_elements, tracks.video_properties, bounding_boxes_area_mean)
-            current_new_confidences = np.random.random((current_new_number_of_data_elements,))
-
-            current_data_candidate_frame_indices = np.setdiff1d(person.tracked_data.frames_indices, person.data.frames_indices)
-            current_new_number_data_frames_indices = np.random.randint(0, current_data_candidate_frame_indices.shape[0])
-            current_data_frames_indices_mask = np.array(current_new_number_data_frames_indices * [True] + (current_data_candidate_frame_indices.shape[0] - current_new_number_data_frames_indices) * [False])
-            np.random.shuffle(current_data_frames_indices_mask)
-            current_new_data_indices = current_data_candidate_frame_indices[current_data_frames_indices_mask]
-
-            current_full_body_data_candidate_frame_indices = np.setdiff1d(person.tracked_data.frames_indices, person.full_body_data.frames_indices)
-            current_number_full_body_data_frames_indices = np.random.randint(0, current_full_body_data_candidate_frame_indices.shape[0])
-            current_full_body_data_frames_indices_mask = np.array(current_number_full_body_data_frames_indices * [True] + (current_full_body_data_candidate_frame_indices.shape[0] - current_number_full_body_data_frames_indices) * [False])
-            np.random.shuffle(current_full_body_data_frames_indices_mask)
-            current_new_full_body_data_indices = current_full_body_data_candidate_frame_indices[current_full_body_data_frames_indices_mask]
-
-            person.data.insert(current_new_data_indices)
-            person.full_body_data.insert(current_new_full_body_data_indices)
-            person.tracked_data.insert(current_new_frames_indices, current_new_bounding_boxes, current_new_confidences)
+            current_person_track = SinglePersonTrack()
+            current_person_track.tracked_data = current_person_tracked_data
+            tracks.persons[person_index] = current_person_track
 
         return tracks
 

@@ -40,7 +40,7 @@ class BoundingBoxes2DArray:
 
 
     def __eq__(self, other):
-        return np.all(self.values == other.values)
+        return np.array_equal(self.values, other.values)
 
 
     def __getitem__(self, item):

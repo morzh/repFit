@@ -16,7 +16,7 @@ from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingB
 class TestConfidenceFilterAddon(unittest.TestCase):
 
     def setUp(self):
-        self.number_checks = 1_500
+        self.number_checks = 3_500
         self.video_width = 1920
         self.video_height = 1080
         self.minimum_frames_number = 50
@@ -37,7 +37,6 @@ class TestConfidenceFilterAddon(unittest.TestCase):
             current_confidence_threshold_value = self.confidence_range[0] + (self.confidence_range[1] - self.confidence_range[0]) * np.random.rand()
             current_tracks_apriori = self.generate_tracks(confidence_range=(current_confidence_threshold_value, 1.0))
             current_tracks_to_filter = self.add_data_to_tracks(current_tracks_apriori, confidence_range=(0.05, current_confidence_threshold_value - 1e-6))
-            # current_tracks_to_filter = copy.deepcopy(current_tracks_apriori)
 
             current_filter = ConfidenceFilterAddon(confidence_threshold=current_confidence_threshold_value)
             current_filter.process(current_tracks_to_filter, filter_full_body_person=True)
@@ -46,25 +45,6 @@ class TestConfidenceFilterAddon(unittest.TestCase):
             for person_apriori, person_filtered in zip(current_tracks_apriori.persons.values(), current_tracks_to_filter.persons.values()):
                 self.assertTrue(person_apriori.data.frames_indices == person_filtered.data.frames_indices)
                 self.assertTrue(person_apriori.full_body_data.frames_indices == person_filtered.full_body_data.frames_indices)
-
-            # dump_index = 0
-            # for person_apriori, person_filtered in zip(current_tracks_apriori.persons.values(), current_tracks_to_filter.persons.values()):
-            #     if not (person_apriori.full_body_data.frames_indices == person_filtered.full_body_data.frames_indices):
-            #         current_data = {'tracks_apriori': current_tracks_apriori, 'tracks_to_filter': current_tracks_to_filter, 'filter': current_filter}
-            #         current_output_filepath = 'confidence_filter_dumps/confidence_dump_' + str(dump_index).zfill(3) + '.pickle'
-            #         with open(current_output_filepath, 'wb') as f:
-            #             pickle.dump(current_data, f)
-            #             dump_index += 1
-
-
-                # self.assertTrue(person_apriori.full_body_data.frames_indices == person_filtered.full_body_data.frames_indices)
-
-            # self.assertTrue(current_tracks_apriori.persons == current_tracks_to_filter)
-
-            # current_tracks_to_filter = self.add_data_to_tracks(current_tracks_apriori, confidence_range=(current_confidence_threshold_value + 1e-6, current_confidence_threshold_value + 0.1))
-            # current_filter.process(current_tracks_to_filter, filter_full_body_person=True)
-            # current_filter.process(current_tracks_to_filter, filter_full_body_person=False)
-            # self.assertFalse(current_tracks_apriori == current_tracks_to_filter)
 
 
     def generate_tracks(self, confidence_range=(0.25, 0.75)) -> MultiplePersonsTracks:
@@ -129,25 +109,26 @@ class TestConfidenceFilterAddon(unittest.TestCase):
 
         for person in new_tracks.persons.values():
             current_person_candidate_frame_indices = np.setdiff1d(frames_indices, person.tracked_data.frames_indices)
-            if current_person_candidate_frame_indices.shape[0]:
-                current_new_number_frames_indices = np.random.randint(0, np.maximum(current_person_candidate_frame_indices.shape[0], 2))
-                current_frames_indices_mask = np.array(current_new_number_frames_indices * [True] + (current_person_candidate_frame_indices.shape[0] - current_new_number_frames_indices) * [False])
-                np.random.shuffle(current_frames_indices_mask)
-                current_new_frames_indices = current_person_candidate_frame_indices[current_frames_indices_mask]
-                current_new_number_of_data_elements = current_new_frames_indices.shape[0]
+            current_number_new_tracked_frames_indices = current_person_candidate_frame_indices.shape[0]
+            if current_number_new_tracked_frames_indices:
+                current_new_number_frames_indices = np.random.randint(0, current_number_new_tracked_frames_indices)
+                if current_new_number_frames_indices:
+                    current_frames_indices_mask = np.array(current_new_number_frames_indices * [True] + (current_person_candidate_frame_indices.shape[0] - current_new_number_frames_indices) * [False])
+                    np.random.shuffle(current_frames_indices_mask)
+                    current_new_frames_indices = current_person_candidate_frame_indices[current_frames_indices_mask]
+                    current_new_number_of_data_elements = current_new_frames_indices.shape[0]
 
-                if current_new_number_of_data_elements:
                     current_new_bounding_boxes = self.generate_bounding_boxes(current_new_number_of_data_elements, tracks.video_properties)
                     current_new_confidences = confidence_range[0] + (confidence_range[1] - confidence_range[0]) * np.random.random((current_new_number_of_data_elements,))
                     person.tracked_data.insert(current_new_frames_indices, current_new_bounding_boxes, current_new_confidences)
 
-                    current_new_number_data_frames_indices = np.random.randint(1, np.maximum(current_new_number_of_data_elements, 2))
+                    current_new_number_data_frames_indices = np.random.randint(0, np.maximum(current_new_number_of_data_elements, 1))
                     current_data_frames_indices_mask = np.array(current_new_number_data_frames_indices * [True] + (current_new_number_of_data_elements - current_new_number_data_frames_indices) * [False])
                     np.random.shuffle(current_data_frames_indices_mask)
                     current_new_data_indices = current_new_frames_indices[current_data_frames_indices_mask]
                     person.data.insert(current_new_data_indices)
 
-                    current_number_full_body_data_frames_indices = np.random.randint(1, np.maximum(current_new_number_of_data_elements, 2))
+                    current_number_full_body_data_frames_indices = np.random.randint(0, np.maximum(current_new_number_of_data_elements, 1))
                     current_full_body_data_frames_indices_mask = np.array(current_number_full_body_data_frames_indices * [True] + (current_new_number_of_data_elements - current_number_full_body_data_frames_indices) * [False])
                     np.random.shuffle(current_full_body_data_frames_indices_mask)
                     current_new_full_body_data_indices = current_new_frames_indices[current_full_body_data_frames_indices_mask]

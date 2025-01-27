@@ -37,7 +37,7 @@ class FramesIndices:
 
 
     def __eq__(self, other):
-        return np.all(self._values == other.values)
+        return np.array_equal(self._values, other.values)
 
 
     def __copy__(self):
