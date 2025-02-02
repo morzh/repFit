@@ -34,7 +34,8 @@ class PersonData:
 
         :param stride: video frames stride
         """
-        if len(self.frames_segments) > 0 or not len(self.frames_indices): return
+        if len(self.frames_segments) > 0: return
+        # if len(self.frames_segments) > 0 or not len(self.frames_indices): return
 
         segments_bins = np.hstack((self.frames_indices.values.reshape(-1, 1), self.frames_indices.values.reshape(-1, 1) + stride))
 

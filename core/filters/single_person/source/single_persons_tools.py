@@ -8,7 +8,7 @@ import time
 
 from core.filters.single_person.source.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
 from core.filters.single_person.source.filter_addons.partial_person_filter_addon import PartialPersonFilterAddon
-from core.filters.single_person.source.filter_addons.full_body_person_filter_addon import FullBodyPersonFilterAddon
+from core.filters.single_person.source.filter_addons.joints_filter_addon import JointsFilterAddon
 from core.filters.single_person.source.filter_addons.absolute_area_filter_addon import AbsoluteAreaFilterAddon
 from core.filters.single_person.source.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
 from core.filters.single_person.source.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
@@ -222,7 +222,7 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
         person.full_body_data.frames_indices = copy.copy(person.tracked_data.frames_indices)
 
     if parameters['full_body']['apply']:
-        whole_person_filter_addon = FullBodyPersonFilterAddon(**parameters['full_body'])
+        whole_person_filter_addon = JointsFilterAddon(**parameters['full_body'])
         tracks.apply_filter(whole_person_filter_addon, apply_to_full_body=True)
 
     if parameters['bridging_gaps']['apply']:

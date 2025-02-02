@@ -27,7 +27,7 @@ class TestAreaRatioFilterAddon(unittest.TestCase):
         self.normal_error = 0.3
 
 
-    def test_area_ratio_filter(self):
+    def test_area_ratio_filter_addon(self):
         for _ in range(self.number_checks):
             current_area_ratio_threshold = int(self.area_ratio_range[0] + (self.area_ratio_range[1] - self.area_ratio_range[0]) * np.random.rand())
             current_bounding_boxes_area_mean = int(self.area_base_values_range[0] + (self.area_base_values_range[1] - self.area_base_values_range[0]) * np.random.random())

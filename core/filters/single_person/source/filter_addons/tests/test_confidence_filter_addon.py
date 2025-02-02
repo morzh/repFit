@@ -32,7 +32,7 @@ class TestConfidenceFilterAddon(unittest.TestCase):
         self.confidence_range = 0.3, 0.7
 
 
-    def test_confidence_filter(self):
+    def test_confidence_filter_addon(self):
         for _ in range(self.number_checks):
             current_confidence_threshold_value = self.confidence_range[0] + (self.confidence_range[1] - self.confidence_range[0]) * np.random.rand()
             current_tracks_apriori = self.generate_tracks(confidence_range=(current_confidence_threshold_value, 1.0))

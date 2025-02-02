@@ -29,7 +29,7 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
         self.normal_error = 0.3
 
 
-    def test_absolute_area_filter(self):
+    def test_absolute_area_filter_addon(self):
         for _ in range(self.number_checks):
             current_area_threshold = int(self.area_values_range[0] + (self.area_values_range[1] - self.area_values_range[0]) * np.random.random())
             current_tracks_with_boxes_areas_mean_below_threshold = self.generate_tracks(current_area_threshold - 1)
