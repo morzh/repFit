@@ -9,7 +9,7 @@ from paths import RESULTS_ROOT, DATASETS_DPATH
 from pathlib import Path
 import numpy as np
 import cv2
-from ultralytics import YOLO
+
 
 
 img_dpath = DATASETS_DPATH / 'images'
@@ -59,6 +59,7 @@ def make_mp_joints():
 
 
 def make_yolo8_joints(model_name: str = '../models/yolov8x-pose.pt'):
+    from ultralytics import YOLO
     detector_model = YOLO(model_name)
     detector_params = dict(
         classes=0,
@@ -83,7 +84,7 @@ def make_yolo8_joints(model_name: str = '../models/yolov8x-pose.pt'):
                 results[frame_fpath.stem] = {
                     "bbox": bbox.tolist(),
                     "keypoints": keypoints.tolist()
-                    }
+                }
 
     save_json(results, result_dpath / "yolo.json")
 
@@ -100,10 +101,40 @@ def convert_motion_bert_joints():
 
     save_json(results, result_dpath / "motion_bert.json")
 
+
+def yolo_nas_pose():
+    # python3.10
+    # https://habr.com/ru/articles/772558/
+    # https://github.com/Deci-AI/super-gradients
+
+    import torch
+    import os
+    import pathlib
+    from super_gradients.training import models
+    from super_gradients.common.object_names import Models
+
+    model = models.get(
+        "yolo_nas_pose_l",
+                       # checkpoint_path=
+                       # "file://home/ubuntu/PycharmProjects/FitMate/repFit/models/yolo_nas_pose_l_coco_pose.pth",
+                       pretrained_weights="coco_pose")
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model.to(device)
+    confidence = 0.6
+
+    for i, frame_fpath in enumerate(img_dpath.glob("*.png")):
+        frame = cv2.imread(str(frame_fpath))
+        res = model.predict(frame, conf=confidence)
+        res.save("./results/"+frame_fpath.name)
+        p=0
+
+
+
 if __name__ == '__main__':
+    yolo_nas_pose()
     # make_mp_joints()
     # make_yolo8_joints()
-    convert_motion_bert_joints()
+    # convert_motion_bert_joints()
 
 
 
