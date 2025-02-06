@@ -7,7 +7,6 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
     Description:
         Filter for bridging gaps between frames segments.
         If gap between neighbouring segments is less than the given threshold value, this segments will be fused into one.
-        Threshold is in seconds.
 
     :ivar gap_threshold: segments gap threshold in seconds
     """
@@ -20,6 +19,6 @@ class BridgeGapsFilterAddon(MultiPersonsFilterAddonBase):
         for person_track in tracks.persons.values():
             if not len(person_track.tracked_data): continue
 
-            current_data_reference = person_track.full_body_data if filter_full_body_person else person_track.data
+            current_data_reference = person_track.full_body_data if filter_full_body_person else person_track.body_data
             current_data_reference.calculate_segments(tracks.frames_stride)
             current_data_reference.bridge_gaps(video_fps, self.gap_threshold)

@@ -43,7 +43,7 @@ class TestConfidenceFilterAddon(unittest.TestCase):
             current_filter.process(current_tracks_to_filter, filter_full_body_person=False)
 
             for person_apriori, person_filtered in zip(current_tracks_apriori.persons.values(), current_tracks_to_filter.persons.values()):
-                self.assertTrue(person_apriori.data.frames_indices == person_filtered.data.frames_indices)
+                self.assertTrue(person_apriori.body_data.frames_indices == person_filtered.body_data.frames_indices)
                 self.assertTrue(person_apriori.full_body_data.frames_indices == person_filtered.full_body_data.frames_indices)
 
 
@@ -79,7 +79,7 @@ class TestConfidenceFilterAddon(unittest.TestCase):
             current_number_data_indices =  np.random.randint(0, current_frames_indices.shape[0])
             current_data_indices_mask = [True] * current_number_data_indices + [False] * (current_frames_indices.shape[0] - current_number_data_indices)
             np.random.shuffle(current_data_indices_mask)
-            current_person.data.frames_indices = FramesIndices(current_frames_indices[current_data_indices_mask])
+            current_person.body_data.frames_indices = FramesIndices(current_frames_indices[current_data_indices_mask])
 
         return multiple_persons_tracks
 
@@ -126,7 +126,7 @@ class TestConfidenceFilterAddon(unittest.TestCase):
                     current_data_frames_indices_mask = np.array(current_new_number_data_frames_indices * [True] + (current_new_number_of_data_elements - current_new_number_data_frames_indices) * [False])
                     np.random.shuffle(current_data_frames_indices_mask)
                     current_new_data_indices = current_new_frames_indices[current_data_frames_indices_mask]
-                    person.data.insert(current_new_data_indices)
+                    person.body_data.insert(current_new_data_indices)
 
                     current_number_full_body_data_frames_indices = np.random.randint(0, np.maximum(current_new_number_of_data_elements, 1))
                     current_full_body_data_frames_indices_mask = np.array(current_number_full_body_data_frames_indices * [True] + (current_new_number_of_data_elements - current_number_full_body_data_frames_indices) * [False])

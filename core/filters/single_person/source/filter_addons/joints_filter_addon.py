@@ -9,7 +9,9 @@ from core.filters.single_person.source.multiple_persons_tracks import MultiplePe
 class JointsFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
-        Select frames at which confident joints number is greater than the given joints number.
+        This is two steps filter.
+        1. Select frames at which confident joints number is greater than the given joints number;
+        2. Assign selected frames indices to body or full body data.
 
     :ivar joints_confidence_threshold: confident joints threshold;
     :ivar joints_number_threshold: maximum number of joints in frame (if less, filter frame).
@@ -21,15 +23,10 @@ class JointsFilterAddon(MultiPersonsFilterAddonBase):
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=True) -> None:
         for person_id, person_track in tracks.persons.items():
-            # current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.values)
-            # current_joints_positions = person_track.tracked_data.joints[:, :, 2]
             if person_track.tracked_data.joints is None: continue
 
             current_joints_confidences = person_track.tracked_data.joints[:, :, 2]
-
             current_joints_confidence_mask = current_joints_confidences >  self.joints_confidence_threshold
-            # current_joints_yolo_position_mask = (current_joints_positions[:, :, 0] + current_joints_positions[:, :, 1]) > 1e-6
-            # current_keypoints_above_thresholds = np.logical_and(current_joints_confidence_mask, current_joints_yolo_position_mask)
             current_joints_number_above_confidence_thresholds = np.sum(current_joints_confidence_mask, axis=1)
             current_confident_joints_number_mask = current_joints_number_above_confidence_thresholds > self.joints_number_threshold
             current_joints_indices_above_thresholds = person_track.tracked_data.frames_indices[current_confident_joints_number_mask]
@@ -38,7 +35,7 @@ class JointsFilterAddon(MultiPersonsFilterAddonBase):
             if filter_full_body_person:
                 person_track.full_body_data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)
             else:
-                person_track.data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)
+                person_track.body_data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)
 
             '''
             if filter_full_body_person:

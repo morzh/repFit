@@ -14,17 +14,17 @@ class SinglePersonTrack:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
     :ivar tracked_data: data, obtained from person's tracker
-    :ivar data: person data
+    :ivar body_data: person data
     :ivar full_body_data: fll body person data
     """
     def __init__(self):
         self.tracked_data = PersonTrackedData()
-        self.data = PersonData()
+        self.body_data = PersonData()
         self.full_body_data = PersonData()
 
 
     def __eq__(self, other):
-        return self.tracked_data == other.tracked_data and self.data == other.data and self.full_body_data == other.full_body_data
+        return self.tracked_data == other.tracked_data and self.body_data == other.body_data and self.full_body_data == other.full_body_data
 
 
     '''

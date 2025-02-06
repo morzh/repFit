@@ -9,7 +9,7 @@ from core.filters.single_person.source.multiple_persons_tracks import MultiplePe
 class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
-        Filter out person's frames, whose (bounding box) confidence less than given threshold.
+        Filter out person's frames (body or full body), whose bounding box confidence is less than  the given threshold.
 
     :ivar confidence_threshold: confidence threshold
     """
@@ -23,7 +23,7 @@ class ConfidenceFilterAddon(MultiPersonsFilterAddonBase):
 
         for person_track in tracks.persons.values():
             if not len(person_track.tracked_data): continue
-            current_data_reference = person_track.full_body_data if filter_full_body_person else person_track.data
+            current_data_reference = person_track.full_body_data if filter_full_body_person else person_track.body_data
 
             current_frames_indices_set = OrderedSet(person_track.tracked_data.frames_indices.values)
             current_frames_keys = current_frames_indices_set.index(current_data_reference.frames_indices.values)

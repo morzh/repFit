@@ -7,9 +7,9 @@ from core.filters.single_person.source.multiple_persons_tracks import MultiplePe
 class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
-        Filter out every person's track, whose mean bounding box area less than the given threshold.
-        Mean area threshold is given in pixels. Filter taking into account only tracked data.
-        So it should be used as one of the first filter in filtering pipeline.
+        Filter out every person's track, whose mean bounding box area of tracked data is less than the given threshold.
+        Mean area threshold is given in pixels. Filter is working only on tracked data.
+        So it should be used as one of the first filter add-on in filtering chain.
 
     :ivar area_threshold: threshold area in pixels
     """

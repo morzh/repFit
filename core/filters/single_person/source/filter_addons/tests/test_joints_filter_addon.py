@@ -43,7 +43,7 @@ class TestJointsFilterAddon(unittest.TestCase):
             current_filter.process(current_tracks, filter_full_body_person=False)
 
             for person in current_tracks.persons.values():
-                self.assertTrue(np.all(person.tracked_data.frames_indices == person.data.frames_indices))
+                self.assertTrue(np.all(person.tracked_data.frames_indices == person.body_data.frames_indices))
                 self.assertTrue(np.all(person.tracked_data.frames_indices == person.full_body_data.frames_indices))
 
 
@@ -62,46 +62,8 @@ class TestJointsFilterAddon(unittest.TestCase):
             current_filter.process(current_tracks_unusable_joints_number, filter_full_body_person=False)
 
             for person_source, person_filtered in zip(current_tracks.persons.values(), current_tracks_unusable_joints_number.persons.values()):
-                self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.data.frames_indices))
+                self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.body_data.frames_indices))
                 self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.full_body_data.frames_indices))
-
-    '''
-    def test_unusable_joints_confidences(self):
-        for _ in range(self.number_checks):
-            current_confidence_threshold_value = self.confidence_range[0] + (self.confidence_range[1] - self.confidence_range[0]) * np.random.rand()
-            current_filter = JointsFilterAddon(joints_confidence_threshold=current_confidence_threshold_value, joints_number_threshold=15)
-
-            current_tracks = self.generate_tracks(usable_joints_number_range=(self.useful_joints_number, self.joints_number),
-                                                  usable_joints_confidences_range=(current_confidence_threshold_value, 1.0))
-            current_tracks_unusable_joints_confidence = self.add_data_to_tracks(current_tracks, usable_joints_number_range=(16, 17),
-                                                                                usable_joints_confidences_range=(0.0, current_confidence_threshold_value - 1e-6))
-
-            current_filter.process(current_tracks_unusable_joints_confidence, filter_full_body_person=True)
-            current_filter.process(current_tracks_unusable_joints_confidence, filter_full_body_person=False)
-
-            for person_source, person_filtered in zip(current_tracks.persons.values(), current_tracks_unusable_joints_confidence.persons.values()):
-                self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.data.frames_indices))
-                self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.full_body_data.frames_indices))
-    '''
-
-    '''
-    def test_unusable_joints_nuber_and_confidences(self):
-        for _ in range(self.number_checks):
-            current_confidence_threshold_value = self.confidence_range[0] + (self.confidence_range[1] - self.confidence_range[0]) * np.random.rand()
-            current_filter = JointsFilterAddon(joints_confidence_threshold=current_confidence_threshold_value, joints_number_threshold=15)
-
-            current_tracks = self.generate_tracks(usable_joints_number_range=(self.useful_joints_number, self.joints_number),
-                                                  usable_joints_confidences_range=(current_confidence_threshold_value, 1.0))
-            current_tracks_unusable_joints_confidence = self.add_data_to_tracks(current_tracks, usable_joints_number_range=(1, 15),
-                                                                                usable_joints_confidences_range=(0.0, current_confidence_threshold_value - 1e-6))
-
-            current_filter.process(current_tracks_unusable_joints_confidence, filter_full_body_person=True)
-            current_filter.process(current_tracks_unusable_joints_confidence, filter_full_body_person=False)
-
-            for person_source, person_filtered in (current_tracks.persons.values(), current_tracks_unusable_joints_confidence.persons.values()):
-                self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.data.frames_indices))
-                self.assertTrue(np.all(person_source.tracked_data.frames_indices == person_filtered.full_body_data.frames_indices))
-    '''
 
 
     def generate_tracks(self, usable_joints_number_range=(10, 17), usable_joints_confidences_range=(0.1, 0.95)) -> MultiplePersonsTracks:
@@ -136,7 +98,7 @@ class TestJointsFilterAddon(unittest.TestCase):
             current_number_data_indices =  np.random.randint(0, current_frames_indices.shape[0])
             current_data_indices_mask = [True] * current_number_data_indices + [False] * (current_frames_indices.shape[0] - current_number_data_indices)
             np.random.shuffle(current_data_indices_mask)
-            current_person.data.frames_indices = FramesIndices(current_frames_indices[current_data_indices_mask])
+            current_person.body_data.frames_indices = FramesIndices(current_frames_indices[current_data_indices_mask])
 
         return multiple_persons_tracks
 

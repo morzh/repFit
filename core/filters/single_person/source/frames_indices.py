@@ -40,6 +40,23 @@ class FramesIndices:
         return np.array_equal(self._values, other.values)
 
 
+    def __add__(self, other):
+        stacked_values = np.concatenate((self._values, other.values))
+        return FramesIndices(np.unique(stacked_values))
+
+
+    def __iadd__(self, other):
+        self._values = np.unique(np.concatenate((self._values, other.values)))
+
+
+    def __sub__(self, other):
+        difference_values = np.setdiff1d(self._values, other.values)
+        return  FramesIndices(difference_values)
+
+    def __isub__(self, other):
+        self._values = np.setdiff1d(self._values, other.values)
+
+
     def __copy__(self):
         return FramesIndices(np.copy(self._values))
 

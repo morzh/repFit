@@ -11,7 +11,7 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
         1. On the first step the biggest mean bounding box value calculated for each single person's track.
         2. On the second step, person's track data deleted, if mean bounding box area is less than value, calculated at first step.
 
-        Filter taking into account only tracked data. So it should be used as one of the first filter in filtering pipeline.
+        Filter is working  only on tracked data. So it should be used as one of the first filter add-ons in filtering chain.
 
     :ivar area_ratio_threshold: persons mean areas ratio threshold.
     """

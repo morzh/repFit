@@ -17,7 +17,7 @@ class BoundingBoxes2DArray:
     """
 
     class IntersectionMode(Enum):
-        EVERYONE_TO_ALL = 1
+        ONE_TO_MANY = 1
         ONE_TO_ONE = 2
 
 
@@ -199,16 +199,16 @@ class BoundingBoxes2DArray:
 
 
     @staticmethod
-    def intersect(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray, mode = IntersectionMode.EVERYONE_TO_ALL) -> list[BoundingBoxes2DArray]:
+    def intersect(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray, mode = IntersectionMode.ONE_TO_MANY) -> list[BoundingBoxes2DArray] | BoundingBoxes2DArray:
         """
-
+        Description:
         """
         if not len(boxes_1):
             return [BoundingBoxes2DArray()]
         elif not len(boxes_2):
             return [BoundingBoxes2DArray()] * len(boxes_1)
 
-        if mode == BoundingBoxes2DArray.IntersectionMode.EVERYONE_TO_ALL:
+        if mode == BoundingBoxes2DArray.IntersectionMode.ONE_TO_MANY:
             intersected_boxes = [BoundingBoxes2DArray] * len(boxes_1)
             boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
             boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
@@ -225,6 +225,25 @@ class BoundingBoxes2DArray:
             return intersected_boxes
         else:
             raise NotImplementedError('Intersection modes other than ONE_TO_ALL is not implemented yet.')
+
+
+    @staticmethod
+    def intersection_over_union(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray) -> np.ndarray:
+        """
+        Description:
+            Intersection over union measure for two arrays of bounding boxes
+
+        :return: IoU values
+
+        :raise ValueError: If ``boxes_1`` and ``boxes_2`` have different number of bounding boxes
+        """
+        if not len(boxes_1) == len(boxes_2):
+            raise ValueError('Input arguments should be of the same size')
+
+        union_areas = boxes_1.areas() + boxes_2.areas()
+        intersections = BoundingBoxes2DArray.intersect(boxes_1, boxes_2, mode = BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+        intersection_areas = intersections.areas()
+        return  union_areas / intersection_areas
 
 
     @staticmethod
