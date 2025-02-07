@@ -13,16 +13,13 @@ from core.filters.single_person.source.filter_addons.absolute_area_filter_addon 
 from core.filters.single_person.source.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
 from core.filters.single_person.source.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
 from core.filters.single_person.source.filter_addons.segments_duration_filter_addon import SegmentsDurationFilterAddon
-from core.filters.single_person.source.frames_indices import FramesIndices
 
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.source.multiple_persons_tracker import PersonsTracker
-from core.utils.cv.frames_segments import FramesSegments
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
-from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
-from core.utils.io.files_operations import check_filename_entry_in_folder, extract_name_extension_from_filepath
+from core.utils.io.files_operations import extract_name_extension_from_filepath
 from core.utils.cv.video_tools import video_resolution_check,  VideoWriter
 
 

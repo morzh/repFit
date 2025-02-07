@@ -3,10 +3,8 @@ import numpy as np
 import os
 import pickle
 
-from fiftyone.core.frame import Frames
-
 from core.filters.single_person.source.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
-from core.filters.single_person.source.frames_indices import FramesIndices
+from core.utils.cv.frames_indices import FramesIndices
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.source.single_person_track import SinglePersonTrack

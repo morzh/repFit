@@ -2,7 +2,7 @@ import copy
 import unittest
 import numpy as np
 
-from core.filters.single_person.source.frames_indices import FramesIndices
+from core.utils.cv.frames_indices import FramesIndices
 
 
 class TestStrictlyIncreasingSequence(unittest.TestCase):
@@ -22,6 +22,30 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
             incorrect_sequence = self.incorrect_sequence(4, self.maximum_sequence_length)
             with self.assertRaises(ValueError):
                 _ = FramesIndices(incorrect_sequence)
+
+
+    def test_add_dunder_methods(self):
+        for _ in range(self.number_checks):
+            current_frame_indices_1 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
+            current_frame_indices_2 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
+
+            current_frame_indices_sum = current_frame_indices_1 + current_frame_indices_2
+            current_frame_indices_1 += current_frame_indices_2
+
+            self.assertTrue(current_frame_indices_sum.is_consistent(current_frame_indices_sum.values))
+            self.assertTrue(current_frame_indices_sum == current_frame_indices_1)
+
+
+    def test_sub_dunder_methods(self):
+        for _ in range(self.number_checks):
+            current_frame_indices_1 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
+            current_frame_indices_2 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
+
+            current_frame_indices_sum = current_frame_indices_1 - current_frame_indices_2
+            current_frame_indices_1 -= current_frame_indices_2
+
+            self.assertTrue(current_frame_indices_sum.is_consistent(current_frame_indices_sum.values))
+            self.assertTrue(current_frame_indices_sum == current_frame_indices_1)
 
 
     def test_append_correct(self):

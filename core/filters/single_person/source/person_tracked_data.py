@@ -1,8 +1,7 @@
 import numpy as np
-from sympy import andre
 
 from core.utils.cv.frames_segments import FramesSegments
-from core.filters.single_person.source.frames_indices import FramesIndices
+from core.utils.cv.frames_indices import FramesIndices
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 
 

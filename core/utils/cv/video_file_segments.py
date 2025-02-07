@@ -11,13 +11,13 @@ class VideoFileSegments:
 
     :ivar segments: video segments;
     :ivar video_properties: video file properties;
-    :ivar frames_number: exact frames number;
+    :ivar exact_frames_number: exact frames number;
     """
-    __slots__ = ['segments', 'video_properties', 'frames_number']
+    __slots__ = ['segments', 'video_properties', 'exact_frames_number']
     def __init__(self, segments: np.ndarray, video_properties: VideoProperties, frames_number: int):
         self.segments = FramesSegments(segments)
         self.video_properties = video_properties
-        self.frames_number = frames_number
+        self.exact_frames_number = frames_number
 
 
     def filter_by_time(self, time_threshold: float) -> None:
@@ -38,7 +38,7 @@ class VideoFileSegments:
 
         :return: video file segments complement
         """
-        self.segments.complement(0, self.frames_number)
+        self.segments.complement(0, self.exact_frames_number)
 
 
     def is_whole_video_single_segment(self) -> bool:
@@ -49,5 +49,5 @@ class VideoFileSegments:
         :return: True if there is only one whole range video segment, False otherwise
         """
         is_single_segment = len(self.segments) == 1
-        is_whole_video_range = (self.segments[0, 0] == 0) and (self.segments[0, -1] == (self.frames_number - 1))
+        is_whole_video_range = (self.segments[0, 0] == 0) and (self.segments[0, -1] == (self.exact_frames_number - 1))
         return is_single_segment and is_whole_video_range

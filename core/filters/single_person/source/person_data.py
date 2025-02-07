@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 
 from core.utils.cv.frames_segments import FramesSegments
-from core.filters.single_person.source.frames_indices import FramesIndices
+from core.utils.cv.frames_indices import FramesIndices
 
 
 class PersonData:

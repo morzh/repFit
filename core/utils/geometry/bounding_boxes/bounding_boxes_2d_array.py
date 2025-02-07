@@ -1,6 +1,9 @@
 from __future__ import annotations
 from enum import Enum
+from typing import Any
+
 import numpy as np
+from numpy import floating
 from sqlalchemy.testing.plugin.plugin_base import warnings
 from torchvision.transforms import InterpolationMode
 
@@ -54,6 +57,14 @@ class BoundingBoxes2DArray:
     def __iter__(self):
         for index in range(self.values.shape[0]):
             yield self.values[index]
+
+
+    def __copy__(self):
+        return BoundingBoxes2DArray(self.values)
+
+
+    def __deepcopy__(self):
+        return BoundingBoxes2DArray(self.values)
 
 
     def reshape(self, new_shape):
@@ -117,6 +128,32 @@ class BoundingBoxes2DArray:
         return self.xyxy_to_xywh(circumscribed_box)
 
 
+    def enlarge(self, top: np.ndarray | None = None, right: np.ndarray | None = None, bottom: np.ndarray | None = None, left: np.ndarray | None = None) -> None:
+        """
+        Description:
+            Enlarge bonding boxes in place by the given values.
+
+        :param top:
+        :param right:
+        :param bottom:
+        :param left:
+        """
+        if top is not None:
+            self.__check_shape(top)
+            self.values[:, 1] -= top
+            self.values[:, 3] += top
+        if right is not None:
+            self.__check_shape(right)
+            self.values[:, 2] += right
+        if bottom is not None:
+            self.__check_shape(bottom)
+            self.values[:, 3] += bottom
+        if left is not None:
+            self.__check_shape(left)
+            self.values[:, 0] -= left
+            self.values[:, 2] += left
+
+
     def areas(self, indices: np.ndarray | None = None) -> np.ndarray:
         """
         Description:
@@ -130,7 +167,7 @@ class BoundingBoxes2DArray:
         return selected_boxes[:, 2] * selected_boxes[:, 3]
 
 
-    def mean_area(self, indices: np.ndarray | None = None) -> float:
+    def mean_area(self, indices: np.ndarray | None = None) -> floating[Any]:
         """
         Description:
             Mean area of bounding boxes with given ``indices``.
@@ -143,7 +180,7 @@ class BoundingBoxes2DArray:
         return np.mean(areas)
 
 
-    def mean_height(self, indices: np.ndarray | None = None) -> float:
+    def mean_height(self, indices: np.ndarray | None = None) -> floating[Any]:
         """
 
         """
@@ -158,7 +195,7 @@ class BoundingBoxes2DArray:
 
         :param indices: indices of bounding boxes;
 
-        :return: perimeters of the seelcted bounding boxes
+        :return: perimeters of the selected bounding boxes
         """
         selected_boxes = self.__selected_bounding_boxes(indices)
         return 2 * (selected_boxes[:, 2] + selected_boxes[:, 3])
@@ -326,7 +363,6 @@ class BoundingBoxes2DArray:
         xy_bottom_right = np.max(xyxy, axis=1)
         xywh_boxes = np.hstack((xy_top_left, xy_bottom_right - xy_top_left))
         return xywh_boxes.reshape((-1, 4))
-
 
     @staticmethod
     def xywh_to_xyxy(bboxes_xywh: np.ndarray) -> np.ndarray:

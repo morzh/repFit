@@ -47,6 +47,7 @@ class FramesIndices:
 
     def __iadd__(self, other):
         self._values = np.unique(np.concatenate((self._values, other.values)))
+        return self
 
 
     def __sub__(self, other):
@@ -55,6 +56,7 @@ class FramesIndices:
 
     def __isub__(self, other):
         self._values = np.setdiff1d(self._values, other.values)
+        return self
 
 
     def __copy__(self):
