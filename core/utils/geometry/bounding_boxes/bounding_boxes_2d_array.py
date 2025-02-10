@@ -1,13 +1,11 @@
 from __future__ import annotations
 from enum import Enum
-from typing import Any
-
 import numpy as np
-from numpy import floating
-from sqlalchemy.testing.plugin.plugin_base import warnings
-from torchvision.transforms import InterpolationMode
+import copy
+import warnings
 
 from core.utils.geometry.bounding_boxes.bounding_box_mode import BoundingBoxMode
+from typing import Any
 
 
 class BoundingBoxes2DArray:
@@ -15,6 +13,10 @@ class BoundingBoxes2DArray:
     Description:
         Class for storing and operating on bounding boxes array.
         Array of bounding boxes, represented by [top, left, width, height] format in image coordinates.
+
+    Remarks:
+        If some width or height equals to zero, this means the following bounding box degenerates to a segment.
+        If both width and height equal zero, bounding box degenerates to a point.
 
     :ivar values: bounding boxes values (XYWH format).
     """
@@ -60,11 +62,18 @@ class BoundingBoxes2DArray:
 
 
     def __copy__(self):
-        return BoundingBoxes2DArray(self.values)
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
 
 
-    def __deepcopy__(self):
-        return BoundingBoxes2DArray(self.values)
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        setattr(result, 'values', copy.deepcopy(self.values, memo))
+        return result
 
 
     def reshape(self, new_shape):
@@ -128,7 +137,7 @@ class BoundingBoxes2DArray:
         return self.xyxy_to_xywh(circumscribed_box)
 
 
-    def enlarge(self, top: np.ndarray | None = None, right: np.ndarray | None = None, bottom: np.ndarray | None = None, left: np.ndarray | None = None) -> None:
+    def enlarge(self, top: np.ndarray | None = None, right: np.ndarray | None = None, bottom: np.ndarray | None = None, left: np.ndarray | None = None) -> BoundingBoxes2DArray:
         """
         Description:
             Enlarge bonding boxes in place by the given values.
@@ -137,21 +146,35 @@ class BoundingBoxes2DArray:
         :param right:
         :param bottom:
         :param left:
+
+        :return: enlarged bounding boxes array
+
+        :raise ValueError: If argument(s) have / hase wrong shape or values
         """
+        def check_enlarge_arguments(arg: np.ndarray):
+            if not self.values.shape[0] ==  arg.size:
+                raise ValueError('Wrong argument shape')
+            if not np.all(arg >= 0):
+                raise ValueError('All values argument should be non negative')
+
+        enlarged_bounding_box = copy.deepcopy(self)
+
         if top is not None:
-            self.__check_shape(top)
-            self.values[:, 1] -= top
-            self.values[:, 3] += top
+            check_enlarge_arguments(top)
+            enlarged_bounding_box.values[:, 1] -= top
+            enlarged_bounding_box.values[:, 3] += top
         if right is not None:
-            self.__check_shape(right)
-            self.values[:, 2] += right
+            check_enlarge_arguments(right)
+            enlarged_bounding_box.values[:, 2] += right
         if bottom is not None:
-            self.__check_shape(bottom)
-            self.values[:, 3] += bottom
+            check_enlarge_arguments(bottom)
+            enlarged_bounding_box.values[:, 3] += bottom
         if left is not None:
-            self.__check_shape(left)
-            self.values[:, 0] -= left
-            self.values[:, 2] += left
+            check_enlarge_arguments(left)
+            enlarged_bounding_box.values[:, 0] -= left
+            enlarged_bounding_box.values[:, 2] += left
+
+        return enlarged_bounding_box
 
 
     def areas(self, indices: np.ndarray | None = None) -> np.ndarray:
@@ -167,22 +190,27 @@ class BoundingBoxes2DArray:
         return selected_boxes[:, 2] * selected_boxes[:, 3]
 
 
-    def mean_area(self, indices: np.ndarray | None = None) -> floating[Any]:
+    def mean_area(self, indices: np.ndarray | None = None) -> np.floating[Any]:
         """
         Description:
             Mean area of bounding boxes with given ``indices``.
 
-        :param indices: indices of bounding boxes;
+        :param indices: indices of bounding boxes. If None uses all bounding boxes in array for mean area calculation.
 
-        :return: mean area of the selected bounding boxes
+        :return: mean area of the (selected) bounding boxes
         """
         areas = self.areas(indices)
         return np.mean(areas)
 
 
-    def mean_height(self, indices: np.ndarray | None = None) -> floating[Any]:
+    def mean_height(self, indices: np.ndarray | None = None) -> np.floating[Any]:
         """
+        Description:
+            Bounding boxes array heights Mean  with given ``indices``.
 
+        :param indices: indices of bounding boxes. If None uses all bounding boxes in array for mean height calculation.
+
+        :return: mean height of the (selected) bounding boxes
         """
         selected_boxes = self.__selected_bounding_boxes(indices)
         return np.mean(selected_boxes[:, 3])
@@ -239,29 +267,60 @@ class BoundingBoxes2DArray:
     def intersect(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray, mode = IntersectionMode.ONE_TO_MANY) -> list[BoundingBoxes2DArray] | BoundingBoxes2DArray:
         """
         Description:
+            Intersects two bounding boxes arrays. In case both width and height equal zero,  no intersection occurred. This seems convenient for array processing.
+
+        :param boxes_1: intersection first operand
+        :param boxes_2: intersection second operand
+        :param mode: intersection mode
+
+        :return: ``boxes_1`` and ``boxes_2`` intersection result.
+
+        :raise ValueError: If ``boxes_1`` and/or ``boxes_2`` has/have wrong shape.
         """
+        if mode == BoundingBoxes2DArray.IntersectionMode.ONE_TO_MANY:
+            return BoundingBoxes2DArray.__intersect_one_to_many(boxes_1, boxes_2)
+        else:
+            return BoundingBoxes2DArray.__intersect_one_to_one(boxes_1, boxes_2)
+
+
+    @staticmethod
+    def __intersect_one_to_one(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray) -> BoundingBoxes2DArray:
+        if not len(boxes_1) == len(boxes_2):
+            raise ValueError('Number of bounding boxes for both operands should coincide.')
+
+        boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
+        boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
+
+        left_tops = np.maximum(boxes_1_xyxy[:, :2], boxes_2_xyxy[:, :2])
+        right_bottoms = np.minimum(boxes_1_xyxy[:, 2:], boxes_2_xyxy[:, 2:])
+        intersection_xyxy = np.hstack((left_tops, right_bottoms))
+        intersection_xywh = BoundingBoxes2DArray.xyxy_to_xywh(intersection_xyxy)
+
+        return BoundingBoxes2DArray(intersection_xywh)
+
+
+    @staticmethod
+    def __intersect_one_to_many(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray) -> list[BoundingBoxes2DArray]:
         if not len(boxes_1):
             return [BoundingBoxes2DArray()]
         elif not len(boxes_2):
             return [BoundingBoxes2DArray()] * len(boxes_1)
 
-        if mode == BoundingBoxes2DArray.IntersectionMode.ONE_TO_MANY:
-            intersected_boxes = [BoundingBoxes2DArray] * len(boxes_1)
-            boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
-            boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
+        boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
+        boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
 
-            for box_1_index in range(boxes_1_xyxy.shape[0]):
-                current_box_1_xyxy = boxes_1_xyxy[box_1_index]
-                current_left_tops = np.vstack((current_box_1_xyxy[:2], boxes_2_xyxy[:, :2]))
-                current_right_bottoms = np.vstack((current_box_1_xyxy[2:], boxes_2_xyxy[:, 2:]))
-                current_left_top = np.min(current_left_tops, axis=0)
-                current_right_bottom = np.max(current_right_bottoms, axis=0)
-                current_xyxy = np.array([*current_left_top, *current_right_bottom])
-                current_xywh = BoundingBoxes2DArray.xyxy_to_xywh(current_xyxy)
-                intersected_boxes[box_1_index] = BoundingBoxes2DArray(current_xywh)
+        intersected_boxes = [BoundingBoxes2DArray] * len(boxes_1)
+        for box_1_index in range(boxes_1_xyxy.shape[0]):
+            current_box_1_xyxy = boxes_1_xyxy[box_1_index]
+            current_left_tops = np.vstack((current_box_1_xyxy[:2], boxes_2_xyxy[:, :2]))
+            current_right_bottoms = np.vstack((current_box_1_xyxy[2:], boxes_2_xyxy[:, 2:]))
+            current_left_top = np.min(current_left_tops, axis=0)
+            current_right_bottom = np.max(current_right_bottoms, axis=0)
+            current_xyxy = np.array([*current_left_top, *current_right_bottom])
+            current_xywh = BoundingBoxes2DArray.xyxy_to_xywh(current_xyxy)
+            intersected_boxes[box_1_index] = BoundingBoxes2DArray(current_xywh)
+
             return intersected_boxes
-        else:
-            raise NotImplementedError('Intersection modes other than ONE_TO_ALL is not implemented yet.')
 
 
     @staticmethod
@@ -284,7 +343,7 @@ class BoundingBoxes2DArray:
 
 
     @staticmethod
-    def clamp(boxes, clamp_box):
+    def clamp(boxes, clamp_box) -> BoundingBoxes2DArray:
         """
         Description:
             all ``boxes`` are inside ``clamp_box``.
@@ -311,10 +370,11 @@ class BoundingBoxes2DArray:
 
         clamped_boxes_xyxy = np.hstack((top_lefts_clamped, bottom_rights_clamped))
 
-        if not (np.alltrue(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2])):
-            print('!!!')
+        # if not (np.alltrue(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2])):
+        #     print('!!!')
 
-        return BoundingBoxes2DArray.xyxy_to_xywh(clamped_boxes_xyxy)
+        clamped_boxes_xywh = BoundingBoxes2DArray.xyxy_to_xywh(clamped_boxes_xyxy)
+        return BoundingBoxes2DArray(clamped_boxes_xywh)
 
 
     def __selected_bounding_boxes(self, indices: np.ndarray | None = None) -> np.ndarray:

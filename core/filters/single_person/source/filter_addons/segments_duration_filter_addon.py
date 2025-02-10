@@ -16,7 +16,7 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:
         for person_id, person_track in tracks.persons.items():
-            if not len(person_track.tracked_data): continue
+            if not len(person_track.tracked_data) or not person_track.is_active: continue
 
             current_data_reference = person_track.full_body_data if filter_full_body_person else person_track.body_data
             current_data_reference.calculate_segments(tracks.frames_stride)

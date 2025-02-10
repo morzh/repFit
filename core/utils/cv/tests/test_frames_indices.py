@@ -8,8 +8,8 @@ from core.utils.cv.frames_indices import FramesIndices
 class TestStrictlyIncreasingSequence(unittest.TestCase):
 
     def setUp(self):
-        self.number_checks = 1_500
-        self.maximum_sequence_length = 500
+        self.number_checks = 2_500
+        self.maximum_sequence_length = 1500
 
 
     def test_init(self):
@@ -26,26 +26,43 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
 
     def test_add_dunder_methods(self):
         for _ in range(self.number_checks):
-            current_frame_indices_1 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
-            current_frame_indices_2 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
+            current_apriori_known_frames_indices_values = self.correct_sequence(1, self.maximum_sequence_length)
+            current_apriori_frames_indices_values_number = current_apriori_known_frames_indices_values.shape[0]
+            current_frames_indices_values_1_mask = np.random.randint(0, 2, current_apriori_known_frames_indices_values.shape[0]).astype(bool)
+            current_frames_indices_values_2_mask = ~current_frames_indices_values_1_mask.copy()
+            #  Adding more frame indices values to two separate frames indices arrays. The idea is that two frame indices arrays should have non-empty overlap.
+            current_frames_indices_values_1_mask = np.logical_or(current_frames_indices_values_1_mask, np.random.randint(0, 2, current_apriori_frames_indices_values_number).astype(bool))
+            current_frames_indices_values_2_mask = np.logical_or(current_frames_indices_values_2_mask, np.random.randint(0, 2, current_apriori_frames_indices_values_number).astype(bool))
+
+            current_frames_indices_apriori_sum = FramesIndices(current_apriori_known_frames_indices_values)
+            current_frame_indices_1 = FramesIndices(current_apriori_known_frames_indices_values[current_frames_indices_values_1_mask])
+            current_frame_indices_2 = FramesIndices(current_apriori_known_frames_indices_values[current_frames_indices_values_2_mask])
 
             current_frame_indices_sum = current_frame_indices_1 + current_frame_indices_2
             current_frame_indices_1 += current_frame_indices_2
 
-            self.assertTrue(current_frame_indices_sum.is_consistent(current_frame_indices_sum.values))
-            self.assertTrue(current_frame_indices_sum == current_frame_indices_1)
+            self.assertTrue(current_frames_indices_apriori_sum == current_frame_indices_sum)
+            self.assertTrue(current_frames_indices_apriori_sum == current_frame_indices_1)
 
 
     def test_sub_dunder_methods(self):
         for _ in range(self.number_checks):
-            current_frame_indices_1 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
-            current_frame_indices_2 = FramesIndices(self.correct_sequence(1, self.maximum_sequence_length))
+            current_apriori_known_frames_indices_values = self.correct_sequence(1, self.maximum_sequence_length)
+            current_frames_indices_values_1_mask = np.random.randint(0, 2, current_apriori_known_frames_indices_values.shape[0]).astype(bool)
+            current_frames_indices_values_2_mask = ~current_frames_indices_values_1_mask.copy()
 
-            current_frame_indices_sum = current_frame_indices_1 - current_frame_indices_2
-            current_frame_indices_1 -= current_frame_indices_2
+            current_frames_indices_apriori = FramesIndices(current_apriori_known_frames_indices_values)
+            current_frame_indices_1 = FramesIndices(current_apriori_known_frames_indices_values[current_frames_indices_values_1_mask])
+            current_frame_indices_2 = FramesIndices(current_apriori_known_frames_indices_values[current_frames_indices_values_2_mask])
 
-            self.assertTrue(current_frame_indices_sum.is_consistent(current_frame_indices_sum.values))
-            self.assertTrue(current_frame_indices_sum == current_frame_indices_1)
+            current_frame_indices_subtract_1 = current_frames_indices_apriori - current_frame_indices_1
+            current_frame_indices_subtract_2 = current_frames_indices_apriori - current_frame_indices_2
+
+            self.assertTrue(current_frame_indices_subtract_1 == current_frame_indices_2)
+            self.assertTrue(current_frame_indices_subtract_2 == current_frame_indices_1)
+
+            current_frames_indices_apriori -= current_frame_indices_1
+            self.assertTrue(current_frames_indices_apriori == current_frame_indices_2)
 
 
     def test_append_correct(self):

@@ -21,11 +21,7 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
         if not len(tracks.persons):
             return
 
-        keys_to_delete = []
-        for person_id, person in tracks.persons.items():
-            current_person_mean_area = person.mean_area()
+        for person_id, person_track in tracks.persons.items():
+            current_person_mean_area = person_track.mean_area()
             if current_person_mean_area < self.area_threshold:
-                keys_to_delete.append(person_id)
-
-        for key in keys_to_delete:
-            tracks.persons.pop(key, None)
+                person_track.is_active = False

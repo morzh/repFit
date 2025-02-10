@@ -24,20 +24,20 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
             return
 
         persons_areas = []
-        persons_keys = []
+        persons_ids = []
 
         for person_id, person in tracks.persons.items():
             persons_areas.append(person.tracked_data.bounding_boxes.mean_area())
-            persons_keys.append(person_id)
+            persons_ids.append(person_id)
 
-        persons_keys = np.array(persons_keys)
+        persons_ids = np.array(persons_ids)
         persons_areas = np.array(persons_areas)
         person_maximum_area = np.max(persons_areas)
         absolute_area_threshold = person_maximum_area / self.area_ratio_threshold
 
         persons_mask = persons_areas < absolute_area_threshold
-        keys_to_delete = persons_keys[persons_mask]
+        inactive_tracks = persons_ids[persons_mask]
 
-        for key in keys_to_delete:
-            tracks.persons.pop(key, None)
+        for track_id in inactive_tracks:
+            tracks.persons[track_id].is_active = False
 

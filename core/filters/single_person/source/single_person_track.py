@@ -21,6 +21,7 @@ class SinglePersonTrack:
         self.tracked_data = PersonTrackedData()
         self.body_data = PersonData()
         self.full_body_data = PersonData()
+        self.is_active = False
 
 
     def __eq__(self, other):

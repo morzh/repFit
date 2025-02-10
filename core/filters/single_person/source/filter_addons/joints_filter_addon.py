@@ -22,7 +22,7 @@ class JointsFilterAddon(MultiPersonsFilterAddonBase):
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=True) -> None:
         for person_id, person_track in tracks.persons.items():
-            if person_track.tracked_data.joints is None: continue
+            if person_track.tracked_data.joints is None or not person_track.is_active: continue
 
             current_joints_confidences = person_track.tracked_data.joints[:, :, 2]
             current_joints_confidence_mask = current_joints_confidences >  self.joints_confidence_threshold

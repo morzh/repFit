@@ -178,25 +178,53 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             self.assertTrue(np.alltrue(circumscribed_box == apriori_known_circumscribed_box))
 
 
-    def test_intersection_one_to_one(self):
+    def test_intersection_non_degenerate_one_to_one(self):
         for _ in range(self.number_checks):
             current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
             current_boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
-            current_boxes_array_width_height = np.random.randint(-500, 0, (current_number_boxes, 2))
+            current_boxes_array_width_height = np.random.randint(1, 1000, (current_number_boxes, 2))
             current_boxes_array = np.hstack((current_boxes_array_top_left, current_boxes_array_width_height))
             current_apriori_known_boxes_intersection = BoundingBoxes2DArray(current_boxes_array)
 
             current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
             current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
-
-            current_intersection_operand_1.enlarge()
-            current_intersection_operand_2.enlarge()
-
-            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1, current_intersection_operand_2)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
 
             self.assertTrue(current_apriori_known_boxes_intersection, current_test_boxes_intersection)
 
+            top_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(top=top_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
 
+            self.assertTrue(current_apriori_known_boxes_intersection, current_test_boxes_intersection)
+
+            left_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(left=left_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+
+            self.assertTrue(current_apriori_known_boxes_intersection, current_test_boxes_intersection)
+
+            right_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(right=right_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+
+            self.assertTrue(current_apriori_known_boxes_intersection, current_test_boxes_intersection)
+
+            bottom_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(bottom=bottom_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+
+            self.assertTrue(current_apriori_known_boxes_intersection, current_test_boxes_intersection)
 
     def test_intersection_one_to_many(self):
         ...
