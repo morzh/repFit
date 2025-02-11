@@ -293,6 +293,8 @@ class BoundingBoxes2DArray:
 
         left_tops = np.maximum(boxes_1_xyxy[:, :2], boxes_2_xyxy[:, :2])
         right_bottoms = np.minimum(boxes_1_xyxy[:, 2:], boxes_2_xyxy[:, 2:])
+        empty_intersection_mask = np.logical_or(left_tops[:, 0] > right_bottoms[:, 0], left_tops[:, 1] > right_bottoms[:, 1])
+
         intersection_xyxy = np.hstack((left_tops, right_bottoms))
         intersection_xywh = BoundingBoxes2DArray.xyxy_to_xywh(intersection_xyxy)
 
@@ -411,7 +413,8 @@ class BoundingBoxes2DArray:
     def xyxy_to_xywh(bboxes_xyxy: np.ndarray) -> np.ndarray:
         """
         Description:
-            Converts XYXY (top-left, bottom-right) bounding box representation to XYWH (top-left, width height) representation.
+            Converts XYXY bounding box representation to XYWH (top-left, width height) representation.
+            This implementation has no assumption that first xy coordinates are left-top and second xy coordinates are right-bottom.
 
         :param bboxes_xyxy: bounding boxes numpy array in XYXY format.
 
