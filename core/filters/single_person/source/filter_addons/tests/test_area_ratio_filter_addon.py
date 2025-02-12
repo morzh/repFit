@@ -37,7 +37,14 @@ class TestAreaRatioFilterAddon(unittest.TestCase):
 
             current_filter = AreaRatioFilterAddon(area_ratio_threshold=current_area_ratio_threshold)
             current_filter.process(current_tracks_to_filter)
-            self.assertTrue(current_tracks_with_boxes_areas_mean_below_threshold == current_tracks_to_filter)
+
+            for person_id in current_tracks_to_filter.persons.keys():
+                if person_id in current_tracks_with_boxes_areas_mean_below_threshold.persons.keys():
+                    self.assertFalse(current_tracks_to_filter.persons[person_id].is_active)
+                else:
+                    self.assertTrue(current_tracks_to_filter.persons[person_id].is_active)
+
+            # self.assertTrue(current_tracks_with_boxes_areas_mean_below_threshold == current_tracks_to_filter)
 
 
     def generate_tracks(self, bounding_boxes_area_mean: int) -> MultiplePersonsTracks:

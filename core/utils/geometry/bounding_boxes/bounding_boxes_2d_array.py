@@ -260,7 +260,7 @@ class BoundingBoxes2DArray:
         :return: True if consistent, False otherwise.
         """
         columns_number = bounding_boxes.shape[1]
-        return np.alltrue(bounding_boxes[:, 2:] > 0) and columns_number == 4
+        return np.alltrue(bounding_boxes[:, 2:] >= 0) and columns_number == 4
 
 
     @staticmethod
@@ -291,12 +291,13 @@ class BoundingBoxes2DArray:
         boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
         boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
 
-        left_tops = np.maximum(boxes_1_xyxy[:, :2], boxes_2_xyxy[:, :2])
-        right_bottoms = np.minimum(boxes_1_xyxy[:, 2:], boxes_2_xyxy[:, 2:])
-        empty_intersection_mask = np.logical_or(left_tops[:, 0] > right_bottoms[:, 0], left_tops[:, 1] > right_bottoms[:, 1])
+        intersection_left_tops = np.maximum(boxes_1_xyxy[:, :2], boxes_2_xyxy[:, :2])
+        intersection_right_bottoms = np.minimum(boxes_1_xyxy[:, 2:], boxes_2_xyxy[:, 2:])
+        empty_intersection_mask = np.logical_or(intersection_left_tops[:, 0] > intersection_right_bottoms[:, 0], intersection_left_tops[:, 1] > intersection_right_bottoms[:, 1])
 
-        intersection_xyxy = np.hstack((left_tops, right_bottoms))
+        intersection_xyxy = np.hstack((intersection_left_tops, intersection_right_bottoms))
         intersection_xywh = BoundingBoxes2DArray.xyxy_to_xywh(intersection_xyxy)
+        intersection_xywh[empty_intersection_mask, 2:] = 0
 
         return BoundingBoxes2DArray(intersection_xywh)
 
@@ -338,10 +339,10 @@ class BoundingBoxes2DArray:
         if not len(boxes_1) == len(boxes_2):
             raise ValueError('Input arguments should be of the same size')
 
-        union_areas = boxes_1.areas() + boxes_2.areas()
         intersections = BoundingBoxes2DArray.intersect(boxes_1, boxes_2, mode = BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
         intersection_areas = intersections.areas()
-        return  union_areas / intersection_areas
+        union_areas = boxes_1.areas() + boxes_2.areas() - intersection_areas
+        return intersection_areas / union_areas
 
 
     @staticmethod

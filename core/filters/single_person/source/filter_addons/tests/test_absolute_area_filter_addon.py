@@ -1,3 +1,4 @@
+import copy
 import unittest
 import numpy as np
 
@@ -35,13 +36,17 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
             current_tracks_with_boxes_areas_mean_below_threshold = self.generate_tracks(current_area_threshold - 1)
             current_filter = AbsoluteAreaFilterAddon(area_threshold=current_area_threshold + 1)
             current_filter.process(current_tracks_with_boxes_areas_mean_below_threshold)
-            self.assertTrue(len(current_tracks_with_boxes_areas_mean_below_threshold.persons) == 0)
+            for person_id in current_tracks_with_boxes_areas_mean_below_threshold.persons.keys():
+                self.assertFalse(current_tracks_with_boxes_areas_mean_below_threshold.persons[person_id].is_active)
 
             current_tracks_with_boxes_areas_mean_below_threshold = self.generate_tracks(current_area_threshold - 1)
             current_tracks_to_filter = self.add_persons_to_tracks(current_tracks_with_boxes_areas_mean_below_threshold, current_area_threshold + 3)
             current_filter.process(current_tracks_to_filter)
-            self.assertTrue(current_tracks_with_boxes_areas_mean_below_threshold == current_tracks_to_filter)
-
+            for person_id in current_tracks_to_filter.persons.keys():
+                if person_id in current_tracks_with_boxes_areas_mean_below_threshold.persons.keys():
+                    self.assertFalse(current_tracks_to_filter.persons[person_id].is_active)
+                else:
+                    self.assertTrue(current_tracks_to_filter.persons[person_id].is_active)
 
     def generate_tracks(self, bounding_boxes_area_mean: int) -> MultiplePersonsTracks:
         persons_number = np.random.randint(1, self.maximum_number_persons_in_tracks)
@@ -65,6 +70,7 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
             current_person_tracked_data = self.generate_person_tracked_data(current_frames_indices, bounding_boxes_area_mean, multiple_persons_tracks)
             current_person = SinglePersonTrack()
             current_person.tracked_data = current_person_tracked_data
+            current_person.is_active = True
             multiple_persons_tracks.persons[person_index] = current_person
 
         return multiple_persons_tracks
@@ -91,6 +97,8 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
         frames_indices = np.linspace(0, (tracks.exact_frames_number // tracks.frames_stride) * tracks.frames_stride, stride_frames_number + 1).astype(int)
         new_persons_number = np.random.randint(0, 20)
 
+        tracks_with_added_persons = copy.deepcopy(tracks)
+
         new_persons_starting_index = len(tracks.persons)
         for person_index in range(new_persons_starting_index, new_persons_starting_index + new_persons_number):
             current_person_tracked_data = PersonTrackedData()
@@ -99,15 +107,16 @@ class TestAbsoluteAreaFilterAddon(unittest.TestCase):
             np.random.shuffle(current_tracked_frames_indices_mask)
 
             current_tracked_frames_indices = frames_indices[current_tracked_frames_indices_mask]
-            current_tracked_bounding_boxes = self.generate_bounding_boxes(current_number_tracked_frames_indices, tracks.video_properties, bounding_boxes_area_mean)
+            current_tracked_bounding_boxes = self.generate_bounding_boxes(current_number_tracked_frames_indices, tracks_with_added_persons.video_properties, bounding_boxes_area_mean)
             current_tracked_confidences = np.random.random((current_number_tracked_frames_indices,))
             current_person_tracked_data.insert(current_tracked_frames_indices, current_tracked_bounding_boxes, current_tracked_confidences)
 
             current_person_track = SinglePersonTrack()
             current_person_track.tracked_data = current_person_tracked_data
-            tracks.persons[person_index] = current_person_track
+            current_person_track.is_active = True
+            tracks_with_added_persons.persons[person_index] = current_person_track
 
-        return tracks
+        return tracks_with_added_persons
 
 
     def generate_bounding_boxes(self, number_boxes: int, video_properties: VideoProperties, area_mean: np.number) -> BoundingBoxes2DArray:

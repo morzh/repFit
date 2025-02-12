@@ -24,16 +24,18 @@ class MultiplePersonsTracks:
     """
     def __init__(self, video_properties: VideoProperties, stride=1, exact_frames_number=-1):
         self.persons: dict[int, SinglePersonTrack] = {}
-        self.video_properties = video_properties
-        self.exact_frames_number = exact_frames_number
-        self._frames_stride = stride
+        self.video_properties: VideoProperties = video_properties
+        self.exact_frames_number: int = exact_frames_number
+        self._frames_stride: int = stride
+        self.filtering_chain: list[MultiPersonsFilterAddonBase] = []
 
 
     def __eq__(self, other):
         return (self.video_properties == other.video_properties and
                 self.exact_frames_number == other.exact_frames_number and
                 self.frames_stride == other.frames_stride and
-                self.persons == other.persons)
+                self.persons == other.persons and
+                self.filtering_chain == other.filtering_chain)
 
 
     def update(self, frame_index: int, bounding_boxes: np.ndarray, keypoints: np.ndarray | None = None) -> None:
@@ -62,15 +64,23 @@ class MultiplePersonsTracks:
             self.persons[current_person_id].tracked_data.append(current_bounding_box, frame_index, current_confidence, joints=current_joints, bounding_box_mode=BoundingBoxes2DArray.XYXY)
 
 
-    def apply_filter(self, filter_visitor: MultiPersonsFilterAddonBase, apply_to_full_body=False) -> None:
+    def apply_filter(self, filter_visitor: MultiPersonsFilterAddonBase) -> None:
         """
         Description:
             Apply ``filter_visitor`` filter in place.
 
         :param filter_visitor: filter class instance.
-        :param apply_to_full_body: apply filter to full body data
         """
-        filter_visitor.process(self, filter_full_body_person=apply_to_full_body)
+        self.filtering_chain.append(filter_visitor)
+        filter_visitor.process(self)
+
+
+    def clear_filtering_chain(self) -> None:
+        """
+        Description:
+            Clear filters list, applied to tracks.
+        """
+        self.filtering_chain = []
 
 
     def serialize(self, filepath: os.PathLike | str) -> None:

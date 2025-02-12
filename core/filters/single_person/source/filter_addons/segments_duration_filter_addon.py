@@ -10,8 +10,9 @@ class SegmentsDurationFilterAddon(MultiPersonsFilterAddonBase):
 
     :ivar duration_threshold: duration threshold in seconds.
     """
-    def __init__(self, duration=1.0):
-        self.duration_threshold = duration
+    def __init__(self, **parameters):
+        self.duration_threshold = parameters.get('duration', 1.0)
+        self.filter_full_body_person = parameters.get('filter_full_body_person', False)
 
 
     def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=False) -> None:

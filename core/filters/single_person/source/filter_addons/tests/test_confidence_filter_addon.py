@@ -36,9 +36,10 @@ class TestConfidenceFilterAddon(unittest.TestCase):
             current_tracks_apriori = self.generate_tracks(confidence_range=(current_confidence_threshold_value, 1.0))
             current_tracks_to_filter = self.add_data_to_tracks(current_tracks_apriori, confidence_range=(0.05, current_confidence_threshold_value - 1e-6))
 
-            current_filter = ConfidenceFilterAddon(confidence_threshold=current_confidence_threshold_value)
-            current_filter.process(current_tracks_to_filter, filter_full_body_person=True)
-            current_filter.process(current_tracks_to_filter, filter_full_body_person=False)
+            current_full_body_filter = ConfidenceFilterAddon(confidence_threshold=current_confidence_threshold_value, filter_full_body_person=True)
+            current_full_body_filter.process(current_tracks_to_filter)
+            current_body_filter = ConfidenceFilterAddon(confidence_threshold=current_confidence_threshold_value, filter_full_body_person=False)
+            current_body_filter.process(current_tracks_to_filter)
 
             for person_apriori, person_filtered in zip(current_tracks_apriori.persons.values(), current_tracks_to_filter.persons.values()):
                 self.assertTrue(person_apriori.body_data.frames_indices == person_filtered.body_data.frames_indices)
@@ -67,6 +68,7 @@ class TestConfidenceFilterAddon(unittest.TestCase):
             current_person_tracked_data = self.generate_person_tracked_data(current_frames_indices, confidence_range, multiple_persons_tracks)
             current_person = SinglePersonTrack()
             current_person.tracked_data = current_person_tracked_data
+            current_person.is_active = True
             multiple_persons_tracks.persons[person_index] = current_person
 
             current_number_full_body_data_indices =  np.random.randint(0, current_frames_indices.shape[0])

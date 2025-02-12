@@ -25,7 +25,7 @@ class SinglePersonTrack:
 
 
     def __eq__(self, other):
-        return self.tracked_data == other.tracked_data and self.body_data == other.body_data and self.full_body_data == other.full_body_data
+        return self.tracked_data == other.tracked_data and self.body_data == other.body_data and self.full_body_data == other.full_body_data and self.is_active == other.is_active
 
 
     '''

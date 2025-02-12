@@ -17,7 +17,7 @@ class AbsoluteAreaFilterAddon(MultiPersonsFilterAddonBase):
         self.area_threshold = area_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks, **kwargs) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         if not len(tracks.persons):
             return
 

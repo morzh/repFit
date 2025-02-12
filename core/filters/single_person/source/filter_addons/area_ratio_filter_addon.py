@@ -19,7 +19,7 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
         self.area_ratio_threshold = area_ratio_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks, **kwargs) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         if not len(tracks.persons):
             return
 

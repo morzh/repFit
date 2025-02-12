@@ -8,7 +8,7 @@ from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingB
 class TestBoundingBoxes2DArray(unittest.TestCase):
 
     def setUp(self):
-        self.number_checks = 1_500
+        self.number_checks = 2_500
         self.maximum_number_boxes = 1_000
         self.top_left_range = (-1_000, 1_000)
 
@@ -238,7 +238,23 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             current_boxes_1_array = np.hstack((current_boxes_1_array_top_left, current_boxes_1_array_width_height))
             current_boxes_1 = BoundingBoxes2DArray(current_boxes_1_array)
 
+            current_boxes_2 = copy.deepcopy(current_boxes_1)
+            shift_x_value = current_boxes_2.values[:, 2] + np.random.randint(1, 100, current_number_boxes)
+            shift_x_sign = int(2 * np.random.randint(0, 2) - 1)
+            current_boxes_2.values[:, 0] += shift_x_sign * shift_x_value
+            current_boxes_2.values[:, 1] += np.random.randint(-1500, 1500, current_number_boxes)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_boxes_1, current_boxes_2, mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 2] == 0))
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 3] == 0))
 
+            current_boxes_2 = copy.deepcopy(current_boxes_1)
+            shift_y_value = current_boxes_2.values[:, 3] + np.random.randint(1, 100, current_number_boxes)
+            shift_y_sign = int(2 * np.random.randint(0, 2) - 1)
+            current_boxes_2.values[:, 0] += np.random.randint(-1500, 1500, current_number_boxes)
+            current_boxes_2.values[:, 1] += shift_y_sign * shift_y_value
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_boxes_1, current_boxes_2, mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 2] == 0))
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 3] == 0))
 
 
     def test_intersection_mixed_one_to_one(self):

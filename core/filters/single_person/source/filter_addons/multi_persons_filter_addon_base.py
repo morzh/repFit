@@ -14,7 +14,7 @@ class MultiPersonsFilterAddonBase(ABC):
     """
 
     @abstractmethod
-    def process(self, tracks: MultiplePersonsTracks, **kwargs) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         """
         Description:
             Abstract method for filtering ``tracks`` using visitor pattern.

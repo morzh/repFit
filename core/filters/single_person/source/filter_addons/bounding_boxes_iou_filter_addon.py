@@ -18,7 +18,7 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
         self.iou_threshold = iou_threshold
 
 
-    def process(self, tracks: MultiplePersonsTracks, **kwargs) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         persons_ids_list = tracks.persons.keys()
 
         for person_reference_id_index, person_reference_id in enumerate(persons_ids_list[:-2]):

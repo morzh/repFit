@@ -13,49 +13,28 @@ class JointsFilterAddon(MultiPersonsFilterAddonBase):
         2. Assign selected frames indices to body or full body data.
 
     :ivar joints_confidence_threshold: confident joints threshold;
-    :ivar joints_number_threshold: maximum number of joints in frame (if less, filter frame).
+    :ivar joints_minimum_number_threshold: minimum number of joints in frame (if less, delete respective frame index);
+    :ivar joints_maximum_number_threshold: maximum number of joints in frame (if more, delete respective frame index);
+    :ivar filter_full_body_person: if True filter full body data, just body data otherwise.
     """
     def __init__(self, **parameters):
         self.joints_confidence_threshold = parameters.get('joints_confidence_threshold', 0.7)
-        self.joints_number_threshold = parameters.get('joints_number_threshold', 16)
+        self.joints_minimum_number_threshold = parameters.get('joints_minimum_number_threshold', 16)
+        self.joints_maximum_number_threshold = parameters.get('joints_maximum_number_threshold', 100)
+        self.filter_full_body_person = parameters.get('filter_full_body_person', True)
 
 
-    def process(self, tracks: MultiplePersonsTracks, filter_full_body_person=True) -> None:
+    def process(self, tracks: MultiplePersonsTracks) -> None:
         for person_id, person_track in tracks.persons.items():
             if person_track.tracked_data.joints is None or not person_track.is_active: continue
 
             current_joints_confidences = person_track.tracked_data.joints[:, :, 2]
             current_joints_confidence_mask = current_joints_confidences >  self.joints_confidence_threshold
             current_joints_number_above_confidence_thresholds = np.sum(current_joints_confidence_mask, axis=1)
-            current_confident_joints_number_mask = current_joints_number_above_confidence_thresholds > self.joints_number_threshold
+            current_confident_joints_number_mask = self.joints_minimum_number_threshold <= current_joints_number_above_confidence_thresholds < self.joints_maximum_number_threshold
             current_joints_indices_above_thresholds = person_track.tracked_data.frames_indices[current_confident_joints_number_mask]
 
-
-            if filter_full_body_person:
+            if self.filter_full_body_person:
                 person_track.full_body_data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)
             else:
                 person_track.body_data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)
-
-            '''
-            if filter_full_body_person:
-                joints_indices = current_frames_indices_set.index(person_track.full_body_data.frames_indices.values)
-            else:
-                joints_indices = current_frames_indices_set.index(person_track.data.frames_indices.values)
-
-            current_keypoints = person_track.tracked_data.joints[joints_indices]
-            current_keypoints_confidences = current_keypoints[:, :, 2]
-
-            current_keypoints_confidence_threshold = current_keypoints_confidences > self.joints_confidence_threshold
-            current_keypoints_bounds_threshold = (current_keypoints[:, :, 0] +  current_keypoints[:, :, 1]) > 1e-6
-            current_keypoints_above_thresholds = np.logical_and(current_keypoints_confidence_threshold, current_keypoints_bounds_threshold)
-
-            current_joints_number_above_confidence_thresholds = np.sum(current_keypoints_above_thresholds, axis=1)
-            current_confident_joints_number_mask = current_joints_number_above_confidence_thresholds > self.joints_number_threshold
-
-            if filter_full_body_person:
-                current_filtered_indices = person_track.full_body_data.frames_indices[current_confident_joints_number_mask]
-                person_track.full_body_data.frames_indices = FramesIndices(current_filtered_indices)
-            else:
-                current_filtered_indices = person_track.data.frames_indices[current_confident_joints_number_mask]
-                person_track.data.frames_indices = FramesIndices(current_filtered_indices)
-            '''

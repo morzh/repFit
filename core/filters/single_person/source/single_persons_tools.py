@@ -164,11 +164,11 @@ def filter_tracks(tracks: MultiplePersonsTracks, **parameters):
 def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters):
     if parameters['absolute_area']['apply']:
         area_filter_addon = AbsoluteAreaFilterAddon(parameters['absolute_area']['area_threshold'])
-        tracks.apply_filter(area_filter_addon, apply_to_full_body=False)
+        tracks.apply_filter(area_filter_addon)
 
     if parameters['area_ratio']['apply']:
         area_ratio_filter_addon = AreaRatioFilterAddon(parameters['area_ratio']['ratio_threshold'])
-        tracks.apply_filter(area_ratio_filter_addon, apply_to_full_body=False)
+        tracks.apply_filter(area_ratio_filter_addon)
 
 
 def filter_persons_body_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
@@ -189,21 +189,21 @@ def filter_persons_body_data(tracks: MultiplePersonsTracks, **parameters) -> Mul
     """
     if parameters['partial_person']['apply']:
         joints_filter_addon = JointsFilterAddon(**parameters['partial_person'])
-        tracks.apply_filter(joints_filter_addon, apply_to_full_body=False)
+        tracks.apply_filter(joints_filter_addon)
 
 
     if parameters['confidence']['apply']:
         confidence_filter_addon = ConfidenceFilterAddon(parameters['confidence']['confidence_threshold'])
-        tracks.apply_filter(confidence_filter_addon, apply_to_full_body=False)
+        tracks.apply_filter(confidence_filter_addon)
 
 
     if parameters['bridging_gaps']['apply']:
-        bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
-        tracks.apply_filter(bridge_gaps_filter_addon, apply_to_full_body=False)
+        bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'])
+        tracks.apply_filter(bridge_gaps_filter_addon)
 
     if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
-        tracks.apply_filter(duration_filter_addon, apply_to_full_body=False)
+        duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'])
+        tracks.apply_filter(duration_filter_addon)
 
     return tracks
 
@@ -225,15 +225,15 @@ def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -
 
     if parameters['full_body']['apply']:
         whole_person_filter_addon = JointsFilterAddon(**parameters['full_body'])
-        tracks.apply_filter(whole_person_filter_addon, apply_to_full_body=True)
+        tracks.apply_filter(whole_person_filter_addon)
 
     if parameters['bridging_gaps']['apply']:
-        bridge_gaps_filter_addon = BridgeGapsFilterAddon(parameters['bridging_gaps']['gap_threshold'])
-        tracks.apply_filter(bridge_gaps_filter_addon, apply_to_full_body=True)
+        bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'])
+        tracks.apply_filter(bridge_gaps_filter_addon)
 
     if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(parameters['segments_duration']['duration_threshold'])
-        tracks.apply_filter(duration_filter_addon, apply_to_full_body=True)
+        duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'])
+        tracks.apply_filter(duration_filter_addon)
 
     return tracks
 
