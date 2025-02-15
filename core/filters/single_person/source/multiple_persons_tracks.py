@@ -106,7 +106,7 @@ class MultiplePersonsTracks:
         clipped_persons_segments = {}
         for person_id, person_track in self.persons.items():
             if person_id == active_person_id: continue
-            current_clipped_frame_segments = person_track.body_data.clip_segments(person_segments)
+            current_clipped_frame_segments = person_track.partial_body_data.clip_segments(person_segments)
             clipped_persons_segments[person_id] = current_clipped_frame_segments
 
         return clipped_persons_segments

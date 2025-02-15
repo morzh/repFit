@@ -1,4 +1,7 @@
+from typing import Any
+
 import numpy as np
+from numpy import floating
 
 from core.filters.single_person.source.person_tracked_data import PersonTrackedData
 from core.filters.single_person.source.person_data import PersonData
@@ -14,18 +17,18 @@ class SinglePersonTrack:
         Class containing information about video segment at which person's tracking is stable (using some tracking network).
 
     :ivar tracked_data: data, obtained from person's tracker
-    :ivar body_data: person data
+    :ivar partial_body_data: person data
     :ivar full_body_data: fll body person data
     """
     def __init__(self):
         self.tracked_data = PersonTrackedData()
-        self.body_data = PersonData()
+        self.partial_body_data = PersonData()
         self.full_body_data = PersonData()
         self.is_active = False
 
 
     def __eq__(self, other):
-        return self.tracked_data == other.tracked_data and self.body_data == other.body_data and self.full_body_data == other.full_body_data and self.is_active == other.is_active
+        return self.tracked_data == other.tracked_data and self.partial_body_data == other.partial_body_data and self.full_body_data == other.full_body_data and self.is_active == other.is_active
 
 
     '''
@@ -96,7 +99,7 @@ class SinglePersonTrack:
     #     self.segments.bridge_gaps(frames_gap_threshold)
 
 
-    def mean_area(self) -> float:
+    def mean_area(self) -> floating[Any]:
         """
         Description:
             Calculates mean of all person's bounding boxes areas.
@@ -106,7 +109,7 @@ class SinglePersonTrack:
         return self.tracked_data.bounding_boxes.mean_area()
 
 
-    def mean_height(self) -> float:
+    def mean_height(self) -> floating[Any]:
         """
         Description:
             Calculates mean height of all person's bounding boxes.

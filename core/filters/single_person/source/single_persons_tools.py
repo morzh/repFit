@@ -156,9 +156,10 @@ def filter_tracks(tracks: MultiplePersonsTracks, **parameters):
     full_body_persons_filtering_parameters = parameters['persons_full_body_data_filtering']
 
     if parameters['do_filtering']:
+        tracks.clear_filtering_chain()
         filter_tracked_data(tracks, **parameters)
         filter_persons_body_data(tracks, **persons_filtering_parameters)
-        filter_full_body_persons_data(tracks, **full_body_persons_filtering_parameters)
+        filter_persons_full_body_data(tracks, **full_body_persons_filtering_parameters)
 
 
 def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters):
@@ -208,7 +209,7 @@ def filter_persons_body_data(tracks: MultiplePersonsTracks, **parameters) -> Mul
     return tracks
 
 
-def filter_full_body_persons_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
+def filter_persons_full_body_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
     """
     Description:
         Filter full body persons data in multiple persons track by predefined set of filters.
