@@ -9,13 +9,14 @@ class JointsFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         This is two steps filter.
-        1. Select frames at which confident joints number is greater than the given joints number;
-        2. Assign selected frames indices to body or full body data.
+        1. Select frames at which confident joints number are in range
+            [self.minimum_number_joints_threshold, self.maximum_number_joints_threshold]. Both edge range values are included.
+        2. Assign selected frames indices to partial or full body data indices.
 
     :ivar joints_confidence_threshold: confident joints threshold;
-    :ivar minimum_number_joints_threshold: minimum number of joints in frame (if less, delete respective frame index);
-    :ivar maximum_number_joints_threshold: maximum number of joints in frame (if more, delete respective frame index);
-    :ivar filter_full_body_person: if True filter full body data, just body data otherwise.
+    :ivar minimum_number_joints_threshold: minimum number of joints in frame
+    :ivar maximum_number_joints_threshold: maximum number of joints in frame
+    :ivar filter_full_body_person: if True assign resulting indices to full body data and to partial body data otherwise.
     """
     def __init__(self, **parameters):
         self.joints_confidence_threshold = parameters.get('joints_confidence_threshold', 0.7)

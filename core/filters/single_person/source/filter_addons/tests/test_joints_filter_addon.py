@@ -122,7 +122,7 @@ class TestJointsFilterAddon(unittest.TestCase):
         exact_video_frames_number = np.random.randint(self.minimum_frames_number, self.maximum_number_of_video_frames)
         video_frames_stride = np.random.randint(1, self.maximum_frames_stride_value)
         stride_frames_number = int(exact_video_frames_number / video_frames_stride)
-        frames_indices = np.linspace(0, (exact_video_frames_number // video_frames_stride) * video_frames_stride, stride_frames_number + 1).astype(int)
+        video_frames_indices = np.linspace(0, (exact_video_frames_number // video_frames_stride) * video_frames_stride, stride_frames_number + 1).astype(int)
         video_frames_number_inaccuracy = np.random.randint(-10, 10)
         approximate_video_frames_number = exact_video_frames_number + video_frames_number_inaccuracy
         fps = 20 + 40*np.random.random()
@@ -131,10 +131,10 @@ class TestJointsFilterAddon(unittest.TestCase):
         multiple_persons_tracks = MultiplePersonsTracks(video_properties, stride=video_frames_stride, exact_frames_number=exact_video_frames_number)
 
         for person_index in range(persons_number):
-            current_number_frames_indices = np.random.randint(int(frames_indices.shape[0] / 4), int(frames_indices.shape[0] / 2))
-            current_frames_indices_mask = np.array(current_number_frames_indices * [True] + (frames_indices.shape[0] - current_number_frames_indices) * [False])
+            current_number_frames_indices = np.random.randint(int(video_frames_indices.shape[0] / 4), int(video_frames_indices.shape[0] / 2))
+            current_frames_indices_mask = np.array(current_number_frames_indices * [True] + (video_frames_indices.shape[0] - current_number_frames_indices) * [False])
             np.random.shuffle(current_frames_indices_mask)
-            current_frames_indices = frames_indices[current_frames_indices_mask]
+            current_frames_indices = video_frames_indices[current_frames_indices_mask]
 
             current_person_tracked_data = self.generate_person_tracked_data(current_frames_indices, confident_joints_number_range, confident_joints_confidences_range, multiple_persons_tracks)
             current_person = SinglePersonTrack()
