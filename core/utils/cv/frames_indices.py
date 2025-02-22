@@ -15,7 +15,7 @@ class FramesIndices:
 
     def __init__(self, indices: np.ndarray | None = None):
         if indices is None:
-            self._values: np.ndarray = np.array([])
+            self._values: np.ndarray = np.array([], dtype=np.int64)
         elif not np.issubdtype(indices.dtype, np.integer):
             raise ValueError('Only integer indices supported.')
         elif not self.is_consistent(indices):
@@ -41,7 +41,7 @@ class FramesIndices:
 
 
     def __add__(self, other):
-        stacked_values = np.concatenate((self._values, other.values))
+        stacked_values = np.concatenate((self._values, other.values), dtype=np.int64)
         return FramesIndices(np.unique(stacked_values))
 
 

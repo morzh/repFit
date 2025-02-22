@@ -49,7 +49,7 @@ class BoundingBoxes2DArray:
 
 
     def __getitem__(self, item):
-        return self.values[item]
+        return BoundingBoxes2DArray(self.values[item])
     
     
     def __len__(self) -> int:

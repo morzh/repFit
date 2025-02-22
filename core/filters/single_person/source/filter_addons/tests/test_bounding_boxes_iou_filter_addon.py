@@ -7,7 +7,7 @@ from matplotlib.patches import Rectangle
 from skimage.util import regular_grid
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
-from core.filters.single_person.source.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
+from core.filters.single_person.source.filter_addons.bounding_boxes_iou_filter_addon import BoundingBoxesIouFilterAddon
 from core.utils.cv.frames_indices import FramesIndices
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.source.person_tracked_data import PersonTrackedData
@@ -30,15 +30,21 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         self.joints_number = 17
         self.confidence_range = 0.3, 0.7
         self.show_overall_persons_boxes = False
-        self.show_tracks_boxes = True
+        self.show_tracks_boxes = False
 
 
 
     def test_bounding_boxes_iou_filter(self):
         for _ in range(self.number_checks):
             current_persons_number = np.random.randint(self.minimum_number_persons_in_tracks, self.maximum_number_persons_in_tracks + 1)
-            current_apriori_clean_tracks = self.generate_tracks(current_persons_number)
+            current_iou_threshold = np.random.random()
+            current_confidence_threshold = np.random.random()
+            current_source_tracks = self.generate_tracks(current_persons_number)
+            current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold)
+            current_filtered_tracks = copy.deepcopy(current_source_tracks)
+            current_filtered_tracks.apply_filter(current_filter)
 
+            self.assertTrue(current_source_tracks == current_filtered_tracks)
 
     def generate_tracks(self, persons_number: int) -> MultiplePersonsTracks:
         persons_overall_boxes = self.generate_overall_bounding_boxes(persons_number)
@@ -81,8 +87,9 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         confidences = np.random.random((indices_number,))
         person_tracked_data.insert(tracked_frames_indices, bounding_boxes, confidences)
         body_data_reference = single_person_track.full_body_data if full_body_type_flag else single_person_track.partial_body_data
-        body_data_reference.frames_indices = tracked_frames_indices
+        body_data_reference.frames_indices = FramesIndices(tracked_frames_indices)
         single_person_track.tracked_data = person_tracked_data
+        single_person_track.is_active = True
         return single_person_track
 
 
