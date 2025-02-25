@@ -6,6 +6,7 @@ import pickle
 import shutil
 import time
 
+from core.filters.single_person.source.filter_addons.bounding_boxes_iou_filter_addon import BoundingBoxesIouFilterAddon
 from core.filters.single_person.source.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
 # from core.filters.single_person.source.filter_addons.partial_person_filter_addon import PartialPersonFilterAddon
 from core.filters.single_person.source.filter_addons.joints_filter_addon import JointsFilterAddon
@@ -58,11 +59,7 @@ def process_videos_by_single_persons_filter(input_output_config: dict, filter_pa
 
     time_start = time.time()
     if use_multiprocessing:
-        run_pool_single_persons_filter(process_video,
-                                       video_source_filepaths,
-                                       videos_target_folder,
-                                       number_processes=number_processes,
-                                       **filter_parameters)
+        run_pool_single_persons_filter(process_video, video_source_filepaths, videos_target_folder, number_processes=number_processes, **filter_parameters)
     else:
         for video_source_filepath in video_source_filepaths:
             process_video(video_source_filepath, videos_target_folder, **filter_parameters)
@@ -152,17 +149,25 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
 
 
 def filter_tracks(tracks: MultiplePersonsTracks, **parameters):
-    persons_filtering_parameters = parameters['persons_data_filtering']
+    tracked_data_filtering_parameters = parameters['persons_data_filtering']
+    partial_body_persons_filtering_parameters = parameters['persons_partial_body_data_filtering']
     full_body_persons_filtering_parameters = parameters['persons_full_body_data_filtering']
+    inter_persons_filtering_parameters = parameters['inter_persons_filtering']
+
 
     if parameters['do_filtering']:
         tracks.clear_filtering_chain()
-        filter_tracked_data(tracks, **parameters)
-        filter_persons_body_data(tracks, **persons_filtering_parameters)
-        filter_persons_full_body_data(tracks, **full_body_persons_filtering_parameters)
+        filter_tracked_data(tracks, **tracked_data_filtering_parameters)
+        filter_partial_body_data(tracks, **partial_body_persons_filtering_parameters)
+        filter_full_body_data(tracks, **full_body_persons_filtering_parameters)
+        filter_inter_persons_data(tracks, **inter_persons_filtering_parameters)
 
 
 def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters):
+    """
+    Description:
+        Filter tracked person's data in multiple persons track by predefined set of filters.
+    """
     if parameters['absolute_area']['apply']:
         area_filter_addon = AbsoluteAreaFilterAddon(parameters['absolute_area']['area_threshold'])
         tracks.apply_filter(area_filter_addon)
@@ -172,10 +177,10 @@ def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters):
         tracks.apply_filter(area_ratio_filter_addon)
 
 
-def filter_persons_body_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
+def filter_partial_body_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     """
     Description:
-        Filter persons data in multiple persons track by predefined set of filters.
+        Filter in place partial persons data in multiple persons track by predefined set of filters.
 
     :param tracks: persons tracks.
 
@@ -206,13 +211,12 @@ def filter_persons_body_data(tracks: MultiplePersonsTracks, **parameters) -> Mul
         duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'])
         tracks.apply_filter(duration_filter_addon)
 
-    return tracks
 
 
-def filter_persons_full_body_data(tracks: MultiplePersonsTracks, **parameters) -> MultiplePersonsTracks:
+def filter_full_body_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     """
     Description:
-        Filter full body persons data in multiple persons track by predefined set of filters.
+        Filter full in place body persons data in multiple persons track by predefined set of filters.
 
 
     :keyword full_body: full bode filter parameters;
@@ -236,7 +240,15 @@ def filter_persons_full_body_data(tracks: MultiplePersonsTracks, **parameters) -
         duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'])
         tracks.apply_filter(duration_filter_addon)
 
-    return tracks
+
+def filter_inter_persons_data(tracks, **parameters) -> None:
+    """
+    Description:
+        Filter in place persons full or partial body data if it meets some criteria.
+    """
+    if parameters['bounding_boxes_iou']['apply']:
+        bounding_box_iou_filter_addon = BoundingBoxesIouFilterAddon(**parameters['bounding_box_iou'])
+        tracks.apply_filter(bounding_box_iou_filter_addon)
 
 
 def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, tracks: MultiplePersonsTracks, **parameters) -> None:
@@ -258,15 +270,11 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
             continue
 
         current_full_body_person_segments = person_track.full_body_data.frames_segments
-        current_full_body_person_boxes = person_track.bounding_boxes_per_segment(current_full_body_person_segments)
+        current_full_body_person_boxes_per_segment = person_track.bounding_boxes_per_segment(current_full_body_person_segments)
         current_other_persons_segments = tracks.clip_persons_segments(current_full_body_person_segments, person_id)
         current_other_persons_boxes = tracks.persons_bounding_boxes(current_other_persons_segments, person_id)
 
-        current_iou = MultiplePersonsTracks.intersections_over_unions(current_full_body_person_boxes, current_other_persons_boxes)
-        current_maximum_iou = np.array([np.max(area) for area in current_iou.values()])
-        current_data_mask = current_maximum_iou > 0.3
-
-        current_full_body_person_boxes = MultiplePersonsTracks.enlarge_bounding_boxes(current_full_body_person_boxes, current_other_persons_boxes, input_video_bounding_box)
+        current_full_body_person_boxes_per_segment = MultiplePersonsTracks.enlarge_bounding_boxes(current_full_body_person_boxes_per_segment, current_other_persons_boxes, input_video_bounding_box)
 
         video_filename_base, video_filename_extension = extract_name_extension_from_filepath(tracks.video_properties.filepath)
         current_output_video_file_basename = f'{video_filename_base}__{output_video_suffix}-id{person_id}'
@@ -277,4 +285,4 @@ def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_fol
             continue
 
         video_writer = VideoWriter(source_filepath, target_folder, fps=tracks.video_properties.fps)
-        video_writer.write_segments_with_bounding_boxes(current_full_body_person_segments, current_full_body_person_boxes, current_output_video_file_basename)
+        video_writer.write_segments_with_bounding_boxes(current_full_body_person_segments, current_full_body_person_boxes_per_segment, current_output_video_file_basename)

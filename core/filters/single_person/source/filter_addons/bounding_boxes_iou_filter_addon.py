@@ -44,7 +44,9 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
                 current_reference_body_frames_indices_keys = np.array(current_reference_body_frames_indices_keys)
                 current_reference_confidences = current_reference_track.tracked_data.confidences[current_reference_body_frames_indices_keys]
                 current_reference_confidences_mask = current_reference_confidences > self.confidence_threshold
-                current_reference_body_frames_confident_indices = current_reference_body_frames_indices_keys[current_reference_confidences_mask]
+                if np.all(current_reference_confidences_mask == False): continue
+                current_reference_body_frames_confident_indices_keys = current_reference_body_frames_indices_keys[current_reference_confidences_mask]
+                current_reference_body_frames_confident_indices =  current_reference_body_frames_indices[current_reference_body_frames_confident_indices_keys]
 
                 # find tracked frames indices with confidence greater than given threshold for target person
                 current_target_frames_indices_set = OrderedSet(current_target_body_frames_indices.values)
@@ -52,14 +54,15 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
                 current_target_body_frames_indices_keys = np.array(current_target_body_frames_indices_keys)
                 current_target_confidences = current_target_track.tracked_data.confidences[current_target_body_frames_indices_keys]
                 current_target_confidences_mask = current_target_confidences > self.confidence_threshold
-                current_target_body_frames_confident_indices = current_target_body_frames_indices_keys[current_target_confidences_mask]
+                if np.all(current_target_confidences_mask == False): continue
+                current_target_body_frames_confident_indices_keys = current_target_body_frames_indices_keys[current_target_confidences_mask]
+                current_target_body_frames_confident_indices = current_target_body_frames_indices[current_target_body_frames_confident_indices_keys]
 
                 # find frames indices which are common for reference and target body and full body data
-                current_common_reference_target_frames_indices = np.intersect1d(current_reference_body_frames_indices.values, current_target_body_frames_indices.values)
+                current_common_reference_target_frames_indices = np.intersect1d(current_reference_body_frames_confident_indices, current_target_body_frames_confident_indices)
                 if not current_common_reference_target_frames_indices.shape[0]: continue
                 current_reference_body_frames_indices_keys = current_reference_frames_indices_set.index(current_common_reference_target_frames_indices)
                 current_target_body_frames_indices_keys = current_target_frames_indices_set.index(current_common_reference_target_frames_indices)
-
                 current_reference_bounding_boxes = current_reference_track.tracked_data.bounding_boxes[current_reference_body_frames_indices_keys]
                 current_target_bounding_boxes = current_target_track.tracked_data.bounding_boxes[current_target_body_frames_indices_keys]
                 current_bounding_boxes_iou = BoundingBoxes2DArray.intersection_over_union(current_reference_bounding_boxes, current_target_bounding_boxes)

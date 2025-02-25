@@ -33,20 +33,37 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         self.show_tracks_boxes = False
 
 
-
-    def test_bounding_boxes_iou_filter(self):
+    def test_bounding_boxes_iou_filter_no_change(self):
         for _ in range(self.number_checks):
             current_persons_number = np.random.randint(self.minimum_number_persons_in_tracks, self.maximum_number_persons_in_tracks + 1)
             current_iou_threshold = np.random.random()
             current_confidence_threshold = np.random.random()
-            current_source_tracks = self.generate_tracks(current_persons_number)
+            current_source_tracks = self.generate_tracks_separate_persons(current_persons_number)
             current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold)
             current_filtered_tracks = copy.deepcopy(current_source_tracks)
             current_filtered_tracks.apply_filter(current_filter)
+            self.assertTrue(current_source_tracks.persons == current_filtered_tracks.persons)
 
-            self.assertTrue(current_source_tracks == current_filtered_tracks)
 
-    def generate_tracks(self, persons_number: int) -> MultiplePersonsTracks:
+    def test_bounding_boxes_iou_filter_confidence(self):
+        for _ in range(self.number_checks):
+            current_persons_number = np.random.randint(self.minimum_number_persons_in_tracks, self.maximum_number_persons_in_tracks + 1)
+            current_iou_threshold = np.random.random()
+            current_confidence_threshold = 0.1 + 0.9*np.random.random()
+            current_source_tracks = self.generate_tracks_separate_persons(current_persons_number, confidence_range=(current_confidence_threshold + 0.01, 1.0))
+            current_source_tracks = self.add_bounding_boxes_to_tracks(current_source_tracks, boxes_confidences_range=(0.01, current_confidence_threshold))
+            current_filtered_tracks = copy.deepcopy(current_source_tracks)
+
+            current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold + 0.01)
+            current_filtered_tracks.apply_filter(current_filter)
+            self.assertTrue(current_source_tracks.persons == current_filtered_tracks.persons)
+
+
+    def test_bounding_boxes_iou_filter(self):
+        ...
+
+
+    def generate_tracks_separate_persons(self, persons_number: int, confidence_range=(0.01, 0.99)) -> MultiplePersonsTracks:
         persons_overall_boxes = self.generate_overall_bounding_boxes(persons_number)
         exact_video_frames_number = np.random.randint(self.minimum_number_of_video_frames, self.maximum_number_of_video_frames)
         video_frames_number_inaccuracy = np.random.randint(-10, 10)
@@ -63,7 +80,7 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
             current_frames_indices_mask = np.array(current_number_frames_indices * [True] + (video_frames_indices.shape[0] - current_number_frames_indices) * [False])
             np.random.shuffle(current_frames_indices_mask)
             current_frames_indices = video_frames_indices[current_frames_indices_mask]
-            multiple_persons_tracks.persons[person_id] = self.generate_single_person_track(current_frames_indices, persons_overall_boxes[person_id])
+            multiple_persons_tracks.persons[person_id] = self.generate_single_person_track(current_frames_indices, persons_overall_boxes[person_id], confidence_range)
 
         if self.show_tracks_boxes:
             self.show_tracks_bounding_boxes(multiple_persons_tracks, persons_overall_boxes)
@@ -71,7 +88,44 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         return multiple_persons_tracks
 
 
-    def generate_single_person_track(self, tracked_frames_indices, overall_bounding_box: BoundingBox2D) -> SinglePersonTrack:
+    def add_bounding_boxes_to_tracks(self, tracks, boxes_confidences_range=(0.1, 0.5)) -> MultiplePersonsTracks:
+        updated_tracks = copy.deepcopy(tracks)
+        stride_frames_number = int(tracks.exact_frames_number / tracks.frames_stride)
+        frames_indices = np.linspace(0, (tracks.exact_frames_number // tracks.frames_stride) * tracks.frames_stride, stride_frames_number + 1).astype(int)
+
+        for person in updated_tracks.persons.values():
+            current_person_candidate_frame_indices = np.setdiff1d(frames_indices, person.tracked_data.frames_indices)
+            current_number_new_tracked_frames_indices = current_person_candidate_frame_indices.shape[0]
+            if current_number_new_tracked_frames_indices:
+                current_new_number_frames_indices = np.random.randint(0, current_number_new_tracked_frames_indices)
+                if current_new_number_frames_indices:
+                    current_frames_indices_mask = np.array(current_new_number_frames_indices * [True] + (current_person_candidate_frame_indices.shape[0] - current_new_number_frames_indices) * [False])
+                    np.random.shuffle(current_frames_indices_mask)
+                    current_new_frames_indices = current_person_candidate_frame_indices[current_frames_indices_mask]
+                    current_new_number_of_data_elements = current_new_frames_indices.shape[0]
+
+                    current_new_bounding_boxes = self.generate_bounding_boxes(current_new_number_of_data_elements, tracks.video_properties)
+                    current_new_confidences = boxes_confidences_range[0] + (boxes_confidences_range[1] - boxes_confidences_range[0]) * np.random.random((current_new_number_of_data_elements,))
+                    person.tracked_data.insert(current_new_frames_indices, current_new_bounding_boxes, current_new_confidences)
+
+                    current_new_number_data_frames_indices = np.random.randint(0, np.maximum(current_new_number_of_data_elements, 1))
+                    current_data_frames_indices_mask = np.array(
+                        current_new_number_data_frames_indices * [True] + (current_new_number_of_data_elements - current_new_number_data_frames_indices) * [False])
+                    np.random.shuffle(current_data_frames_indices_mask)
+                    current_new_data_indices = current_new_frames_indices[current_data_frames_indices_mask]
+                    person.partial_body_data.insert(current_new_data_indices)
+
+                    current_number_full_body_data_frames_indices = np.random.randint(0, np.maximum(current_new_number_of_data_elements, 1))
+                    current_full_body_data_frames_indices_mask = np.array(
+                        current_number_full_body_data_frames_indices * [True] + (current_new_number_of_data_elements - current_number_full_body_data_frames_indices) * [False])
+                    np.random.shuffle(current_full_body_data_frames_indices_mask)
+                    current_new_full_body_data_indices = current_new_frames_indices[current_full_body_data_frames_indices_mask]
+                    person.full_body_data.insert(current_new_full_body_data_indices)
+
+        return updated_tracks
+
+
+    def generate_single_person_track(self, tracked_frames_indices, overall_bounding_box: BoundingBox2D, confidences_range=(0.01, 0.99)) -> SinglePersonTrack:
         single_person_track = SinglePersonTrack()
         person_tracked_data = PersonTrackedData()
         indices_number = tracked_frames_indices.shape[0]
@@ -84,13 +138,28 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         bounding_boxes = bounding_boxes[:, [0, 2, 1, 3]]
         bounding_boxes = BoundingBoxes2DArray.xyxy_to_xywh(bounding_boxes)
         bounding_boxes = BoundingBoxes2DArray(bounding_boxes)
-        confidences = np.random.random((indices_number,))
+        confidences = confidences_range[0] + (confidences_range[1] - confidences_range[0]) * np.random.random((indices_number,))
         person_tracked_data.insert(tracked_frames_indices, bounding_boxes, confidences)
         body_data_reference = single_person_track.full_body_data if full_body_type_flag else single_person_track.partial_body_data
         body_data_reference.frames_indices = FramesIndices(tracked_frames_indices)
         single_person_track.tracked_data = person_tracked_data
         single_person_track.is_active = True
         return single_person_track
+
+
+    @staticmethod
+    def generate_bounding_boxes(number_boxes: int, video_properties: VideoProperties) -> BoundingBoxes2DArray:
+        if not number_boxes:
+            return BoundingBoxes2DArray()
+
+        lefts = np.random.randint(0, video_properties.width, (number_boxes, 1))
+        tops = np.random.randint(0, video_properties.height, (number_boxes, 1))
+        widths = np.random.randint(1, int(0.5 * video_properties.width), (number_boxes, 1))
+        heights = np.random.randint(1, int(0.5 * video_properties.height), (number_boxes, 1))
+
+        boxes = np.hstack((lefts, tops, widths, heights))
+        bounding_boxes = BoundingBoxes2DArray(boxes)
+        return bounding_boxes
 
 
     def generate_overall_bounding_boxes(self, persons_number: int) -> list[BoundingBox2D]:
@@ -138,16 +207,23 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         return persons_overall_boxes
 
 
-    def show_tracks_bounding_boxes(self, tracks:MultiplePersonsTracks, persons_overall_boxes):
+    def show_tracks_bounding_boxes(self, tracks:MultiplePersonsTracks, persons_overall_boxes=None) -> None:
         fig, ax = plt.subplots()
         fig.set_size_inches(22.5, 14.5)
-        for box in persons_overall_boxes:
-            rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor='green', facecolor=(1, 1, 1, 0))
-            ax.add_patch(rect)
+
+        if persons_overall_boxes is not None:
+            for box in persons_overall_boxes:
+                rect = Rectangle((box.x, box.y), width=box.width, height=box.height, edgecolor='green', facecolor=(1, 1, 1, 0))
+                ax.add_patch(rect)
 
         for person in tracks.persons.values():
+            if persons_overall_boxes is None:
+                person_overall_box = person.tracked_data.bounding_boxes.circumscribe().flatten()
+                rect = Rectangle((person_overall_box[0], person_overall_box[1]), width=person_overall_box[2], height=person_overall_box[3], edgecolor=(0.1, 0.1, 0.85, 0.1), facecolor=(1, 1, 1, 0))
+                ax.add_patch(rect)
+
             for box_index in range(len(person.tracked_data.bounding_boxes)):
-                current_box = person.tracked_data.bounding_boxes[box_index]
+                current_box = person.tracked_data.bounding_boxes[box_index].values.flatten()
                 rect = Rectangle((current_box[0], current_box[1]), width=current_box[2], height=current_box[3], edgecolor=(0.1, 0.1, 0.85, 0.1), facecolor=(1, 1, 1, 0))
                 ax.add_patch(rect)
 

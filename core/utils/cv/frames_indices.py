@@ -54,6 +54,7 @@ class FramesIndices:
         difference_values = np.setdiff1d(self._values, other.values)
         return  FramesIndices(difference_values)
 
+
     def __isub__(self, other):
         self._values = np.setdiff1d(self._values, other.values)
         return self
