@@ -26,42 +26,57 @@ visualization:
   show_frame_delay: 10
 
 
-persons_data_filtering:
+persons_tracked_data_filtering:
   do_filtering: true
-  confidence:
-    apply: true
-    confidence_threshold: 0.4 # confidence in [0, 1] interval
   absolute_area:
     apply: true
     area_threshold: 1000 # square pixels
   area_ratio:
     apply: true
     ratio_threshold: 5
-  segments_duration:
+
+partial_body_filtering:
+  do_filtering: true
+  confidence:
+    apply: false
+    confidence_threshold: 0.4 # confidence in [0, 1] interval
+  joints:
     apply: true
-    duration_threshold: 1.5 # duration time in seconds
+    joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
+    minimum_number_joints_threshold: 6
+    maximum_number_joints_threshold: 15
   bridging_gaps:
     apply: true
     gap_threshold: 1.0 # duration time in seconds
-  partial_person:
+  segments_duration:
     apply: true
-    joints_confidence_threshold: 0.65 # confidence in [0, 1] interval
-    joints_number_threshold: 5
+    duration_threshold: 1.5 # duration time in seconds
 
-
-persons_full_body_data_filtering:
+full_body_filtering:
   do_filtering: true
-  full_body:
+  confidence:
+    apply: false
+    confidence_threshold: 0.4 # confidence in [0, 1] interval
+  joints:
     apply: true
     joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
-    joints_number_threshold: 16
+    minimum_number_joints_threshold: 16
+    maximum_number_joints_threshold: 17
+
+inter_persons_filtering:
+  do_filtering: true
+  bounding_boxes_iou:
+    iou_threshold: 0.4
+    confidence_threshold: 0.5
+
+segments_filtering:
+  do_filtering: true
   bridging_gaps:
     apply: true
     gap_threshold: 4.5 # duration time in seconds
   segments_duration:
     apply: true
     duration_threshold: 0.5 # duration time in seconds
-
 
 video_segments_writer:
   write_persons_tracks: true
