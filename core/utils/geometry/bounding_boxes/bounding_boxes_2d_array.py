@@ -229,6 +229,24 @@ class BoundingBoxes2DArray:
         return 2 * (selected_boxes[:, 2] + selected_boxes[:, 3])
 
 
+    def widths(self) -> np.ndarray:
+        """
+        Description:
+            Bounding boxes widths getter
+        :return: widths array
+        """
+        return self.values[:, 2]
+
+
+    def heights(self) -> np.ndarray:
+        """
+        Description:
+            Bounding boxes heights getter
+        :return: heights array
+        """
+        return self.values[:, 3]
+
+
     @property
     def shape(self) -> tuple:
         """
@@ -339,9 +357,16 @@ class BoundingBoxes2DArray:
         if not len(boxes_1) == len(boxes_2):
             raise ValueError('Input arguments should be of the same size')
 
+        zero_division_tolerance = 1e-9
+
         intersections = BoundingBoxes2DArray.intersect(boxes_1, boxes_2, mode = BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
         intersection_areas = intersections.areas()
         union_areas = boxes_1.areas() + boxes_2.areas() - intersection_areas
+
+        union_areas_zero_mask = union_areas < zero_division_tolerance
+        intersection_areas[union_areas_zero_mask] = 0
+        union_areas[union_areas_zero_mask] = 1
+
         return intersection_areas / union_areas
 
 

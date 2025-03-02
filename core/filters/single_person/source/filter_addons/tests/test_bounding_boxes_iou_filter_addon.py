@@ -1,4 +1,5 @@
 import copy
+import random
 import unittest
 import numpy as np
 from scipy.spatial import distance
@@ -59,17 +60,34 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
             self.assertTrue(current_source_tracks.persons == current_filtered_tracks.persons)
 
 
-    def test_bounding_boxes_iou_filter(self):
-        ...
+    def test_bounding_boxes_iou_filter_pair_of_persons(self):
+        persons_number = 2
+        for _ in range(self.number_checks):
+            current_iou_threshold = 0.1 + 0.9 * np.random.random()
+            current_confidence_threshold = 0.1 + 0.9 * np.random.random()
+            current_source_tracks, free_indices = self.generate_tracks_separate_persons(persons_number,
+                                                                                        confidence_range=(current_confidence_threshold + 0.01, 1.0),
+                                                                                        return_free_frames_indices=True)
+            current_altered_tracks = self.add_iou_threshold_bounding_boxes_to_two_persons_tracks(current_source_tracks, free_indices,
+                                                                                                 boxes_confidences_range=(0.01, current_confidence_threshold),
+                                                                                                 iou_low_bound= current_iou_threshold)
+            current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold)
+            current_altered_tracks.apply_filter(current_filter)
+            self.assertTrue(current_source_tracks.persons == current_altered_tracks.persons)
 
 
-    def generate_tracks_separate_persons(self, persons_number: int, confidence_range=(0.01, 0.99)) -> MultiplePersonsTracks:
+    def generate_tracks_separate_persons(self, persons_number: int, confidence_range=(0.01, 0.99), return_free_frames_indices=False) -> MultiplePersonsTracks:
         persons_overall_boxes = self.generate_overall_bounding_boxes(persons_number)
         exact_video_frames_number = np.random.randint(self.minimum_number_of_video_frames, self.maximum_number_of_video_frames)
         video_frames_number_inaccuracy = np.random.randint(-10, 10)
         video_frames_stride = np.random.randint(1, self.maximum_frames_stride_value)
         stride_frames_number = int(exact_video_frames_number / video_frames_stride)
         video_frames_indices = np.linspace(0, (exact_video_frames_number // video_frames_stride) * video_frames_stride, stride_frames_number + 1).astype(int)
+        number_free_frames_indices = int(video_frames_indices.shape[0] * (0.1 + 0.1 * np.random.random()))
+        free_frames_indices_mask = [True] * number_free_frames_indices + [False] * (video_frames_indices.shape[0] - number_free_frames_indices)
+        np.random.shuffle(free_frames_indices_mask)
+        free_frames_indices = video_frames_indices[free_frames_indices_mask]
+        video_frames_indices = video_frames_indices[np.invert(free_frames_indices_mask)]
         approximate_video_frames_number = exact_video_frames_number + video_frames_number_inaccuracy
         fps = 20 + 40 * np.random.random()
         video_properties = VideoProperties('path_to_video', self.video_width, self.video_height, approximate_video_frames_number, fps)
@@ -80,12 +98,15 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
             current_frames_indices_mask = np.array(current_number_frames_indices * [True] + (video_frames_indices.shape[0] - current_number_frames_indices) * [False])
             np.random.shuffle(current_frames_indices_mask)
             current_frames_indices = video_frames_indices[current_frames_indices_mask]
-            multiple_persons_tracks.persons[person_id] = self.generate_single_person_track(current_frames_indices, persons_overall_boxes[person_id], confidence_range)
+            multiple_persons_tracks.persons[person_id] = self.generate_single_person_track(current_frames_indices, persons_overall_boxes[person_id], confidence_range, free_frames_indices)
 
         if self.show_tracks_boxes:
             self.show_tracks_bounding_boxes(multiple_persons_tracks, persons_overall_boxes)
 
-        return multiple_persons_tracks
+        if return_free_frames_indices:
+            return multiple_persons_tracks, free_frames_indices
+        else:
+            return multiple_persons_tracks
 
 
     def add_bounding_boxes_to_tracks(self, tracks, boxes_confidences_range=(0.1, 0.5)) -> MultiplePersonsTracks:
@@ -125,9 +146,15 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         return updated_tracks
 
 
-    def generate_single_person_track(self, tracked_frames_indices, overall_bounding_box: BoundingBox2D, confidences_range=(0.01, 0.99)) -> SinglePersonTrack:
+    def generate_single_person_track(self,
+                                     tracked_frames_indices,
+                                     overall_bounding_box: BoundingBox2D,
+                                     confidences_range=(0.01, 0.99),
+                                     free_frames_indices: None | np.ndarray = None) -> SinglePersonTrack:
         single_person_track = SinglePersonTrack()
         person_tracked_data = PersonTrackedData()
+        if free_frames_indices is not None:
+            tracked_frames_indices = np.setdiff1d(tracked_frames_indices, free_frames_indices)
         indices_number = tracked_frames_indices.shape[0]
         overall_bounding_box_x_bounds = int(overall_bounding_box.x), int(overall_bounding_box.x + overall_bounding_box.width)
         overall_bounding_box_y_bounds = int(overall_bounding_box.y), int(overall_bounding_box.y + overall_bounding_box.height)
@@ -148,14 +175,14 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
 
 
     @staticmethod
-    def generate_bounding_boxes(number_boxes: int, video_properties: VideoProperties) -> BoundingBoxes2DArray:
+    def generate_bounding_boxes(number_boxes: int, video_properties: VideoProperties, minimum_width=1, minimum_height=1) -> BoundingBoxes2DArray:
         if not number_boxes:
             return BoundingBoxes2DArray()
 
         lefts = np.random.randint(0, video_properties.width, (number_boxes, 1))
         tops = np.random.randint(0, video_properties.height, (number_boxes, 1))
-        widths = np.random.randint(1, int(0.5 * video_properties.width), (number_boxes, 1))
-        heights = np.random.randint(1, int(0.5 * video_properties.height), (number_boxes, 1))
+        widths = np.random.randint(minimum_width, int(0.5 * video_properties.width), (number_boxes, 1))
+        heights = np.random.randint(minimum_height, int(0.5 * video_properties.height), (number_boxes, 1))
 
         boxes = np.hstack((lefts, tops, widths, heights))
         bounding_boxes = BoundingBoxes2DArray(boxes)
@@ -235,3 +262,33 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
 
         plt.tight_layout()
         plt.show()
+
+
+    def add_iou_threshold_bounding_boxes_to_two_persons_tracks(self, tracks: MultiplePersonsTracks, new_frames_indices: np.ndarray, boxes_confidences_range=(0.01, 1.0), iou_low_bound=0.5) -> MultiplePersonsTracks:
+        if not len(tracks.persons) == 2:
+            raise ValueError('THis function works only for two persons track.')
+
+        updated_tracks = copy.deepcopy(tracks)
+        stride_frames_number = int(tracks.exact_frames_number / tracks.frames_stride)
+        common_boxes = self.generate_bounding_boxes(new_frames_indices.shape[0], tracks.video_properties, minimum_width=30, minimum_height=30)
+        common_boxes_enlarge_values = 0.5 * common_boxes.widths() * ( 1 / iou_low_bound - 1)
+        common_boxes_enlarge_values = common_boxes_enlarge_values.astype(np.int64) - 1
+        common_boxes_enlarge_values = np.maximum(0, common_boxes_enlarge_values)
+        assert common_boxes_enlarge_values.min() >= 0
+
+        persons_boxes = [None, None]
+        persons_boxes[0] = common_boxes.enlarge(left=common_boxes_enlarge_values)
+        persons_boxes[1] = common_boxes.enlarge(right=common_boxes_enlarge_values)
+        iou_check = BoundingBoxes2DArray.intersection_over_union(persons_boxes[0], persons_boxes[1])
+
+        assert iou_check.min() >= iou_low_bound
+
+        for person_index, person in enumerate(updated_tracks.persons.values()):
+            current_person_body_choice = bool(np.random.randint(0, 2))
+            current_person_body_reference = person.full_body_data if current_person_body_choice else person.partial_body_data
+
+            current_new_confidences = boxes_confidences_range[0] + (boxes_confidences_range[1] - boxes_confidences_range[0]) * np.random.random((new_frames_indices.shape[0],))
+            person.tracked_data.insert(new_frames_indices, persons_boxes[person_index], current_new_confidences)
+            current_person_body_reference.frames_indices.insert(new_frames_indices)
+
+        return updated_tracks

@@ -111,11 +111,15 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
 def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> MultiplePersonsTracks:
     """
      Description:
+        Get multiple persons tracks from video file or from serialized data file.
 
-     :param video_source_filepath:
+     :param video_source_filepath: video filepath
 
-     :keyword yolo_weights_path:
-     :keyword yolo_weights_path:
+     :keyword yolo_weights_path: YOLO weights filepath;
+     :keyword yolo_model: YOLO model filename (e.g. yolov10l.pt);
+     :keyword write_tracked_data: serialize tracked data;
+     :keyword tracked_data_suffix: tracked data suffix;
+     :keyword use_saved_data: do not track data and use serialized data instead.
 
      :raises ValueError:
 
@@ -155,18 +159,17 @@ def filter_tracks(tracks: MultiplePersonsTracks, **parameters) -> None:
 
     :param tracks: multiple persons tracks;
 
-    :keyword tracked_data_filtering:
-    :keyword partial_body_data_filtering:
-    :keyword full_body_data_filtering:
-    :keyword inter_persons_filtering:
-    :keyword segments_filtering:
+    :keyword tracked_data_filtering: parameters for tracked data filtering
+    :keyword partial_body_data_filtering: parameters for partial body filtering
+    :keyword full_body_data_filtering: parameters for full body filtering
+    :keyword inter_persons_filtering: parameters for inter persons filtering
+    :keyword segments_filtering: parameters for partial and full body time segments filtering
     """
     tracked_data_filtering_parameters = parameters['tracked_data_filtering']
     partial_body_filtering_parameters = parameters['partial_body_data_filtering']
     full_body_filtering_parameters = parameters['full_body_data_filtering']
     inter_persons_filtering_parameters = parameters['inter_persons_filtering']
     segments_filtering_parameters = parameters['segments_filtering']
-
 
     if parameters['do_filtering']:
         tracks.clear_filtering_chain()
@@ -175,7 +178,6 @@ def filter_tracks(tracks: MultiplePersonsTracks, **parameters) -> None:
         filter_full_body_data(tracks, **full_body_filtering_parameters)
         filter_inter_persons_data(tracks, **inter_persons_filtering_parameters)
         filter_segments(tracks, **segments_filtering_parameters)
-
 
 
 def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters) -> None:
@@ -205,12 +207,10 @@ def filter_partial_body_data(tracks: MultiplePersonsTracks, **parameters) -> Non
     :param tracks: multiple persons tracks;
 
     :keyword confidence: confidence filter parameters;
-    :keyword absolute_area: absolute area filter parameters;
-    :keyword area_ratio: ario ratio filter parameters;
-    :keyword partial_person: partial person filter parameters;
+    :keyword joints: partial person filter parameters;
     """
-    if parameters['partial_person']['apply']:
-        joints_filter_addon = JointsFilterAddon(**parameters['partial_person'])
+    if parameters['joints']['apply']:
+        joints_filter_addon = JointsFilterAddon(**parameters['joints'])
         tracks.apply_filter(joints_filter_addon)
 
     if parameters['confidence']['apply']:
@@ -223,26 +223,18 @@ def filter_full_body_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     Description:
         Filter full in place body persons data in multiple persons track by predefined set of filters.
 
-    :param tracks: person's tracks.
+    :param tracks: multiple persons tracks;
 
-    :keyword full_body: full bode filter parameters;
-    :keyword bridging_gaps: bridging gap filter parameters;
-    :keyword segments_duration: segments duration filter parameters;
+    :keyword confidence: partial person confidence filter parameters;
+    :keyword joints: partial person filter parameters.
     """
-    for person in tracks.persons.values():
-        person.full_body_data.frames_indices = copy.copy(person.tracked_data.frames_indices)
-
-    if parameters['full_body']['apply']:
-        whole_person_filter_addon = JointsFilterAddon(**parameters['full_body'])
+    if parameters['joints']['apply']:
+        whole_person_filter_addon = JointsFilterAddon(**parameters['joints'])
         tracks.apply_filter(whole_person_filter_addon)
 
-    if parameters['bridging_gaps']['apply']:
-        bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'])
-        tracks.apply_filter(bridge_gaps_filter_addon)
-
-    if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'])
-        tracks.apply_filter(duration_filter_addon)
+    if parameters['confidence']['apply']:
+        confidence_filter_addon = ConfidenceFilterAddon(parameters['confidence']['confidence_threshold'])
+        tracks.apply_filter(confidence_filter_addon)
 
 
 def filter_inter_persons_data(tracks, **parameters) -> None:
@@ -270,13 +262,13 @@ def filter_segments(tracks, **parameters) -> None:
     if parameters['bridging_gaps']['apply']:
         bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'], filter_full_body_person=True)
         tracks.apply_filter(bridge_gaps_filter_addon)
-        bridge_gaps_filter_addon.filter_full_body_person = False
+        bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'], filter_full_body_person=False)
         tracks.apply_filter(bridge_gaps_filter_addon)
     if parameters['segments_duration']['apply']:
-        duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'], filter_full_body_person=True)
-        tracks.apply_filter(duration_filter_addon)
-        duration_filter_addon.filter_full_body_person = False
-        tracks.apply_filter(duration_filter_addon)
+        segments_duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'], filter_full_body_person=True)
+        tracks.apply_filter(segments_duration_filter_addon)
+        segments_duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'], filter_full_body_person=False)
+        tracks.apply_filter(segments_duration_filter_addon)
 
 
 def write_multiple_persons_tracks(source_filepath: os.PathLike | str, target_folder: os.PathLike | str, tracks: MultiplePersonsTracks, **parameters) -> None:
