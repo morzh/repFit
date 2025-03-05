@@ -60,7 +60,7 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
             self.assertTrue(current_source_tracks.persons == current_filtered_tracks.persons)
 
 
-    def test_bounding_boxes_iou_filter_pair_of_persons(self):
+    def test_bounding_boxes_iou_filter_pair_of_persons_set_01(self):
         persons_number = 2
         for _ in range(self.number_checks):
             current_iou_threshold = 0.1 + 0.9 * np.random.random()
@@ -69,21 +69,59 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
                                                                                         confidence_range=(current_confidence_threshold + 0.01, 1.0),
                                                                                         return_free_frames_indices=True)
             current_altered_tracks = self.add_iou_threshold_bounding_boxes_to_two_persons_tracks(current_source_tracks, free_indices,
-                                                                                                 boxes_confidences_range=(0.01, current_confidence_threshold),
+                                                                                                 boxes_confidences_range=(current_confidence_threshold + 0.01, 1.0),
                                                                                                  iou_low_bound= current_iou_threshold)
+
+            for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
+                self.assertFalse(person_source.partial_body_data == person_altered.partial_body_data and person_source.full_body_data == person_altered.full_body_data)
+
             current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold)
             current_altered_tracks.apply_filter(current_filter)
-            self.assertTrue(current_source_tracks.persons == current_altered_tracks.persons)
+            for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
+                self.assertTrue(person_source.partial_body_data == person_altered.partial_body_data)
+                self.assertTrue(person_source.full_body_data == person_altered.full_body_data)
 
 
-    def generate_tracks_separate_persons(self, persons_number: int, confidence_range=(0.01, 0.99), return_free_frames_indices=False) -> MultiplePersonsTracks:
+    def test_bounding_boxes_iou_filter_pair_of_persons_set_02(self):
+        persons_number = 2
+        for _ in range(self.number_checks):
+            current_iou_threshold = 0.1 + 0.9 * np.random.random()
+            current_confidence_threshold = 0.1 + 0.9 * np.random.random()
+            current_source_tracks, free_indices = self.generate_tracks_separate_persons(persons_number,
+                                                                                        confidence_range=(current_confidence_threshold + 0.01, 1.0),
+                                                                                        return_free_frames_indices=True,
+                                                                                        free_indices_ratios=(0.1, 0.3))
+            if free_indices.shape[0] > 2:
+                free_indices_center = int(0.5 * free_indices.shape[0])
+                current_source_tracks = self.add_iou_threshold_bounding_boxes_to_two_persons_tracks(current_source_tracks,
+                                                                                                     free_indices[:free_indices_center],
+                                                                                                     boxes_confidences_range=(0.01, current_confidence_threshold),
+                                                                                                     iou_low_bound= current_iou_threshold)
+
+                current_altered_tracks = self.add_iou_threshold_bounding_boxes_to_two_persons_tracks(current_source_tracks,
+                                                                                                     free_indices[free_indices_center:],
+                                                                                                     boxes_confidences_range=(current_confidence_threshold + 0.01, 1.0),
+                                                                                                     iou_low_bound= current_iou_threshold)
+
+
+                for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
+                    self.assertFalse(person_source.partial_body_data == person_altered.partial_body_data and person_source.full_body_data == person_altered.full_body_data)
+
+                current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold)
+                current_altered_tracks.apply_filter(current_filter)
+                for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
+                    self.assertTrue(person_source.partial_body_data == person_altered.partial_body_data)
+                    self.assertTrue(person_source.full_body_data == person_altered.full_body_data)
+
+
+    def generate_tracks_separate_persons(self, persons_number: int, confidence_range=(0.01, 0.99), return_free_frames_indices=False, free_indices_ratios=(0.1, 0.1)) -> MultiplePersonsTracks:
         persons_overall_boxes = self.generate_overall_bounding_boxes(persons_number)
         exact_video_frames_number = np.random.randint(self.minimum_number_of_video_frames, self.maximum_number_of_video_frames)
         video_frames_number_inaccuracy = np.random.randint(-10, 10)
         video_frames_stride = np.random.randint(1, self.maximum_frames_stride_value)
         stride_frames_number = int(exact_video_frames_number / video_frames_stride)
         video_frames_indices = np.linspace(0, (exact_video_frames_number // video_frames_stride) * video_frames_stride, stride_frames_number + 1).astype(int)
-        number_free_frames_indices = int(video_frames_indices.shape[0] * (0.1 + 0.1 * np.random.random()))
+        number_free_frames_indices = int(video_frames_indices.shape[0] * (free_indices_ratios[0] + free_indices_ratios[1] * np.random.random()))
         free_frames_indices_mask = [True] * number_free_frames_indices + [False] * (video_frames_indices.shape[0] - number_free_frames_indices)
         np.random.shuffle(free_frames_indices_mask)
         free_frames_indices = video_frames_indices[free_frames_indices_mask]

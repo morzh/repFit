@@ -51,13 +51,22 @@ class FramesIndices:
 
 
     def __sub__(self, other):
-        difference_values = np.setdiff1d(self._values, other.values)
-        return  FramesIndices(difference_values)
+        difference_values = np.empty([])
+        if isinstance(other, FramesIndices):
+            difference_values = np.setdiff1d(self._values, other.values)
+        elif isinstance(other, np.ndarray):
+            difference_values = np.setdiff1d(self._values, other)
+
+        return FramesIndices(difference_values)
 
 
     def __isub__(self, other):
-        self._values = np.setdiff1d(self._values, other.values)
-        return self
+        if isinstance(other, FramesIndices):
+            self._values = np.setdiff1d(self._values, other.values)
+            return self
+        elif isinstance(other, np.ndarray):
+            self._values = np.setdiff1d(self._values, other)
+            return self
 
 
     def __copy__(self):

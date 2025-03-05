@@ -23,13 +23,16 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
 
     def process(self, tracks: MultiplePersonsTracks) -> None:
         persons_ids_list = list(tracks.persons.keys())
+        per_person_frames_indices_to_filter_out = [np.empty(0,)] * len(tracks.persons)
 
-        for person_reference_id_index, person_reference_id in enumerate(persons_ids_list[:-1]):
+        for person_reference_id in persons_ids_list[:-1]:
+        # for person_reference_id_index, person_reference_id in enumerate(persons_ids_list[:-1]):
+        #     current_reference_track = tracks.persons[person_reference_id]
             current_reference_track = tracks.persons[person_reference_id]
             if not len(current_reference_track.tracked_data) or not current_reference_track.is_active: continue
             if not len(current_reference_track.partial_body_data.frames_indices) and not len(current_reference_track.full_body_data.frames_indices): continue
 
-            for person_target_id in persons_ids_list[person_reference_id_index + 1:]:
+            for person_target_id in persons_ids_list[person_reference_id + 1:]:
                 current_target_track = tracks.persons[person_target_id]
                 if not len(current_target_track.tracked_data) or not current_target_track.is_active: continue
                 if not len(current_target_track.partial_body_data.frames_indices) and not len(current_target_track.full_body_data.frames_indices): continue
@@ -70,9 +73,18 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
 
                 # update  frames indices in reference and target person
                 if not np.all(current_iou_above_threshold_mask == False):
-                    current_common_reference_target_frames_indices_filtered = current_common_reference_target_frames_indices[current_iou_above_threshold_mask]
-                    current_reference_track.partial_body_data.frames_indices -= current_common_reference_target_frames_indices_filtered
-                    current_reference_track.full_body_data.frames_indices -= current_common_reference_target_frames_indices_filtered
+                    current_reference_target_frames_indices_to_filter_out = current_common_reference_target_frames_indices[current_iou_above_threshold_mask]
 
-                    current_target_track.partial_body_data.frames_indices -= current_common_reference_target_frames_indices_filtered
-                    current_target_track.full_body_data.frames_indices -= current_common_reference_target_frames_indices_filtered
+                    per_person_frames_indices_to_filter_out[person_reference_id] = np.concatenate((per_person_frames_indices_to_filter_out[person_reference_id], current_reference_target_frames_indices_to_filter_out))
+                    per_person_frames_indices_to_filter_out[person_target_id] = np.concatenate((per_person_frames_indices_to_filter_out[person_target_id], current_reference_target_frames_indices_to_filter_out))
+
+                    # current_reference_track.partial_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
+                    # current_reference_track.full_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
+                    #
+                    # current_target_track.partial_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
+                    # current_target_track.full_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
+
+            # filter out frame indices
+            for person_id in tracks.persons.keys():
+                tracks.persons[person_id].partial_body_data.frames_indices -= per_person_frames_indices_to_filter_out[person_id]
+                tracks.persons[person_id].full_body_data.frames_indices -= per_person_frames_indices_to_filter_out[person_id]
