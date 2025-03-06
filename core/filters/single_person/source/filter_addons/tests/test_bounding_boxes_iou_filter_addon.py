@@ -1,11 +1,9 @@
 import copy
-import random
 import unittest
 import numpy as np
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-from skimage.util import regular_grid
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.filters.single_person.source.filter_addons.bounding_boxes_iou_filter_addon import BoundingBoxesIouFilterAddon
@@ -112,6 +110,30 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
                 for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
                     self.assertTrue(person_source.partial_body_data == person_altered.partial_body_data)
                     self.assertTrue(person_source.full_body_data == person_altered.full_body_data)
+
+
+    def test_bounding_boxes_iou_filter_four_persons_set_01(self):
+        persons_number = 4
+        for _ in range(self.number_checks):
+            current_iou_threshold = 0.1 + 0.9 * np.random.random()
+            current_confidence_threshold = 0.1 + 0.9 * np.random.random()
+            current_source_tracks, free_indices = self.generate_tracks_separate_persons(persons_number,
+                                                                                        confidence_range=(current_confidence_threshold + 0.01, 1.0),
+                                                                                        return_free_frames_indices=True,
+                                                                                        free_indices_ratios=(0.1, 0.3))
+            current_altered_tracks = self.add_iou_threshold_bounding_boxes_to_four_persons_tracks(current_source_tracks, free_indices,
+                                                                                                 boxes_confidences_range=(current_confidence_threshold + 0.01, 1.0),
+                                                                                                 iou_low_bound= current_iou_threshold)
+
+            for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
+                self.assertFalse(person_source.partial_body_data == person_altered.partial_body_data and person_source.full_body_data == person_altered.full_body_data)
+
+            current_filter = BoundingBoxesIouFilterAddon(iou_threshold=current_iou_threshold, confidence_threshold=current_confidence_threshold)
+            current_altered_tracks.apply_filter(current_filter)
+            for person_source, person_altered in zip(current_source_tracks.persons.values(), current_altered_tracks.persons.values()):
+                self.assertTrue(person_source.partial_body_data == person_altered.partial_body_data)
+                self.assertTrue(person_source.full_body_data == person_altered.full_body_data)
+
 
 
     def generate_tracks_separate_persons(self, persons_number: int, confidence_range=(0.01, 0.99), return_free_frames_indices=False, free_indices_ratios=(0.1, 0.1)) -> MultiplePersonsTracks:
@@ -302,31 +324,46 @@ class TestBoundingBoxesIouFilterAddon(unittest.TestCase):
         plt.show()
 
 
-    def add_iou_threshold_bounding_boxes_to_two_persons_tracks(self, tracks: MultiplePersonsTracks, new_frames_indices: np.ndarray, boxes_confidences_range=(0.01, 1.0), iou_low_bound=0.5) -> MultiplePersonsTracks:
-        if not len(tracks.persons) == 2:
-            raise ValueError('THis function works only for two persons track.')
+    def add_iou_threshold_bounding_boxes_to_four_persons_tracks(self, tracks: MultiplePersonsTracks, new_frames_indices: np.ndarray, boxes_confidences_range=(0.01, 1.0), iou_low_bound=0.5) -> MultiplePersonsTracks:
+        if not len(tracks.persons) == 4:
+            raise ValueError('This function works only for two persons track.')
 
         updated_tracks = copy.deepcopy(tracks)
-        stride_frames_number = int(tracks.exact_frames_number / tracks.frames_stride)
-        common_boxes = self.generate_bounding_boxes(new_frames_indices.shape[0], tracks.video_properties, minimum_width=30, minimum_height=30)
-        common_boxes_enlarge_values = 0.5 * common_boxes.widths() * ( 1 / iou_low_bound - 1)
-        common_boxes_enlarge_values = common_boxes_enlarge_values.astype(np.int64) - 1
-        common_boxes_enlarge_values = np.maximum(0, common_boxes_enlarge_values)
-        assert common_boxes_enlarge_values.min() >= 0
 
-        persons_boxes = [None, None]
-        persons_boxes[0] = common_boxes.enlarge(left=common_boxes_enlarge_values)
-        persons_boxes[1] = common_boxes.enlarge(right=common_boxes_enlarge_values)
-        iou_check = BoundingBoxes2DArray.intersection_over_union(persons_boxes[0], persons_boxes[1])
+        common_boxes = self.generate_bounding_boxes(new_frames_indices.shape[0], tracks.video_properties, minimum_width=30, minimum_height=30)
+        common_boxes_enlarge_left_right_values = 0.5 * common_boxes.widths() * ( 1 / iou_low_bound - 1)
+        common_boxes_enlarge_left_right_values = common_boxes_enlarge_left_right_values.astype(np.int64) - 1
+        common_boxes_enlarge_left_right_values = np.maximum(0, common_boxes_enlarge_left_right_values)
+        assert common_boxes_enlarge_left_right_values.min() >= 0
+
+        common_boxes_enlarge_top_bottom_values = 0.5 * common_boxes.heights() * ( 1 / iou_low_bound - 1)
+        common_boxes_enlarge_top_bottom_values = common_boxes_enlarge_top_bottom_values.astype(np.int64) - 1
+        common_boxes_enlarge_top_bottom_values = np.maximum(0, common_boxes_enlarge_top_bottom_values)
+        assert common_boxes_enlarge_top_bottom_values.min() >= 0
+
+        persons_boxes = [None] * 4
+        persons_boxes[0] = common_boxes.enlarge(left=common_boxes_enlarge_left_right_values)
+        persons_boxes[1] = common_boxes.enlarge(right=common_boxes_enlarge_left_right_values)
+        persons_boxes[2] = common_boxes.enlarge(top=common_boxes_enlarge_top_bottom_values)
+        persons_boxes[3] = common_boxes.enlarge(bottom=common_boxes_enlarge_top_bottom_values)
+        iou_check = BoundingBoxes2DArray.intersection_over_union(persons_boxes[1], persons_boxes[2])
 
         assert iou_check.min() >= iou_low_bound
 
-        for person_index, person in enumerate(updated_tracks.persons.values()):
+        for person_id, person_track in enumerate(updated_tracks.persons.values()):
             current_person_body_choice = bool(np.random.randint(0, 2))
-            current_person_body_reference = person.full_body_data if current_person_body_choice else person.partial_body_data
+            current_person_body_reference = person_track.full_body_data if current_person_body_choice else person_track.partial_body_data
 
             current_new_confidences = boxes_confidences_range[0] + (boxes_confidences_range[1] - boxes_confidences_range[0]) * np.random.random((new_frames_indices.shape[0],))
-            person.tracked_data.insert(new_frames_indices, persons_boxes[person_index], current_new_confidences)
+            person_track.tracked_data.insert(new_frames_indices, persons_boxes[person_id], current_new_confidences)
             current_person_body_reference.frames_indices.insert(new_frames_indices)
 
         return updated_tracks
+
+
+    def add_iou_threshold_bounding_boxes_to_two_persons_tracks(self, tracks: MultiplePersonsTracks, new_frames_indices: np.ndarray, boxes_confidences_range=(0.01, 1.0),
+                                                               iou_low_bound=0.5) -> MultiplePersonsTracks:
+        if not len(tracks.persons) == 2:
+            raise ValueError('This function works only for two persons track.')
+
+        updated_tracks = copy.deepcopy(tracks)

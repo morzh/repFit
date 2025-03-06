@@ -142,7 +142,7 @@ class BoundingBoxes2DArray:
         Description:
             Enlarge bonding boxes in place by the given values.
 
-        :param top:
+        :param top: add to tops values
         :param right:
         :param bottom:
         :param left:

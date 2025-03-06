@@ -1,5 +1,6 @@
 import numpy as np
 from ordered_set import OrderedSet
+from triton.language import dtype
 
 from core.filters.single_person.source.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
@@ -23,11 +24,9 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
 
     def process(self, tracks: MultiplePersonsTracks) -> None:
         persons_ids_list = list(tracks.persons.keys())
-        per_person_frames_indices_to_filter_out = [np.empty(0,)] * len(tracks.persons)
+        per_person_frames_indices_to_filter_out = [np.empty(0, dtype=np.int64)] * len(tracks.persons)
 
         for person_reference_id in persons_ids_list[:-1]:
-        # for person_reference_id_index, person_reference_id in enumerate(persons_ids_list[:-1]):
-        #     current_reference_track = tracks.persons[person_reference_id]
             current_reference_track = tracks.persons[person_reference_id]
             if not len(current_reference_track.tracked_data) or not current_reference_track.is_active: continue
             if not len(current_reference_track.partial_body_data.frames_indices) and not len(current_reference_track.full_body_data.frames_indices): continue
@@ -74,17 +73,10 @@ class BoundingBoxesIouFilterAddon(MultiPersonsFilterAddonBase):
                 # update  frames indices in reference and target person
                 if not np.all(current_iou_above_threshold_mask == False):
                     current_reference_target_frames_indices_to_filter_out = current_common_reference_target_frames_indices[current_iou_above_threshold_mask]
-
                     per_person_frames_indices_to_filter_out[person_reference_id] = np.concatenate((per_person_frames_indices_to_filter_out[person_reference_id], current_reference_target_frames_indices_to_filter_out))
                     per_person_frames_indices_to_filter_out[person_target_id] = np.concatenate((per_person_frames_indices_to_filter_out[person_target_id], current_reference_target_frames_indices_to_filter_out))
 
-                    # current_reference_track.partial_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
-                    # current_reference_track.full_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
-                    #
-                    # current_target_track.partial_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
-                    # current_target_track.full_body_data.frames_indices -= current_reference_target_frames_indices_to_filter_out
-
-            # filter out frame indices
-            for person_id in tracks.persons.keys():
-                tracks.persons[person_id].partial_body_data.frames_indices -= per_person_frames_indices_to_filter_out[person_id]
-                tracks.persons[person_id].full_body_data.frames_indices -= per_person_frames_indices_to_filter_out[person_id]
+        # filter out frame indices
+        for person_id in tracks.persons.keys():
+            tracks.persons[person_id].partial_body_data.frames_indices -= per_person_frames_indices_to_filter_out[person_id]
+            tracks.persons[person_id].full_body_data.frames_indices -= per_person_frames_indices_to_filter_out[person_id]
