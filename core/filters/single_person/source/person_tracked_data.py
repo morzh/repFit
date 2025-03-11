@@ -113,7 +113,7 @@ class PersonTrackedData:
         self._frames_indices._values = self._frames_indices[mask]
 
 
-    def bounding_box(self, frame_index) -> np.ndarray:
+    def bounding_box(self, frame_index) -> BoundingBoxes2DArray:
         """
         Description:
             Calculates bounding box at ``frame_index``. If ``frame_index`` presented in data, corresponding bounding box will be returned.
@@ -121,18 +121,18 @@ class PersonTrackedData:
 
         :param frame_index: frame index
 
-        :raises ValueError:
-
         :return: bounding box, represented by numpy array
         """
         if len(self._frames_indices) == 0:
-            return np.array([-1, -1, 0, 0])
+            bounding_box_values = np.array([-1, -1, 0, 0])
         elif len(self._frames_indices) == 1:
-            return self._bounding_boxes[0]
+            bounding_box_values = self._bounding_boxes.values[0]
         elif frame_index <= self._frames_indices.values[-1]:
-            return self._interpolation(frame_index, self._bounding_boxes)
+            bounding_box_values = self._interpolation(frame_index, self._bounding_boxes.values)
         else:
-            return self._extrapolation(frame_index, self._bounding_boxes)
+            bounding_box_values = self._extrapolation(frame_index, self._bounding_boxes.values)
+
+        return BoundingBoxes2DArray(bounding_box_values)
 
 
     def confidence(self, frame_index) -> float:
@@ -262,13 +262,13 @@ class PersonTrackedData:
         return extrapolated_keypoints
 
 
-    def _interpolation(self, frame_index: int, array) -> np.ndarray:
+    def _interpolation(self, frame_index: int, array: np.ndarray) -> np.ndarray:
         """
         Description:
             Interpolate ``array`` at ``frame_index``.
 
         :param frame_index: index of a frame
-        :param array:
+        :param array: numpy array with bounding boxes values
 
         :return: interpolated values
         """

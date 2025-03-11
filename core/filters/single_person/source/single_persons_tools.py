@@ -8,11 +8,13 @@ import time
 
 from core.filters.single_person.source.filter_addons.bounding_boxes_iou_filter_addon import BoundingBoxesIouFilterAddon
 from core.filters.single_person.source.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
+from core.filters.single_person.source.filter_addons.copy_symmetric_occluded_joints_yolo_filter_addon import CopySymmetricOccludedJointsYoloFilterAddon
 # from core.filters.single_person.source.filter_addons.partial_person_filter_addon import PartialPersonFilterAddon
 from core.filters.single_person.source.filter_addons.joints_filter_addon import JointsFilterAddon
 from core.filters.single_person.source.filter_addons.absolute_area_filter_addon import AbsoluteAreaFilterAddon
 from core.filters.single_person.source.filter_addons.area_ratio_filter_addon import AreaRatioFilterAddon
 from core.filters.single_person.source.filter_addons.bridge_gaps_filter_addon import BridgeGapsFilterAddon
+from core.filters.single_person.source.filter_addons.mean_person_confidence_filter_addon import MeanPersonConfidenceFilterAddon
 from core.filters.single_person.source.filter_addons.segments_duration_filter_addon import SegmentsDurationFilterAddon
 
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
@@ -33,19 +35,16 @@ def process_videos_by_single_persons_filter(input_output_config: dict, filter_pa
     :param input_output_config: input output folders configuration
     :param filter_parameters: steady camera filter parameters
 
-    :raises ValueError:
+    :raises ValueError: if ``filter_parameters`` are incorrect.
     """
 
     videos_root_folder = str(input_output_config.get('videos_root_folder', None))
     videos_source_subfolder = str(input_output_config.get('videos_source_subfolder', None))
     videos_target_subfolder = str(input_output_config.get('videos_target_subfolder', None))
 
-    if videos_root_folder is None:
-        raise ValueError('input_output_config dictionary should contain videos_root_folder key argument')
-    if videos_source_subfolder is None:
-        raise ValueError('input_output_config dictionary should contain videos_source_subfolder key argument')
-    if videos_target_subfolder is None:
-        raise ValueError('input_output_config dictionary should contain videos_target_subfolder key argument')
+    if videos_root_folder is None: raise ValueError('input_output_config dictionary should contain videos_root_folder key argument')
+    if videos_source_subfolder is None: raise ValueError('input_output_config dictionary should contain videos_source_subfolder key argument')
+    if videos_target_subfolder is None: raise ValueError('input_output_config dictionary should contain videos_target_subfolder key argument')
 
     videos_source_folder = str(os.path.join(videos_root_folder, videos_source_subfolder))
     videos_target_folder = str(os.path.join(videos_root_folder, videos_target_subfolder))
@@ -81,11 +80,6 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     visualization_parameters = parameters['visualization']
     video_segments_writer_parameters = parameters['video_segments_writer']
     do_visualization = visualization_parameters['do_visualization']
-
-    # video_source_filename = os.path.basename(video_source_filepath)
-    # video_source_filename_base = video_source_filename.split('.')[0]
-    # if check_filename_entry_in_folder(videos_target_folder, video_source_filename_base) and tracking_parameters['use_saved_data']:
-    #     return
 
     video_processing_start_time = time.time()
     minimum_resolution = video_input_parameters.get('minimal_resolution', 200)
@@ -132,13 +126,13 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     use_saved_data = parameters.get('use_saved_data', True)
 
     yolo_weights_filepath = os.path.join(str(yolo_weights_folder), str(yolo_model))
-    persons_track_data_filepath = f'{video_source_filepath}.{tracked_data_suffix}.pickle'
+    multiple_persons_tracks_pickle_filepath = f'{video_source_filepath}.{tracked_data_suffix}.pickle'
     persons_tracker = PersonsTracker(weights_pathname=yolo_weights_filepath)
     track_persons = True
 
-    if use_saved_data and os.path.exists(persons_track_data_filepath):
+    if use_saved_data and os.path.exists(multiple_persons_tracks_pickle_filepath):
         try:
-            with open(persons_track_data_filepath, "rb") as input_file:
+            with open(multiple_persons_tracks_pickle_filepath, "rb") as input_file:
                 tracks = pickle.load(input_file)
             track_persons = False
         except ModuleNotFoundError as e:
@@ -147,7 +141,7 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     if track_persons:
         tracks = persons_tracker.track(video_source_filepath, **parameters)
         if write_tracked_data:
-            tracks.serialize(persons_track_data_filepath)
+            tracks.serialize(multiple_persons_tracks_pickle_filepath)
 
     return tracks
 
@@ -165,14 +159,15 @@ def filter_tracks(tracks: MultiplePersonsTracks, **parameters) -> None:
     :keyword inter_persons_filtering: parameters for inter persons filtering
     :keyword segments_filtering: parameters for partial and full body time segments filtering
     """
-    tracked_data_filtering_parameters = parameters['tracked_data_filtering']
-    partial_body_filtering_parameters = parameters['partial_body_data_filtering']
-    full_body_filtering_parameters = parameters['full_body_data_filtering']
-    inter_persons_filtering_parameters = parameters['inter_persons_filtering']
-    segments_filtering_parameters = parameters['segments_filtering']
-
     if parameters['do_filtering']:
+        tracked_data_filtering_parameters = parameters['tracked_data_filtering']
+        partial_body_filtering_parameters = parameters['partial_body_filtering']
+        full_body_filtering_parameters = parameters['full_body_filtering']
+        inter_persons_filtering_parameters = parameters['inter_persons_filtering']
+        segments_filtering_parameters = parameters['segments_filtering']
+
         tracks.clear_filtering_chain()
+
         filter_tracked_data(tracks, **tracked_data_filtering_parameters)
         filter_partial_body_data(tracks, **partial_body_filtering_parameters)
         filter_full_body_data(tracks, **full_body_filtering_parameters)
@@ -190,13 +185,25 @@ def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     :keyword absolute_area: absolute area filter parameters
     :keyword area_ratio:  area ratio filter parameters
     """
+
+    if parameters['mean_confidence']['apply']:
+        mean_confidence_threshold = parameters['mean_confidence']['mean_confidence_threshold']
+        mean_confidence_filter_addon = MeanPersonConfidenceFilterAddon(mean_confidence_threshold)
+        tracks.apply_filter(mean_confidence_filter_addon)
+
     if parameters['absolute_area']['apply']:
         area_filter_addon = AbsoluteAreaFilterAddon(parameters['absolute_area']['area_threshold'])
         tracks.apply_filter(area_filter_addon)
 
     if parameters['area_ratio']['apply']:
-        area_ratio_filter_addon = AreaRatioFilterAddon(parameters['area_ratio']['ratio_threshold'])
+        area_ratio_threshold = parameters['area_ratio']['ratio_threshold']
+        mean_confidence_threshold = parameters['area_ratio']['mean_confidence_threshold']
+        area_ratio_filter_addon = AreaRatioFilterAddon(area_ratio_threshold, mean_confidence_threshold)
         tracks.apply_filter(area_ratio_filter_addon)
+
+    if parameters['copy_symmetric_occluded_joints']['apply']:
+        copy_symmetric_joints = CopySymmetricOccludedJointsYoloFilterAddon()
+        tracks.apply_filter(copy_symmetric_joints)
 
 
 def filter_partial_body_data(tracks: MultiplePersonsTracks, **parameters) -> None:

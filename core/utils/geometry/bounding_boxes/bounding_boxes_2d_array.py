@@ -32,6 +32,7 @@ class BoundingBoxes2DArray:
     __slots__ = ['values']
     def __init__(self, bounding_boxes: np.ndarray | None = None, mode=XYWH):
         if bounding_boxes is not None:
+            bounding_boxes = bounding_boxes.reshape((-1, 4))
             if mode == BoundingBoxes2DArray.XYXY:
                 bounding_boxes = self.xyxy_to_xywh(bounding_boxes)
             elif not self.is_consistent(bounding_boxes):

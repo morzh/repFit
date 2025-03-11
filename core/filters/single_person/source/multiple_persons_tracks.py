@@ -62,6 +62,7 @@ class MultiplePersonsTracks:
             current_joints = keypoints[index] if keypoints is not None else None
 
             self.persons[current_person_id].tracked_data.append(current_bounding_box, frame_index, current_confidence, joints=current_joints, bounding_box_mode=BoundingBoxes2DArray.XYXY)
+            self.persons[current_person_id].is_active = True
 
 
     def apply_filter(self, filter_visitor: MultiPersonsFilterAddonBase) -> None:
@@ -175,8 +176,8 @@ class MultiplePersonsTracks:
 
                 for segment in current_segments:
                     if segment[0] <= video_reader.current_frame_index < segment[1]:
-                        current_bounding_box = self.persons[person_id].tracked_data.bounding_box(video_reader.current_frame_index)
-                        current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.astype(np.int64))[0]
+                        current_bounding_box = person_track.tracked_data.bounding_box(video_reader.current_frame_index)
+                        current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.values.astype(np.int64))[0]
                         current_keypoints = self.persons[person_id].tracked_data.frame_keypoints(video_reader.current_frame_index)
                         current_confidence = self.persons[person_id].tracked_data.confidence(video_reader.current_frame_index)
                         current_color = viz.stepped_color(hsv_step, person_id)

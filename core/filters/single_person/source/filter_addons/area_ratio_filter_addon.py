@@ -15,18 +15,20 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
 
     :ivar area_ratio_threshold: persons mean areas ratio threshold.
     """
-    def __init__(self, area_ratio_threshold=4):
+    def __init__(self, area_ratio_threshold=4, mean_confidence_threshold=0.5):
         self.area_ratio_threshold = area_ratio_threshold
+        self.mean_confidence_threshold = mean_confidence_threshold
 
 
     def process(self, tracks: MultiplePersonsTracks) -> None:
-        if not len(tracks.persons):
-            return
+        if len(tracks.persons) < 2: return
 
         persons_areas = []
         persons_ids = []
 
         for person_id, person in tracks.persons.items():
+            if not person.is_active: continue
+            if np.mean(person.tracked_data.confidences) < self.mean_confidence_threshold: continue
             persons_areas.append(person.tracked_data.bounding_boxes.mean_area())
             persons_ids.append(person_id)
 

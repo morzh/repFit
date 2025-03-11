@@ -29,9 +29,11 @@ class PersonsTracker:
         :keyword verbose_tracking: show tracking information while tracking.
 
         :return: multiple persons tracks data.
+
+        :raises IOError: if ``video_filepath`` does not exist.
         """
         if not os.path.isfile(video_filepath):
-            raise Exception(f"Video {video_filepath} was not found")
+            raise IOError(f"Video {video_filepath} was not found")
 
         stride = options.get('frames_stride', 2)
         show_tracked_data = options.get('visualize_while_tracking', False)
