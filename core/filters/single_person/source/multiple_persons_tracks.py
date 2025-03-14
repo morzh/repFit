@@ -162,6 +162,8 @@ class MultiplePersonsTracks:
         boxes_thickness = options.get('frames_thickness', 2)
         show_frame_delay = options.get('show_frame_delay', 10)
         hsv_step = options.get('hsv_step', 20)
+        maximum_width = options.get('maximum_width', 1920)
+        maximum_height = options.get('maximum_height', 1080)
 
         video_reader = VideoReader(self.video_properties.filepath)
         video_filename = os.path.basename(self.video_properties.filepath)
@@ -188,6 +190,10 @@ class MultiplePersonsTracks:
                             frame = viz.draw_skeleton_joints(frame, current_color, joints_radius, current_keypoints)
                             frame = viz.draw_skeleton_bones(frame, current_color, bones_thickness, current_keypoints)
 
+            if frame.shape[0] > maximum_height or frame.shape[1] > maximum_width:
+                factor = min(maximum_height / frame.shape[0], maximum_width / frame.shape[1])
+                new_width_height = (int(factor * frame.shape[1]), int(factor * frame.shape[0]))
+                frame = cv2.resize(frame, new_width_height)
             cv2.imshow(imshow_window_name, frame)
             cv2.waitKey(show_frame_delay)
 

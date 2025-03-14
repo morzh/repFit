@@ -10,7 +10,7 @@ class MeanPersonConfidenceFilterAddon(MultiPersonsFilterAddonBase):
 
         Filter is working  only on tracked data. So it should be used as one of the first filter add-ons in filtering chain.
 
-    :ivar mean_confidence_threshold: persons mean areas ratio threshold.
+    :ivar mean_confidence_threshold: mean person confidence threshold.
     """
     def __init__(self, mean_confidence_threshold=0.5):
         self.mean_confidence_threshold = mean_confidence_threshold

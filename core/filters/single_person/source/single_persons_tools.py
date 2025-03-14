@@ -202,7 +202,8 @@ def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters) -> None:
         tracks.apply_filter(area_ratio_filter_addon)
 
     if parameters['copy_symmetric_occluded_joints']['apply']:
-        copy_symmetric_joints = CopySymmetricOccludedJointsYoloFilterAddon()
+        add_noise = parameters['copy_symmetric_occluded_joints']['add_noise']
+        copy_symmetric_joints = CopySymmetricOccludedJointsYoloFilterAddon(add_noise)
         tracks.apply_filter(copy_symmetric_joints)
 
 

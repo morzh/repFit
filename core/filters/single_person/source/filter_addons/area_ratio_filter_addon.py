@@ -13,7 +13,8 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
 
         Filter is working  only on tracked data. So it should be used as one of the first filter add-ons in filtering chain.
 
-    :ivar area_ratio_threshold: persons mean areas ratio threshold.
+    :ivar area_ratio_threshold: persons mean areas ratio threshold;
+    :ivar mean_confidence_threshold: mean person confidence threshold.
     """
     def __init__(self, area_ratio_threshold=4, mean_confidence_threshold=0.5):
         self.area_ratio_threshold = area_ratio_threshold
@@ -36,7 +37,6 @@ class AreaRatioFilterAddon(MultiPersonsFilterAddonBase):
         persons_areas = np.array(persons_areas)
         person_maximum_area = np.max(persons_areas)
         absolute_area_threshold = person_maximum_area / self.area_ratio_threshold
-
         persons_mask = persons_areas < absolute_area_threshold
         inactive_tracks = persons_ids[persons_mask]
 
