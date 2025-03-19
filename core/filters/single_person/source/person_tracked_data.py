@@ -131,6 +131,7 @@ class PersonTrackedData:
             bounding_box_values = self._interpolation(frame_index, self._bounding_boxes.values)
         else:
             bounding_box_values = self._extrapolation(frame_index, self._bounding_boxes.values)
+            bounding_box_values[2:] = np.maximum(bounding_box_values[2:], np.zeros(2, ))
 
         return BoundingBoxes2DArray(bounding_box_values)
 

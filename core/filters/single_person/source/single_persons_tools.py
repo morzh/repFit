@@ -135,6 +135,7 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
             with open(multiple_persons_tracks_pickle_filepath, "rb") as input_file:
                 tracks = pickle.load(input_file)
             track_persons = False
+            logger.info(f'Data has been read from {input_file}')
         except ModuleNotFoundError as e:
             logger.warning(e.msg)
 

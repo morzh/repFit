@@ -1,4 +1,5 @@
 import os
+from loguru import logger
 from ultralytics import YOLO
 
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
@@ -42,6 +43,7 @@ class PersonsTracker:
 
         video_stride_reader = VideoStrideReader(video_filepath, stride=stride)
         persons_tracks = MultiplePersonsTracks(video_properties=video_stride_reader.video_properties, stride=stride)
+        logger.info(f'Detection and tracking {video_filepath} ...')
 
         for frame in video_stride_reader:
             current_predictions = self.model.track(frame, classes=0, persist=persist, save=False, show=show_tracked_data, verbose=verbose)
