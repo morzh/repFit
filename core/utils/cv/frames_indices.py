@@ -103,24 +103,25 @@ class FramesIndices:
         self._values = np.sort(self._values)
 
 
-    def is_in_vicinity(self, input_frame_index: int, stride: int, mode='both') -> bool:
+    def is_in_vicinity(self, input_frame: int, stride: int, mode='both') -> bool:
         """
         Description:
 
-        @param input_frame_index: input frame index
+        @param input_frame: input frame index
         @param stride: video frames stride
         @param mode: mode of matching. Options are 'left', 'right' and 'both'.
 
         :return: True if input frame index is in vicinity of the sequence of frames. False otherwise.
         """
-        closest_frame_index = np.searchsorted(self._values, input_frame_index)
+        closest_frame_index = (np.abs(self._values - input_frame)).argmin()
+        closest_frame = self._values[closest_frame_index]
         match mode:
             case 'left':
-                if 0 <= (input_frame_index - closest_frame_index) < stride: return True
+                if 0 <= (input_frame - closest_frame) < stride: return True
             case 'right':
-                if 0 <= (closest_frame_index - input_frame_index) < stride: return True
+                if 0 <= (closest_frame - input_frame) < stride: return True
             case 'both':
-                if abs(closest_frame_index - input_frame_index) < stride: return True
+                if abs(closest_frame - input_frame) < stride: return True
         return False
 
     @staticmethod

@@ -4,7 +4,6 @@ import os
 import pickle
 
 from core.filters.single_person.source.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
-from core.utils.cv.frames_indices import FramesIndices
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.source.single_person_track import SinglePersonTrack
@@ -146,7 +145,7 @@ class MultiplePersonsTracks:
 
         video_visualized_folder = os.path.join(videos_folder, parameters['visualization_videos_folder'])
         os.makedirs(os.path.dirname(video_visualized_folder), exist_ok=True)
-        video_visualized_filepath = str(os.path.join(video_visualized_folder, video_filename + '.viz.mp4'))
+        video_visualized_filepath = os.path.join(str(video_visualized_folder), video_filename + '.viz.mp4')
 
         if skip_existing_videos and os.path.exists(video_visualized_filepath): return
 
@@ -171,7 +170,6 @@ class MultiplePersonsTracks:
 
         for current_frame_index, current_frame in enumerate(video_reader):
             for person_id, person_track in self.persons.items():
-                if not person_track.is_active: continue
                 current_mean_boxes_area = person_track.mean_height()
                 current_joints_radius = max(int(round(current_mean_boxes_area * 0.01)), 1)
                 current_bones_thickness = max(int(round(current_joints_radius / 2)), 1)
@@ -199,28 +197,26 @@ class MultiplePersonsTracks:
         if show_frames: cv2.destroyAllWindows()
 
 
-    def just_temporal_code(self, person_track):
-        def calculate_segments(frames_indices: FramesIndices, stride=1) -> FramesSegments:
-            """
-            Description:
-                Calculate frames segments using  video  frames``stride`` value.
-
-            :param frames_indices: video frames indices;
-            :param stride: video frames stride
-            """
-            segments_bins = np.hstack((frames_indices.values.reshape(-1, 1), frames_indices.values.reshape(-1, 1) + stride))
-            for index in range(segments_bins.shape[0] - 1):
-                if segments_bins[index, 1] == segments_bins[index + 1, 0]:
-                    segments_bins[index + 1, 0] = segments_bins[index, 0]
-                    segments_bins[index] = -1
-
-            mask = segments_bins[:, 0] != -1
-            segments = segments_bins[mask]
-            segments[:, 1] += 1
-            return FramesSegments(segments)
-
-        current_segments = calculate_segments(person_track.tracked_data.frames_indices, self.frames_stride)
-
+    # def just_temporal_code(self, person_track):
+    #     def calculate_segments(frames_indices: FramesIndices, stride=1) -> FramesSegments:
+    #         """
+    #         Description:
+    #             Calculate frames segments using  video  frames``stride`` value.
+    #
+    #         :param frames_indices: video frames indices;
+    #         :param stride: video frames stride
+    #         """
+    #         segments_bins = np.hstack((frames_indices.values.reshape(-1, 1), frames_indices.values.reshape(-1, 1) + stride))
+    #         for index in range(segments_bins.shape[0] - 1):
+    #             if segments_bins[index, 1] == segments_bins[index + 1, 0]:
+    #                 segments_bins[index + 1, 0] = segments_bins[index, 0]
+    #                 segments_bins[index] = -1
+    #
+    #         mask = segments_bins[:, 0] != -1
+    #         segments = segments_bins[mask]
+    #         segments[:, 1] += 1
+    #         return FramesSegments(segments)
+    #     current_segments = calculate_segments(person_track.tracked_data.frames_indices, self.frames_stride)
 
 
     @property
