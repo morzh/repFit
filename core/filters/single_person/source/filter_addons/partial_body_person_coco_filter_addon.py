@@ -5,7 +5,7 @@ from core.filters.single_person.source.multiple_persons_tracks import MultiplePe
 from core.utils.cv.frames_indices import FramesIndices
 
 
-class PartialBodyPersonFilterAddon(MultiPersonsFilterAddonBase):
+class PartialBodyPersonCocoFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Select frames at which number of confident body joints are in range of given thresholds.
@@ -17,7 +17,7 @@ class PartialBodyPersonFilterAddon(MultiPersonsFilterAddonBase):
     def __init__(self, **parameters):
         self.body_joints_confidence_threshold = parameters.get('body_joints_confidence_threshold', 0.7)
         self.low_number_body_joints = parameters.get('low_number_body_joints', 5)
-        self.high_number_body_joints = parameters.get('high_number_body_joints', 12)
+        self.high_number_body_joints = parameters.get('high_number_body_joints', 11)
 
 
     def process(self, tracks: MultiplePersonsTracks) -> None:

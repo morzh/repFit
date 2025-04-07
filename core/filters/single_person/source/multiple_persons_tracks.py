@@ -131,7 +131,7 @@ class MultiplePersonsTracks:
         return  bounding_boxes
 
 
-    def visualize_tracked_data(self, **options) -> None:
+    def visualize_tracked_data(self, **parameters) -> None:
         """
         Description:
             Visualize multiple persons tracks.
@@ -140,6 +140,66 @@ class MultiplePersonsTracks:
         :keyword show_frame_delay: gap between gaps in milliseconds
         :keyword hsv_step: HSV format hue circle step (in degrees)
         """
+        skip_existing_videos = parameters.get('skip_existing_videos', True)
+        videos_folder = os.path.dirname(self.video_properties.filepath)
+        video_filename = os.path.basename(self.video_properties.filepath)
+
+        video_visualized_folder = os.path.join(videos_folder, parameters['visualization_videos_folder'])
+        os.makedirs(os.path.dirname(video_visualized_folder), exist_ok=True)
+        video_visualized_filepath = str(os.path.join(video_visualized_folder, video_filename + '.viz.mp4'))
+
+        if skip_existing_videos and os.path.exists(video_visualized_filepath): return
+
+        boxes_thickness = parameters.get('frames_thickness', 2)
+        show_frame_delay = parameters.get('show_frame_delay', 10)
+        hsv_step = parameters.get('hsv_step', 20)
+        maximum_width = parameters.get('maximum_width', 1920)
+        maximum_height = parameters.get('maximum_height', 1080)
+        write_video = parameters.get('write_video', False)
+        show_frames = parameters.get('show_frames', True)
+
+        video_reader = VideoReader(self.video_properties.filepath)
+        video_filename = os.path.basename(self.video_properties.filepath)
+        video_width_height = (video_reader.video_properties.width, video_reader.video_properties.height)
+
+        if video_reader.video_properties.width > maximum_width or video_reader.video_properties.height > maximum_height:
+            factor = min(maximum_height / video_reader.video_properties.height, maximum_width / video_reader.video_properties.width)
+            video_width_height = (int(factor * video_reader.video_properties.width), int(factor * video_reader.video_properties.height))
+
+        if write_video:
+            video_writer = cv2.VideoWriter(video_visualized_filepath, cv2.VideoWriter_fourcc(*'MP4V'), video_reader.video_properties.fps, video_width_height)
+
+        for current_frame_index, current_frame in enumerate(video_reader):
+            for person_id, person_track in self.persons.items():
+                if not person_track.is_active: continue
+                current_mean_boxes_area = person_track.mean_height()
+                current_joints_radius = max(int(round(current_mean_boxes_area * 0.01)), 1)
+                current_bones_thickness = max(int(round(current_joints_radius / 2)), 1)
+                current_person_color = viz.stepped_color(hsv_step, person_id) if person_track.is_active else (120, 120, 120)
+
+                if person_track.tracked_data.frames_indices.is_in_vicinity(current_frame_index, self.frames_stride):
+                    current_bounding_box = person_track.tracked_data.bounding_box(video_reader.current_frame_index)
+                    current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.values.astype(np.int64))[0]
+                    current_keypoints = person_track.tracked_data.frame_keypoints(video_reader.current_frame_index)
+                    current_confidence = person_track.tracked_data.confidence(video_reader.current_frame_index)
+
+                    current_boxes_overlay = viz.draw_bounding_boxes(person_id, current_frame, current_bounding_box, current_person_color, boxes_thickness)
+                    current_frame = cv2.addWeighted(current_boxes_overlay, current_confidence, current_frame, 1 - current_confidence, 0)
+                    if person_track.tracked_data.joints is not None:
+                        current_frame = viz.draw_skeleton_joints(current_frame, current_person_color, current_joints_radius, current_keypoints)
+                        current_frame = viz.draw_skeleton_bones(current_frame, current_person_color, current_bones_thickness, current_keypoints)
+
+            current_frame = cv2.resize(current_frame, video_width_height)
+            if write_video: video_writer.write(current_frame)
+            if show_frames:
+                cv2.imshow(video_filename, current_frame)
+                cv2.waitKey(show_frame_delay)
+
+        if write_video: video_writer.release()
+        if show_frames: cv2.destroyAllWindows()
+
+
+    def just_temporal_code(self, person_track):
         def calculate_segments(frames_indices: FramesIndices, stride=1) -> FramesSegments:
             """
             Description:
@@ -159,60 +219,8 @@ class MultiplePersonsTracks:
             segments[:, 1] += 1
             return FramesSegments(segments)
 
-        skip_existing_videos = options.get('skip_existing_videos', True)
-        video_folder = os.path.dirname(self.video_properties.filepath)
-        video_filename = os.path.basename(self.video_properties.filepath)
-        video_visualized_filepath = str(os.path.join(video_folder, options['visualization_videos_folder'], video_filename + '.viz.mp4'))
-        if skip_existing_videos and os.path.exists(video_visualized_filepath): return
+        current_segments = calculate_segments(person_track.tracked_data.frames_indices, self.frames_stride)
 
-        boxes_thickness = options.get('frames_thickness', 2)
-        show_frame_delay = options.get('show_frame_delay', 10)
-        hsv_step = options.get('hsv_step', 20)
-        maximum_width = options.get('maximum_width', 1920)
-        maximum_height = options.get('maximum_height', 1080)
-        write_video = options.get('write_video', False)
-        show_frames = options.get('show_frames', True)
-
-        video_reader = VideoReader(self.video_properties.filepath)
-        video_filename = os.path.basename(self.video_properties.filepath)
-        video_width_height = (video_reader.video_properties.width, video_reader.video_properties.height)
-
-        if video_reader.video_properties.width > maximum_width or video_reader.video_properties.height > maximum_height:
-            factor = min(maximum_height / video_reader.video_properties.height, maximum_width / video_reader.video_properties.width)
-            video_width_height = (int(factor * video_reader.video_properties.width), int(factor * video_reader.video_properties.height))
-
-        if write_video:
-            video_writer = cv2.VideoWriter(video_visualized_filepath, cv2.VideoWriter_fourcc(*'MP4V'), video_reader.video_properties.fps, video_width_height)
-
-        for current_frame in video_reader:
-            for person_id, person_track in self.persons.items():
-                if not person_track.is_active: continue
-                mean_boxes_area = person_track.mean_height()
-                joints_radius = max(int(round(mean_boxes_area * 0.01)), 1)
-                bones_thickness = max(int(round(joints_radius / 2)), 1)
-                current_segments = calculate_segments(person_track.tracked_data.frames_indices, self.frames_stride)
-
-                for segment in current_segments:
-                    if segment[0] <= video_reader.current_frame_index < segment[1]:
-                        current_bounding_box = person_track.tracked_data.bounding_box(video_reader.current_frame_index)
-                        current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.values.astype(np.int64))[0]
-                        current_keypoints = person_track.tracked_data.frame_keypoints(video_reader.current_frame_index)
-                        current_confidence = person_track.tracked_data.confidence(video_reader.current_frame_index)
-                        current_color = viz.stepped_color(hsv_step, person_id)
-                        current_boxes_overlay = viz.draw_bounding_boxes(person_id, current_frame, current_bounding_box, current_color, boxes_thickness)
-                        current_frame = cv2.addWeighted(current_boxes_overlay, current_confidence, current_frame, 1 - current_confidence, 0)
-                        if person_track.tracked_data.joints is not None:
-                            current_frame = viz.draw_skeleton_joints(current_frame, current_color, joints_radius, current_keypoints)
-                            current_frame = viz.draw_skeleton_bones(current_frame, current_color, bones_thickness, current_keypoints)
-
-            current_frame = cv2.resize(current_frame, video_width_height)
-            if write_video: video_writer.write(current_frame)
-            if show_frames:
-                cv2.imshow(video_filename, current_frame)
-                cv2.waitKey(show_frame_delay)
-
-        if write_video: video_writer.release()
-        if show_frames: cv2.destroyAllWindows()
 
 
     @property
@@ -256,3 +264,9 @@ class MultiplePersonsTracks:
             result_intersection_areas[person_id] = current_intersection_areas if len(current_intersection_areas) else np.zeros(1,)
 
         return result_intersection_areas
+
+    def visualize_full_body_tracks(self, **parameters) -> None:
+        pass
+
+    def visualize_partial_body_tracks(self, **parameters) -> None:
+        pass

@@ -2,5 +2,5 @@
 'videos_source_subfolder': 'test_single_person_filter_01'
 'videos_target_subfolder': 'test_single_person_filter_01_single_person'
 'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm']
-'number_processes': 2
-'use_multiprocessing': false
+'number_processes': 4
+'use_multiprocessing': true

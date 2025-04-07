@@ -5,7 +5,7 @@ from core.filters.single_person.source.multiple_persons_tracks import MultiplePe
 from core.utils.cv.frames_indices import FramesIndices
 
 
-class FullBodyPersonFilterAddon(MultiPersonsFilterAddonBase):
+class FullBodyPersonCocoFilterAddon(MultiPersonsFilterAddonBase):
     """
     Description:
         Select frames at which number of confident head and body joints are above given thresholds.

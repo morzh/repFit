@@ -49,6 +49,9 @@ class FramesIndices:
         self._values = np.unique(np.concatenate((self._values, other.values)))
         return self
 
+    def __iter__(self):
+        return self._values.__iter__()
+
 
     def __sub__(self, other):
         difference_values = np.empty([])
@@ -99,6 +102,26 @@ class FramesIndices:
         self._values = np.append(self._values, new_frames_indices)
         self._values = np.sort(self._values)
 
+
+    def is_in_vicinity(self, input_frame_index: int, stride: int, mode='both') -> bool:
+        """
+        Description:
+
+        @param input_frame_index: input frame index
+        @param stride: video frames stride
+        @param mode: mode of matching. Options are 'left', 'right' and 'both'.
+
+        :return: True if input frame index is in vicinity of the sequence of frames. False otherwise.
+        """
+        closest_frame_index = np.searchsorted(self._values, input_frame_index)
+        match mode:
+            case 'left':
+                if 0 <= (input_frame_index - closest_frame_index) < stride: return True
+            case 'right':
+                if 0 <= (closest_frame_index - input_frame_index) < stride: return True
+            case 'both':
+                if abs(closest_frame_index - input_frame_index) < stride: return True
+        return False
 
     @staticmethod
     def is_consistent(indices: np.ndarray) -> bool:

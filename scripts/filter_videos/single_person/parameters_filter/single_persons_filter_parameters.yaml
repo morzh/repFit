@@ -32,7 +32,8 @@ tracked_data_filtering:
     mean_confidence_threshold: 0.5
   copy_symmetric_occluded_joints: # in case of occlusion, use values from symmetric joints
     apply: true
-    add_noise: true
+    add_noise: true # add noise to joints for visualization purposes
+
 
 partial_body_filtering:
   do_filtering: false
@@ -40,62 +41,101 @@ partial_body_filtering:
     apply: false
     confidence_threshold: 0.4 # confidence in [0, 1] interval
   joints:
-    apply: true
+    apply: false
     joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
     minimum_number_joints_threshold: 6
     maximum_number_joints_threshold: 15
+  partial_body:
+    apply: true
+    body_joints_confidence_threshold: 0.65 # confidence in [0, 1] interval
+    low_number_body_joints: 5
+    high_number_body_joints: 11
   bridging_gaps:
     apply: true
-    gap_threshold: 1.0 # duration time in seconds
+    gap_threshold: 1.2 # duration time in seconds
   segments_duration:
     apply: true
-    duration_threshold: 1.5 # duration time in seconds
+    duration_threshold: 1.75 # duration time in seconds
+
 
 full_body_filtering:
-  do_filtering: false
+  do_filtering: true
   confidence:
     apply: false
     confidence_threshold: 0.4 # confidence in [0, 1] interval
   joints:
-    apply: true
+    apply: false
     joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
     minimum_number_joints_threshold: 16
     maximum_number_joints_threshold: 17
+  full_body:
+    apply: true
+    head_joints_confidence_threshold: 0.65 # confidence in [0, 1] interval
+    accepted_number_head_joints: 1
+    body_joints_confidence_threshold: 0.65 # confidence in [0, 1] interval
+    accepted_number_body_joints: 11
+  bridging_gaps:
+    apply: false
+    gap_threshold: 1.0 # duration time in seconds
+  segments_duration:
+    apply: false
+    duration_threshold: 1.5 # duration time in seconds
+
 
 inter_persons_filtering:
   do_filtering: false
   bounding_boxes_iou:
     apply: false
-    iou_threshold: 0.4
-    confidence_threshold: 0.5
-
-segments_filtering:
-  do_filtering: false
-  bridging_gaps:
-    apply: true
-    gap_threshold: 4.5 # duration time in seconds
-  segments_duration:
-    apply: true
-    duration_threshold: 0.5 # duration time in seconds
+    iou_threshold: 0.4 # Intersection over Union threshold
+    confidence_threshold: 0.5 # bounding boxes confidence threshold
 
 
 visualization:
-  do_visualization: true
-  maximum_width: 1920  # width in pixels
-  maximum_height: 1080  # height in pixels
-  bounding_box_thickness: 2 # box around character thickness
-  hsv_step: 20 # Hue step in degrees for HSV model
-  draw_keypoints: true # draw skeleton joints
-  keypoints_confidence_threshold: 0.2
-  show_frames: true
-  show_frame_delay: 3  # OpenCV waitKey() delay
-  write_video: true
-  skip_existing_videos: true
-  visualization_videos_folder: 'visualization'
+  tracked_data_visualization:
+    do_visualization: true
+    maximum_width: 1920  # width in pixels
+    maximum_height: 1080  # height in pixels
+    bounding_box_thickness: 2 # box around character thickness
+    hsv_step: 20 # Hue step in degrees for HSV model
+    draw_keypoints: true # draw skeleton joints
+    keypoints_confidence_threshold: 0.2
+    show_frames: false  # show video frames
+    show_frame_delay: 3  # cv2.waitKey(show_frame_delay)
+    write_video: true
+    skip_existing_videos: true
+    visualization_videos_folder: 'visualization_tracked_data'
+
+  partial_body_visualization:
+    do_visualization: false
+    maximum_width: 1920  # width in pixels
+    maximum_height: 1080  # height in pixels
+    bounding_box_thickness: 2 # box around character thickness
+    hsv_step: 20 # Hue step in degrees for HSV model
+    draw_keypoints: true # draw skeleton joints
+    keypoints_confidence_threshold: 0.2
+    show_frames: false  # show video frames
+    show_frame_delay: 3  # cv2.waitKey(show_frame_delay)
+    write_video: true
+    skip_existing_videos: true
+    visualization_videos_folder: 'visualization_partial_body'
+
+  full_body_visualization:
+    do_visualization: false
+    maximum_width: 1920  # width in pixels
+    maximum_height: 1080  # height in pixels
+    bounding_box_thickness: 2 # box around character thickness
+    hsv_step: 20 # Hue step in degrees for HSV model
+    draw_keypoints: true # draw skeleton joints
+    keypoints_confidence_threshold: 0.2
+    show_frames: false  # show video frames
+    show_frame_delay: 3  # cv2.waitKey(show_frame_delay)
+    write_video: true
+    skip_existing_videos: true
+    visualization_videos_folder: 'visualization_full_body'
 
 
 video_segments_writer:
-  write_persons_tracks: false
+  write_persons_tracks: true
   video_suffix: 'single_person'
   full_body_person_segment_duration_threshold: 3  # duration is in seconds
   full_body_person_segment_gap_duration_threshold: 4  # gap duration is in seconds

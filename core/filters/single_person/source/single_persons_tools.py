@@ -1,6 +1,4 @@
-import copy
 from loguru import logger
-import numpy as np
 import os
 import pickle
 import shutil
@@ -9,6 +7,7 @@ import time
 from core.filters.single_person.source.filter_addons.bounding_boxes_iou_filter_addon import BoundingBoxesIouFilterAddon
 from core.filters.single_person.source.filter_addons.confidence_filter_addon import ConfidenceFilterAddon
 from core.filters.single_person.source.filter_addons.copy_symmetric_occluded_joints_yolo_filter_addon import CopySymmetricOccludedJointsYoloFilterAddon
+from core.filters.single_person.source.filter_addons.full_body_person_coco_filter_addon import FullBodyPersonCocoFilterAddon
 # from core.filters.single_person.source.filter_addons.partial_person_filter_addon import PartialPersonFilterAddon
 from core.filters.single_person.source.filter_addons.joints_filter_addon import JointsFilterAddon
 from core.filters.single_person.source.filter_addons.absolute_area_filter_addon import AbsoluteAreaFilterAddon
@@ -19,6 +18,7 @@ from core.filters.single_person.source.filter_addons.segments_duration_filter_ad
 
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
 from core.filters.single_person.source.multiple_persons_tracker import PersonsTracker
+from core.utils.cv.video_properties import VideoProperties
 
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.utils.parallel.multiprocess import run_pool_single_persons_filter
@@ -52,22 +52,22 @@ def process_videos_by_single_persons_filter(input_output_config: dict, filter_pa
     use_multiprocessing = input_output_config.get('use_multiprocessing', False)
     number_processes = input_output_config.get('number_processes', 2)
 
-    video_source_filepaths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
+    video_source_file_paths = [os.path.join(videos_source_folder, f) for f in os.listdir(videos_source_folder)
                               if os.path.isfile(os.path.join(videos_source_folder, f)) and os.path.splitext(f)[-1] in videos_extensions]
     os.makedirs(videos_target_folder, exist_ok=True)
 
     time_start = time.time()
     if use_multiprocessing:
-        run_pool_single_persons_filter(process_video, video_source_filepaths, videos_target_folder, number_processes=number_processes, **filter_parameters)
+        run_pool_single_persons_filter(process_video, video_source_file_paths, videos_target_folder, number_processes=number_processes, **filter_parameters)
     else:
-        for video_source_filepath in video_source_filepaths:
+        for video_source_filepath in video_source_file_paths:
             process_video(video_source_filepath, videos_target_folder, **filter_parameters)
     time_end = time.time()
 
-    logger.info(f'Filtering time for {len(video_source_filepaths)} videos took {(time_end - time_start):.2f} seconds')
+    logger.info(f'Filtering time for {len(video_source_file_paths)} videos took {(time_end - time_start):.2f} seconds')
 
 
-def  process_video(video_source_filepath: os.PathLike | str, videos_target_folder: os.PathLike | str, **parameters) -> None:
+def process_video(video_source_filepath: os.PathLike | str, videos_target_folder: os.PathLike | str, **parameters) -> None:
     """
     Description:
         Convenient function for multiprocessing. It violates single responsibility principle, but who cares.
@@ -79,7 +79,14 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     tracking_parameters = parameters['tracking']
     visualization_parameters = parameters['visualization']
     video_segments_writer_parameters = parameters['video_segments_writer']
-    do_visualization = visualization_parameters['do_visualization']
+
+    tracked_data_visualization_parameters = visualization_parameters['tracked_data_visualization']
+    full_body_visualization_parameters = visualization_parameters['full_body_visualization']
+    partial_body_visualization_parameters = visualization_parameters['partial_body_visualization']
+
+    do_tracked_data_visualization = tracked_data_visualization_parameters['do_visualization']
+    do_full_body_visualization = full_body_visualization_parameters['do_visualization']
+    do_partial_body_visualization = partial_body_visualization_parameters['do_visualization']
 
     video_processing_start_time = time.time()
     minimum_resolution = video_input_parameters.get('minimal_resolution', 200)
@@ -98,8 +105,14 @@ def  process_video(video_source_filepath: os.PathLike | str, videos_target_folde
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
                 f'video duration is {(tracks.video_properties.approximate_frames_number / tracks.video_properties.fps):.2f} seconds.')
 
-    if do_visualization:
-        tracks.visualize_tracked_data(**visualization_parameters)
+    if do_tracked_data_visualization:
+        tracks.visualize_tracked_data(**tracked_data_visualization_parameters)
+
+    if do_full_body_visualization:
+        tracks.visualize_full_body_tracks(**full_body_visualization_parameters)
+
+    if do_partial_body_visualization:
+        tracks.visualize_partial_body_tracks(**partial_body_visualization_parameters)
 
 
 def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> MultiplePersonsTracks:
@@ -129,6 +142,7 @@ def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> Multi
     multiple_persons_tracks_pickle_filepath = f'{video_source_filepath}.{tracked_data_suffix}.pickle'
     persons_tracker = PersonsTracker(weights_pathname=yolo_weights_filepath)
     track_persons = True
+    tracks = MultiplePersonsTracks(VideoProperties())
 
     if use_saved_data and os.path.exists(multiple_persons_tracks_pickle_filepath):
         try:
@@ -165,15 +179,18 @@ def filter_tracks(tracks: MultiplePersonsTracks, **parameters) -> None:
         partial_body_filtering_parameters = parameters['partial_body_filtering']
         full_body_filtering_parameters = parameters['full_body_filtering']
         inter_persons_filtering_parameters = parameters['inter_persons_filtering']
-        segments_filtering_parameters = parameters['segments_filtering']
 
         tracks.clear_filtering_chain()
 
         filter_tracked_data(tracks, **tracked_data_filtering_parameters)
+
         filter_partial_body_data(tracks, **partial_body_filtering_parameters)
         filter_full_body_data(tracks, **full_body_filtering_parameters)
+
         filter_inter_persons_data(tracks, **inter_persons_filtering_parameters)
-        filter_segments(tracks, **segments_filtering_parameters)
+
+        filter_partial_body_segments(tracks, **partial_body_filtering_parameters)
+        filter_full_body_segments(tracks, **full_body_filtering_parameters)
 
 
 def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters) -> None:
@@ -186,6 +203,8 @@ def filter_tracked_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     :keyword absolute_area: absolute area filter parameters
     :keyword area_ratio:  area ratio filter parameters
     """
+
+    if not parameters['do_filtering']: return
 
     if parameters['mean_confidence']['apply']:
         mean_confidence_threshold = parameters['mean_confidence']['mean_confidence_threshold']
@@ -218,6 +237,8 @@ def filter_partial_body_data(tracks: MultiplePersonsTracks, **parameters) -> Non
     :keyword confidence: confidence filter parameters;
     :keyword joints: partial person filter parameters;
     """
+    if not parameters['do_filtering']: return
+
     if parameters['joints']['apply']:
         joints_filter_addon = JointsFilterAddon(**parameters['joints'])
         tracks.apply_filter(joints_filter_addon)
@@ -237,6 +258,8 @@ def filter_full_body_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     :keyword confidence: partial person confidence filter parameters;
     :keyword joints: partial person filter parameters.
     """
+    if not parameters['do_filtering']: return
+
     if parameters['joints']['apply']:
         whole_person_filter_addon = JointsFilterAddon(**parameters['joints'])
         tracks.apply_filter(whole_person_filter_addon)
@@ -244,6 +267,10 @@ def filter_full_body_data(tracks: MultiplePersonsTracks, **parameters) -> None:
     if parameters['confidence']['apply']:
         confidence_filter_addon = ConfidenceFilterAddon(parameters['confidence']['confidence_threshold'])
         tracks.apply_filter(confidence_filter_addon)
+
+    if parameters['full_body']['apply']:
+        full_body_coco_filter_addon = FullBodyPersonCocoFilterAddon(**parameters['full_body'])
+        tracks.apply_filter(full_body_coco_filter_addon)
 
 
 def filter_inter_persons_data(tracks, **parameters) -> None:
@@ -253,30 +280,52 @@ def filter_inter_persons_data(tracks, **parameters) -> None:
 
     :param tracks: person's tracks.
     """
+    if not parameters['do_filtering']: return
+
     if parameters['bounding_boxes_iou']['apply']:
         bounding_box_iou_filter_addon = BoundingBoxesIouFilterAddon(**parameters['bounding_box_iou'])
         tracks.apply_filter(bounding_box_iou_filter_addon)
 
 
-def filter_segments(tracks, **parameters) -> None:
+def filter_partial_body_segments(tracks, **parameters) -> None:
     """
     Description:
-        Filter in place persons full or partial body segments.
+        Filter in place persons partial body segments.
 
     :param tracks: person's tracks.
 
     :keyword bridging_gaps: bridging gap filter parameters.
     :keyword segments_duration: segments duration filter parameters;
     """
+    if not parameters['do_filtering']: return
+
+    if parameters['bridging_gaps']['apply']:
+        bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'], filter_full_body_person=False)
+        tracks.apply_filter(bridge_gaps_filter_addon)
+
+    if parameters['segments_duration']['apply']:
+        segments_duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'], filter_full_body_person=False)
+        tracks.apply_filter(segments_duration_filter_addon)
+
+
+def filter_full_body_segments(tracks, **parameters) -> None:
+    """
+    Description:
+        Filter in place persons full body segments.
+
+    :param tracks: person's tracks.
+
+    :keyword bridging_gaps: bridging gap filter parameters.
+    :keyword segments_duration: segments duration filter parameters;
+    """
+    if not parameters['do_filtering']: return
+
     if parameters['bridging_gaps']['apply']:
         bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'], filter_full_body_person=True)
         tracks.apply_filter(bridge_gaps_filter_addon)
-        bridge_gaps_filter_addon = BridgeGapsFilterAddon(**parameters['bridging_gaps'], filter_full_body_person=False)
-        tracks.apply_filter(bridge_gaps_filter_addon)
+
     if parameters['segments_duration']['apply']:
         segments_duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'], filter_full_body_person=True)
-        tracks.apply_filter(segments_duration_filter_addon)
-        segments_duration_filter_addon = SegmentsDurationFilterAddon(**parameters['segments_duration'], filter_full_body_person=False)
         tracks.apply_filter(segments_duration_filter_addon)
 
 
