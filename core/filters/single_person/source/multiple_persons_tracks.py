@@ -175,7 +175,7 @@ class MultiplePersonsTracks:
                 current_bones_thickness = max(int(round(current_joints_radius / 2)), 1)
                 current_person_color = viz.stepped_color(hsv_step, person_id) if person_track.is_active else (120, 120, 120)
 
-                if person_track.tracked_data.frames_indices.is_in_vicinity(current_frame_index, self.frames_stride):
+                if person_track.tracked_data.frames_indices.is_in_vicinity(current_frame_index, self.frames_stride, mode='right'):
                     current_bounding_box = person_track.tracked_data.bounding_box(video_reader.current_frame_index)
                     current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.values.astype(np.int64))[0]
                     current_keypoints = person_track.tracked_data.frame_keypoints(video_reader.current_frame_index)

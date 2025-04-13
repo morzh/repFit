@@ -103,25 +103,31 @@ class FramesIndices:
         self._values = np.sort(self._values)
 
 
-    def is_in_vicinity(self, input_frame: int, stride: int, mode='both') -> bool:
+    def is_in_vicinity(self, input_frame_number: int, stride: int, mode='both') -> bool:
         """
         Description:
 
-        @param input_frame: input frame index
+        @param input_frame_number: input frame index
         @param stride: video frames stride
-        @param mode: mode of matching. Options are 'left', 'right' and 'both'.
+        @param mode: type of vicinity. Options are 'left', 'right' and 'both'.
 
         :return: True if input frame index is in vicinity of the sequence of frames. False otherwise.
         """
-        closest_frame_index = (np.abs(self._values - input_frame)).argmin()
-        closest_frame = self._values[closest_frame_index]
         match mode:
             case 'left':
-                if 0 <= (input_frame - closest_frame) < stride: return True
+                frames_indices_difference = input_frame_number - self._values
+                closest_frame_index = np.argmax(frames_indices_difference[frames_indices_difference <= 0])
+                closest_frame_number = self._values[closest_frame_index]
+                if 0 <= (input_frame_number - closest_frame_number) < stride: return True
             case 'right':
-                if 0 <= (closest_frame - input_frame) < stride: return True
+                frames_indices_difference = input_frame_number - self._values
+                closest_frame_index = np.argmin(frames_indices_difference[frames_indices_difference >= 0])
+                closest_frame_number = self._values[closest_frame_index]
+                if 0 <= (closest_frame_number - input_frame_number) < stride: return True
             case 'both':
-                if abs(closest_frame - input_frame) < stride: return True
+                closest_frame_index = (np.abs(self._values - input_frame_number)).argmin()
+                closest_frame_number = self._values[closest_frame_index]
+                if abs(closest_frame_number - input_frame_number) < stride: return True
         return False
 
     @staticmethod
