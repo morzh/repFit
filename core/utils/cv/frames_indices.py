@@ -116,14 +116,15 @@ class FramesIndices:
         match mode:
             case 'left':
                 frames_indices_difference = input_frame_number - self._values
-                closest_frame_index = np.argmax(frames_indices_difference[frames_indices_difference <= 0])
-                closest_frame_number = self._values[closest_frame_index]
-                if 0 <= (input_frame_number - closest_frame_number) < stride: return True
-            case 'right':
-                frames_indices_difference = input_frame_number - self._values
-                closest_frame_index = np.argmin(frames_indices_difference[frames_indices_difference >= 0])
+                closest_frame_index = len(frames_indices_difference[frames_indices_difference > 0])
                 closest_frame_number = self._values[closest_frame_index]
                 if 0 <= (closest_frame_number - input_frame_number) < stride: return True
+            case 'right':
+                frames_indices_difference = input_frame_number - self._values
+                closest_frame_index = len(frames_indices_difference[frames_indices_difference >= 0]) - 1
+                # closest_frame_index = np.argmin(frames_indices_difference[frames_indices_difference >= 0])
+                closest_frame_number = self._values[closest_frame_index]
+                if 0 <= (input_frame_number - closest_frame_number) < stride: return True
             case 'both':
                 closest_frame_index = (np.abs(self._values - input_frame_number)).argmin()
                 closest_frame_number = self._values[closest_frame_index]

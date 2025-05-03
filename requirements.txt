@@ -1,0 +1,8 @@
+numpy
+opencv-python >= 4.11
+torch >= 2.1
+loguru
+ultralytics
+CRAFT
+easyocr
+pytesseract
