@@ -1,8 +1,5 @@
 import numpy as np
 import unittest
-
-from rich.segment import Segments
-
 from core.utils.cv.frames_segments import FramesSegments
 
 
@@ -46,7 +43,7 @@ class TestFramesSegments(unittest.TestCase):
             segments = FramesSegments(segments_array)
 
             segment_index = np.random.randint(1, number_segments)
-            self.assertTrue(np.alltrue(segments_array[segment_index] == segments[segment_index]))
+            self.assertTrue(np.all(segments_array[segment_index] == segments[segment_index]))
             self.assertEqual(segments_array[segment_index, 0], segments[segment_index, 0])
             self.assertEqual(segments_array[segment_index, 1], segments[segment_index, 1])
 
@@ -124,7 +121,7 @@ class TestFramesSegments(unittest.TestCase):
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
 
-            self.assertTrue(np.alltrue(segments_array == segments.values))
+            self.assertTrue(np.all(segments_array == segments.values))
 
 
     def test_complements_equal_endpoints(self):
@@ -139,7 +136,7 @@ class TestFramesSegments(unittest.TestCase):
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
             segments.complement(lower_bound=low_bound, upper_bound=high_bound)
 
-            self.assertTrue(np.alltrue(segments_equal_endpoints == segments.values))
+            self.assertTrue(np.all(segments_equal_endpoints == segments.values))
 
 
     def test_compliment_incorrect_bounds(self):
@@ -164,7 +161,7 @@ class TestFramesSegments(unittest.TestCase):
             segments.filter_degenerate()
             segments.combine_adjacent()
 
-            self.assertTrue(np.alltrue(segments_array == segments.values))
+            self.assertTrue(np.all(segments_array == segments.values))
 
 
     def test_bridge_gaps(self):
@@ -179,7 +176,7 @@ class TestFramesSegments(unittest.TestCase):
             segments = FramesSegments(segments_array_gaps)
             segments.bridge_gaps(maximum_gap)
 
-            self.assertTrue(np.alltrue(segments_array == segments.values))
+            self.assertTrue(np.all(segments_array == segments.values))
 
 
     def test_combine_adjacent(self):
@@ -191,7 +188,7 @@ class TestFramesSegments(unittest.TestCase):
             segments = FramesSegments(segments_array_adjacent)
             segments.combine_adjacent()
 
-            self.assertTrue(np.alltrue(segments_array == segments.values))
+            self.assertTrue(np.all(segments_array == segments.values))
 
 
     def test_check_consistency(self):
@@ -213,7 +210,7 @@ class TestFramesSegments(unittest.TestCase):
             segments_values = self.generate_consistent_segments_with_given_lengths(apriori_lengths, number_segments)
             segments = FramesSegments(segments_values)
 
-            self.assertTrue(np.alltrue(apriori_lengths == segments.lengths))
+            self.assertTrue(np.all(apriori_lengths == segments.lengths))
 
 
     def test_as_frame_indices(self):
@@ -224,7 +221,7 @@ class TestFramesSegments(unittest.TestCase):
 
             for segments_index, segment_endpoints in enumerate(current_segments_frames_indices):
                 current_check_difference = segment_endpoints[1:] - segment_endpoints[:-1]
-                self.assertTrue(np.alltrue(current_check_difference == 1))
+                self.assertTrue(np.all(current_check_difference == 1))
                 self.assertEqual(current_segments_frames_indices[segments_index][0], segment_endpoints[0])
                 self.assertEqual(current_segments_frames_indices[segments_index][-1], current_segments[segments_index, 1] - 1)
 

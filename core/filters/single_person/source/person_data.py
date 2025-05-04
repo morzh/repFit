@@ -88,4 +88,9 @@ class PersonData:
         if len(self.frames_segments) <= 1: return
         frames_gap_threshold = round(fps * time_threshold)
         self.frames_segments.bridge_gaps(frames_gap_threshold)
-#
+
+
+    def update_indices(self, person_frames_indices: FramesIndices) -> None:
+        """
+
+        """

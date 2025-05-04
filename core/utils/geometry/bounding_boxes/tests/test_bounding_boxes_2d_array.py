@@ -43,7 +43,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             bounding_boxes_2d.append(bounding_box_3)
 
             boxes_array = np.vstack((boxes_array, bounding_box_1.reshape(1, 4), bounding_box_2.reshape(1, 4), bounding_box_3.reshape(1, 4)))
-            self.assertTrue(np.alltrue(boxes_array == bounding_boxes_2d.values))
+            self.assertTrue(np.all(boxes_array == bounding_boxes_2d.values))
 
 
     def test_append_incorrect_size(self):
@@ -76,7 +76,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
             bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
             bounding_box = np.random.randint(-500, 500, size=(1, 4))
-            if np.alltrue(bounding_box[0, 2:] > 0):
+            if np.all(bounding_box[0, 2:] > 0):
                 bounding_box[0, 2] *= -1.0
             if np.any(bounding_box[0, 2:] == 0):
                 bounding_box[0, 3] = -1.0
@@ -175,7 +175,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             bounding_boxes = BoundingBoxes2DArray(xyxys, mode=BoundingBoxes2DArray.XYXY)
             circumscribed_box = bounding_boxes.circumscribe()
 
-            self.assertTrue(np.alltrue(circumscribed_box == apriori_known_circumscribed_box))
+            self.assertTrue(np.all(circumscribed_box == apriori_known_circumscribed_box))
 
 
     def test_self_intersection(self):
@@ -362,7 +362,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             current_bounding_boxes = BoundingBoxes2DArray(current_boxes)
             current_areas = current_bounding_boxes.areas()
 
-            self.assertTrue(np.alltrue(current_apriori_known_areas == current_areas))
+            self.assertTrue(np.all(current_apriori_known_areas == current_areas))
 
 
     def test_mean_area(self):
@@ -393,7 +393,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             bounding_boxes = BoundingBoxes2DArray(boxes)
             perimeters = bounding_boxes.perimeters()
 
-            self.assertTrue(np.alltrue(apriori_known_perimeter == perimeters))
+            self.assertTrue(np.all(apriori_known_perimeter == perimeters))
 
 
     def test_xyxy_to_xywh(self):
@@ -418,10 +418,10 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             boxes_xywh_converted_3 = BoundingBoxes2DArray.xyxy_to_xywh(boxes_bottom_right_top_left)
             boxes_xywh_converted_4 = BoundingBoxes2DArray.xyxy_to_xywh(boxes_top_right_bottom_left)
 
-            self.assertTrue(np.alltrue(boxes_left_top_width_height == boxes_xywh_converted_1))
-            self.assertTrue(np.alltrue(boxes_left_top_width_height == boxes_xywh_converted_2))
-            self.assertTrue(np.alltrue(boxes_left_top_width_height == boxes_xywh_converted_3))
-            self.assertTrue(np.alltrue(boxes_left_top_width_height == boxes_xywh_converted_4))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_1))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_2))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_3))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_4))
 
 
     def test_xywh_to_xyxy(self):
@@ -434,7 +434,7 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
             boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_xywh)
             boxes_xywh_reverse = BoundingBoxes2DArray.xyxy_to_xywh(boxes_xyxy)
 
-            self.assertTrue(np.alltrue(boxes_xywh == boxes_xywh_reverse))
+            self.assertTrue(np.all(boxes_xywh == boxes_xywh_reverse))
 
 
     def test_clamp(self):
@@ -455,5 +455,5 @@ class TestBoundingBoxes2DArray(unittest.TestCase):
 
             clamp_box_xyxy = np.repeat(clamp_box_xyxy, number_boxes, axis=0)
 
-            self.assertTrue(np.alltrue(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2]))
-            self.assertTrue(np.alltrue(clamped_boxes_xyxy[:, 2:] <= clamp_box_xyxy[:, 2:]))
+            self.assertTrue(np.all(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2]))
+            self.assertTrue(np.all(clamped_boxes_xyxy[:, 2:] <= clamp_box_xyxy[:, 2:]))

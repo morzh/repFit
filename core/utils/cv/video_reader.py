@@ -23,7 +23,7 @@ class VideoReader:
         if os.path.exists(str(video_filepath)):
             self.video_capture = cv2.VideoCapture(str(video_filepath))
         else:
-            FileNotFoundError(f'Video file {video_filepath} does not exist')
+            raise FileNotFoundError(f'Video file {video_filepath} does not exist')
 
         self.video_properties: VideoProperties = self._init_video_properties(video_filepath)
 

@@ -120,7 +120,7 @@ class TestStrictlyIncreasingSequence(unittest.TestCase):
         incorrect_sequence = copy.deepcopy(correct_sequence)
         np.random.shuffle(incorrect_sequence)
         # sometimes np.random.shuffle leaves input array unchanged. Following check prevents this.
-        if np.alltrue(correct_sequence == incorrect_sequence):
+        if np.all(correct_sequence == incorrect_sequence):
             incorrect_sequence[0] = correct_sequence[-1]
         return incorrect_sequence
 

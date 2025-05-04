@@ -174,6 +174,22 @@ class FramesSegments:
         return FramesSegments(clipped_segments)
 
 
+    def segment_index(self, frame_index: int) -> int:
+        """
+        Description:
+            Return person's video frame segment index by input video frame index.
+
+        :param frame_index: input video frame index
+
+        :return: segment index
+        """
+        segment_start_mask = self.values[:, 0] <= frame_index
+        segment_end_mask = frame_index < self.values[:, 1]
+        segment_mask = np.logical_and(segment_start_mask, segment_end_mask)
+        index = np.argwhere(segment_mask == True)
+        return int(index)
+
+
     def write(self, filepath: str) -> None:
         """
         Description:

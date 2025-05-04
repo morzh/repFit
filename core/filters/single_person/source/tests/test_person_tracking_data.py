@@ -30,7 +30,7 @@ class TestPersonTrackedData(unittest.TestCase):
             top_lefts = np.random.randint(-500, 500, (1, 2))
             width_heights = np.random.randint(-200, 220, (1, 2))
 
-            if np.alltrue(width_heights > 0):
+            if np.all(width_heights > 0):
                 width_heights[0, 0] *= -1
 
             bounding_box = np.hstack((top_lefts, width_heights)).reshape(4,)
@@ -107,7 +107,7 @@ class TestPersonTrackedData(unittest.TestCase):
             for index in range(frames.shape[0]):
                 frame_index = frames[index]
                 interpolated_bounding_box = tracking_data.bounding_box(frame_index)
-                self.assertTrue(np.alltrue(np.isclose(interpolated_bounding_box, bounding_boxes_interpolated[index], atol=1e-18)))
+                self.assertTrue(np.all(np.isclose(interpolated_bounding_box, bounding_boxes_interpolated[index], atol=1e-18)))
 
 
     def test_calculate_segments(self):
@@ -117,7 +117,7 @@ class TestPersonTrackedData(unittest.TestCase):
             frames_segments_ground_truth = self.frames_segments(number_segments, stride=stride)
             tracking_data = self.generate_tracking_data_with_known_segments(frames_segments_ground_truth, stride)
             frames_segments = tracking_data.calculate_segments(stride)
-            self.assertTrue(np.alltrue(frames_segments_ground_truth.values == frames_segments.values))
+            self.assertTrue(np.all(frames_segments_ground_truth.values == frames_segments.values))
 
 
     @staticmethod

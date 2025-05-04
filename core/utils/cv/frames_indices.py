@@ -1,7 +1,4 @@
 import numpy as np
-import warnings
-
-from pyqtgraph.examples.MultiDataPlot import values
 
 
 class FramesIndices:
@@ -148,7 +145,7 @@ class FramesIndices:
             return True
 
         derivatives = indices[1:] - indices[:-1]
-        if np.alltrue(derivatives > 0):
+        if np.all(derivatives > 0):
             return True
 
         return False

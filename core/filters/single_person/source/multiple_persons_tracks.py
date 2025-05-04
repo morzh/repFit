@@ -4,7 +4,6 @@ import os
 import pickle
 
 from core.filters.single_person.source.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
-from core.filters.video_filter.cut_steady_video import video_seg
 from core.utils.cv.frames_segments import FramesSegments
 from core.utils.cv.video_properties import VideoProperties
 from core.filters.single_person.source.single_person_track import SinglePersonTrack
@@ -12,7 +11,6 @@ from core.utils.cv.video_reader import VideoReader
 from core.utils.geometry.bounding_boxes.bounding_box_2d import BoundingBox2D
 from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
 import core.utils.visualization.tracks_visualizing_utils as viz
-from core.utils.geometry.segments.segment_2d import Segment2D
 
 
 class MultiplePersonsTracks:
@@ -132,7 +130,7 @@ class MultiplePersonsTracks:
         return  bounding_boxes
 
 
-    def visualize_tracked_data(self, **parameters) -> None:
+    def visualize_tracked_data(self, source_video_filepath: str | os.PathLike, **parameters) -> None:
         """
         Description:
             Visualize tracked data.
@@ -148,8 +146,8 @@ class MultiplePersonsTracks:
         :keyword show_frames: if ``True``, show visualized frames.
         """
         skip_existing_videos = parameters.get('skip_existing_videos', True)
-        videos_folder = os.path.dirname(self.video_properties.filepath)
-        video_filename = os.path.basename(self.video_properties.filepath)
+        videos_folder = os.path.dirname(source_video_filepath)
+        video_filename = os.path.basename(source_video_filepath)
 
         video_visualized_folder = os.path.join(videos_folder, parameters['visualization_videos_folder'])
         os.makedirs(os.path.dirname(video_visualized_folder), exist_ok=True)
@@ -166,7 +164,6 @@ class MultiplePersonsTracks:
         show_frames = parameters.get('show_frames', True)
 
         video_reader = VideoReader(self.video_properties.filepath)
-        video_filename = os.path.basename(self.video_properties.filepath)
         video_width_height = (video_reader.video_properties.width, video_reader.video_properties.height)
 
         if video_reader.video_properties.width > maximum_width or video_reader.video_properties.height > maximum_height:
@@ -207,7 +204,7 @@ class MultiplePersonsTracks:
         if show_frames: cv2.destroyAllWindows()
 
 
-    def visualize_full_body_data(self, **parameters) -> None:
+    def visualize_full_body_data(self, source_video_filepath: str | os.PathLike, **parameters) -> None:
         """
         Description:
             Visualize full body data of persons tracks.
@@ -223,12 +220,12 @@ class MultiplePersonsTracks:
         :keyword show_frames: if ``True``, show visualized frames
         """
         skip_existing_videos = parameters.get('skip_existing_videos', True)
-        videos_folder = os.path.dirname(self.video_properties.filepath)
-        video_filename = os.path.basename(self.video_properties.filepath)
+        videos_folder = os.path.dirname(source_video_filepath)
+        video_filename = os.path.basename(source_video_filepath)
 
         video_visualized_folder = os.path.join(videos_folder, parameters['visualization_videos_folder'])
-        os.makedirs(os.path.dirname(video_visualized_folder), exist_ok=True)
-        video_visualized_filepath = os.path.join(str(video_visualized_folder), video_filename + '.viz.mp4')
+        os.makedirs(video_visualized_folder, exist_ok=True)
+        video_visualized_filepath = os.path.join(str(video_visualized_folder), video_filename)  #  + '.viz.mp4')
 
         if skip_existing_videos and os.path.exists(video_visualized_filepath): return
 
@@ -240,8 +237,7 @@ class MultiplePersonsTracks:
         write_video = parameters.get('write_video', False)
         show_frames = parameters.get('show_frames', True)
 
-        video_reader = VideoReader(self.video_properties.filepath)
-        video_filename = os.path.basename(self.video_properties.filepath)
+        video_reader = VideoReader(source_video_filepath)
         video_width_height = (video_reader.video_properties.width, video_reader.video_properties.height)
 
         if video_reader.video_properties.width > maximum_width or video_reader.video_properties.height > maximum_height:
@@ -253,28 +249,30 @@ class MultiplePersonsTracks:
         else:
             video_writer = None
 
-        for frame_index, frame in enumerate(video_reader):
+        for frame in video_reader:
             for person_id, person_track in self.persons.items():
                 current_mean_boxes_area = person_track.mean_height()
                 current_joints_radius = max(int(round(current_mean_boxes_area * 0.01)), 1)
                 current_bones_thickness = max(int(round(current_joints_radius / 2)), 1)
                 current_person_color = viz.stepped_color(hsv_step, person_id) if person_track.is_active else (120, 120, 120, 120)
 
-                if len(person_track.full_body_data.segments):
-                    current_segments_bounding_boxes = person_track.full_body_data.segments.bounding_boxes()
-                    if frame_index in person_track.full_body_data.frames_segments:
-                        current_segment_index = person_track.full_body_data.frames_segments.index(frame_index)
-                        current_confidence = person_track.full_body_data.confidence(video_reader.current_frame_index)
-                        current_keypoints = person_track.full_body_data.frame_keypoints(video_reader.current_frame_index)
-                        current_overall_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_segments_bounding_boxes[current_segment_index].values.astype(np.int64))[0]
+                if len(person_track.full_body_data.frames_segments):
+                    current_segment_index = person_track.full_body_data.frames_segments.segment_index(video_reader.current_frame_index)
+                    if current_segment_index >= 0:
+                        current_segment = person_track.full_body_data.segments[current_segment_index]
+                        current_segment = FramesSegments(current_segment.values)
+                        current_segment_bounding_boxes = person_track.tracked_data.bounding_boxes_per_segment(current_segment)
+                        current_confidence = person_track.tracked_data.confidence(video_reader.current_frame_index)
+                        current_keypoints = person_track.tracked_data.frame_keypoints(video_reader.current_frame_index)
+                        current_segment_bounding_box = current_segment_bounding_boxes.circumscribe()
 
-                        current_boxes_overlay = viz.draw_bounding_boxes(person_id, frame, current_overall_bounding_box, current_person_color, boxes_thickness)
+                        current_boxes_overlay = viz.draw_bounding_boxes(person_id, frame, current_segment_bounding_box, current_person_color, boxes_thickness)
                         frame = cv2.addWeighted(current_boxes_overlay, current_confidence, frame, 1 - current_confidence, 0)
                         if person_track.full_body_data.joints is not None:
                             frame = viz.draw_skeleton_joints(frame, current_person_color, current_joints_radius, current_keypoints)
                             frame = viz.draw_skeleton_bones(frame, current_person_color, current_bones_thickness, current_keypoints)
                 else:
-                    if person_track.tracked_data.frames_indices.is_in_vicinity(video_reader.current_frame_index, self.frames_stride, mode='right'):
+                    if person_track.full_body_data.frames_indices.is_in_vicinity(video_reader.current_frame_index, self.frames_stride, mode='right'):
                         current_bounding_box = person_track.tracked_data.bounding_box(video_reader.current_frame_index)
                         current_bounding_box = BoundingBoxes2DArray.xywh_to_xyxy(current_bounding_box.values.astype(np.int64))[0]
                         current_keypoints = person_track.tracked_data.frame_keypoints(video_reader.current_frame_index)
@@ -339,5 +337,5 @@ class MultiplePersonsTracks:
 
         return result_intersection_areas
 
-    def visualize_partial_body_tracks(self, **parameters) -> None:
+    def visualize_partial_body_tracks(self, video_source_filepath, **parameters) -> None:
         pass

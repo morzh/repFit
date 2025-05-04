@@ -40,7 +40,7 @@ partial_body_filtering:
   confidence:
     apply: false
     confidence_threshold: 0.4 # confidence in [0, 1] interval
-  joints:
+  joints:  # old version of partial body filtering. Use full_body instead for COCO 17 joints.
     apply: false
     joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
     minimum_number_joints_threshold: 6
@@ -63,7 +63,7 @@ full_body_filtering:
   confidence:
     apply: false
     confidence_threshold: 0.4 # confidence in [0, 1] interval
-  joints:
+  joints:  # old version of full body filtering. Use full_body instead for COCO 17 joints.
     apply: false
     joints_confidence_threshold: 0.7 # confidence in [0, 1] interval
     minimum_number_joints_threshold: 16
@@ -92,7 +92,7 @@ inter_persons_filtering:
 
 visualization:
   tracked_data_visualization:
-    do_visualization: true
+    do_visualization: false
     maximum_width: 1920  # width in pixels
     maximum_height: 1080  # height in pixels
     bounding_box_thickness: 2 # box around character thickness
@@ -120,7 +120,7 @@ visualization:
     visualization_videos_folder: 'visualization_partial_body'
 
   full_body_visualization:
-    do_visualization: false
+    do_visualization: true
     maximum_width: 1920  # width in pixels
     maximum_height: 1080  # height in pixels
     bounding_box_thickness: 2 # box around character thickness
@@ -135,7 +135,7 @@ visualization:
 
 
 video_segments_writer:
-  write_persons_tracks: true
+  write_persons_tracks: false
   video_suffix: 'single_person'
   full_body_person_segment_duration_threshold: 3  # duration is in seconds
   full_body_person_segment_gap_duration_threshold: 4  # gap duration is in seconds

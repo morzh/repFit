@@ -1,6 +1,5 @@
 import numpy as np
 from ordered_set import OrderedSet
-from triton.language import dtype
 
 from core.filters.single_person.source.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
 from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks

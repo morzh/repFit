@@ -92,7 +92,7 @@ class BoundingBoxes2DArray:
         if bounding_box.size != 4:
             raise ValueError('Input bounding_box size should be 4')
         bounding_box_flatten = bounding_box.flatten()
-        if (mode == BoundingBoxes2DArray.XYWH) and not np.alltrue(bounding_box_flatten[2:] > 0):
+        if (mode == BoundingBoxes2DArray.XYWH) and not np.all(bounding_box_flatten[2:] > 0):
             raise ValueError('Input bounding_box[2:4] components should be greater or equal zero.')
         if mode == BoundingBoxes2DArray.XYXY:
             bounding_box = BoundingBoxes2DArray.xyxy_to_xywh(bounding_box)
@@ -279,7 +279,7 @@ class BoundingBoxes2DArray:
         :return: True if consistent, False otherwise.
         """
         columns_number = bounding_boxes.shape[1]
-        return np.alltrue(bounding_boxes[:, 2:] >= 0) and columns_number == 4
+        return np.all(bounding_boxes[:, 2:] >= 0) and columns_number == 4
 
 
     @staticmethod
@@ -322,11 +322,11 @@ class BoundingBoxes2DArray:
 
 
     @staticmethod
-    def __intersect_one_to_many(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray) -> list[BoundingBoxes2DArray]:
+    def __intersect_one_to_many(boxes_1: BoundingBoxes2DArray, boxes_2: BoundingBoxes2DArray) -> list[type[BoundingBoxes2DArray]]:
         if not len(boxes_1):
-            return [BoundingBoxes2DArray()]
+            return [BoundingBoxes2DArray]
         elif not len(boxes_2):
-            return [BoundingBoxes2DArray()] * len(boxes_1)
+            return [BoundingBoxes2DArray] * len(boxes_1)
 
         boxes_1_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_1.values)
         boxes_2_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_2.values)
@@ -399,7 +399,7 @@ class BoundingBoxes2DArray:
 
         clamped_boxes_xyxy = np.hstack((top_lefts_clamped, bottom_rights_clamped))
 
-        # if not (np.alltrue(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2])):
+        # if not (np.all(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2])):
         #     print('!!!')
 
         clamped_boxes_xywh = BoundingBoxes2DArray.xyxy_to_xywh(clamped_boxes_xyxy)

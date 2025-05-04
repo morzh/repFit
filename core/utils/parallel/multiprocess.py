@@ -1,6 +1,6 @@
 import torch
 from multiprocessing import Pool
-from jedi.inference.gradual.typing import Callable
+from collections.abc import Callable
 
 
 def run_pool(func, args: list, number_processes: int = 10):

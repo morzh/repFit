@@ -88,31 +88,25 @@ def process_video(video_source_filepath: os.PathLike | str, videos_target_folder
     do_full_body_visualization = full_body_visualization_parameters['do_visualization']
     do_partial_body_visualization = partial_body_visualization_parameters['do_visualization']
 
-    video_processing_start_time = time.time()
+    write_persons_tracks_video_files = video_segments_writer_parameters.get('write_persons_tracks', False)
     minimum_resolution = video_input_parameters.get('minimal_resolution', 200)
+
+    video_processing_start_time = time.time()
     video_filename = os.path.basename(video_source_filepath)
     if not video_resolution_check(video_source_filepath, minimum_dimension_size=minimum_resolution):
         logger.info(f"{video_filename} :: one of the resolution dimension has size less than {minimum_resolution} pixels")
         return
-
     tracks = obtain_multiple_persons_tracks(video_source_filepath, **tracking_parameters)
     filter_tracks(tracks, **parameters)
-
-    if video_segments_writer_parameters.get('write_persons_tracks', False):
-        write_multiple_persons_tracks(video_source_filepath, videos_target_folder, tracks, **parameters['video_segments_writer'])
-
+    if write_persons_tracks_video_files: write_multiple_persons_tracks(video_source_filepath, videos_target_folder, tracks, **video_segments_writer_parameters)
     video_processing_end_time = time.time()
+
     logger.info(f'{video_filename} :: processing took {(video_processing_end_time - video_processing_start_time):.2f} seconds, '
                 f'video duration is {(tracks.video_properties.approximate_frames_number / tracks.video_properties.fps):.2f} seconds.')
 
-    if do_tracked_data_visualization:
-        tracks.visualize_tracked_data(**tracked_data_visualization_parameters)
-
-    if do_full_body_visualization:
-        tracks.visualize_full_body_tracks(**full_body_visualization_parameters)
-
-    if do_partial_body_visualization:
-        tracks.visualize_partial_body_tracks(**partial_body_visualization_parameters)
+    if do_tracked_data_visualization: tracks.visualize_tracked_data(video_source_filepath, **tracked_data_visualization_parameters)
+    if do_full_body_visualization: tracks.visualize_full_body_data(video_source_filepath, **full_body_visualization_parameters)
+    if do_partial_body_visualization: tracks.visualize_partial_body_tracks(video_source_filepath, **partial_body_visualization_parameters)
 
 
 def obtain_multiple_persons_tracks(video_source_filepath, **parameters) -> MultiplePersonsTracks:

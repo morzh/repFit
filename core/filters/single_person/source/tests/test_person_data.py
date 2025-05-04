@@ -18,7 +18,7 @@ class TestPersonData(unittest.TestCase):
             frames_segments_ground_truth = self.frames_segments(number_segments, stride=stride)
             tracking_data = self.generate_tracking_data_with_known_segments(frames_segments_ground_truth, stride)
             frames_segments = tracking_data.calculate_segments(stride)
-            self.assertTrue(np.alltrue(frames_segments_ground_truth.values == frames_segments.values))
+            self.assertTrue(np.all(frames_segments_ground_truth.values == frames_segments.values))
 
 
     @staticmethod
