@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser(description='AlphaPose Demo')
 # python scripts/demo_inference.py
 # --cfg configs/halpe_coco_wholebody_136/resnet/256x192_res50_lr1e-3_2x-dcn-combined.yaml
 checkpoint = "/home/ubuntu/PycharmProjects/FitMate/AlphaPose/pretrained_models/halpe26_fast_res50_256x192.pth"
-configs = "/home/ubuntu/PycharmProjects/FitMate/AlphaPose/configs/halpe_26/resnet/256x192_res50_lr1e-3_1x.yaml"
+configs = "/home/ubuntu/PycharmProjects/FitMate/AlphaPose/configs_input_output/halpe_26/resnet/256x192_res50_lr1e-3_1x.yaml"
 parser.add_argument('--cfg', type=str, default=configs, help='experiment configure file name')
 parser.add_argument('--nn', type=int, help='number of video')
 parser.add_argument('--checkpoint', type=str, default=checkpoint, help='checkpoint file name')
@@ -79,7 +79,7 @@ n_process = 5
 
 sys.path.append("/home/ubuntu/PycharmProjects/FitMate/repFit")
 
-from filters.video_filter.paths import (
+from core.filters.video_filter.paths import (
     CRED_FILTERED_VIDEO_DPATH,
     JOINTS2d_TRACK_DPATH,
     JOINTS2d_EXTRA_INFO_DPATH,

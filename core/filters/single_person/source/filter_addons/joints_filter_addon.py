@@ -1,0 +1,43 @@
+import numpy as np
+
+from core.filters.single_person.source.filter_addons.multi_persons_filter_addon_base import MultiPersonsFilterAddonBase
+from core.utils.cv.frames_indices import FramesIndices
+from core.filters.single_person.source.multiple_persons_tracks import MultiplePersonsTracks
+
+
+class JointsFilterAddon(MultiPersonsFilterAddonBase):
+    """
+    Description:
+        This is two steps filter.
+        1. Select frames at which confident joints number are in range
+            [self.minimum_number_joints_threshold, self.maximum_number_joints_threshold]. Both edge range values are included.
+        2. Assign selected frames indices to partial or full body data indices.
+
+    :ivar joints_confidence_threshold: confident joints threshold;
+    :ivar minimum_number_joints_threshold: minimum number of joints in frame
+    :ivar maximum_number_joints_threshold: maximum number of joints in frame
+    :ivar filter_full_body_person: if True assign resulting indices to full body data and to partial body data otherwise.
+    """
+    def __init__(self, **parameters):
+        self.joints_confidence_threshold = parameters.get('joints_confidence_threshold', 0.7)
+        self.minimum_number_joints_threshold = parameters.get('minimum_number_joints_threshold', 16)
+        self.maximum_number_joints_threshold = parameters.get('maximum_number_joints_threshold', 100)
+        self.filter_full_body_person = parameters.get('filter_full_body_person', True)
+
+
+    def process(self, tracks: MultiplePersonsTracks) -> None:
+        for person_id, person_track in tracks.persons.items():
+            if person_track.tracked_data.joints is None or not person_track.is_active: continue
+
+            current_joints_confidences = person_track.tracked_data.joints[:, :, 2]
+            current_joints_confidence_mask = current_joints_confidences >=  self.joints_confidence_threshold
+            current_joints_number_above_confidence_thresholds = np.sum(current_joints_confidence_mask, axis=1)
+            current_confident_joints_number_mask_low = current_joints_number_above_confidence_thresholds >= self.minimum_number_joints_threshold
+            current_confident_joints_number_mask_high = current_joints_number_above_confidence_thresholds <= self.maximum_number_joints_threshold
+            current_confident_joints_number_mask = np.logical_and(current_confident_joints_number_mask_low, current_confident_joints_number_mask_high)
+            current_joints_indices_above_thresholds = person_track.tracked_data.frames_indices[current_confident_joints_number_mask]
+
+            if self.filter_full_body_person:
+                person_track.full_body_data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)
+            else:
+                person_track.partial_body_data.frames_indices = FramesIndices(current_joints_indices_above_thresholds)

@@ -1,0 +1,42 @@
+import os
+from dataclasses import dataclass
+
+
+@dataclass(slots=True, frozen=True)
+class VideoProperties:
+    """
+        Description:
+            Video properties storage class.
+
+    :ivar filepath: video filepath;
+    :ivar width: video width;
+    :ivar height: video height;
+    :ivar approximate_frames_number: approximate frames number given by cv2.VideoCapture();
+    :ivar fps: video frames per second
+    """
+    filepath: str | os.PathLike = ''
+    width: int = 0
+    height: int = 0
+    approximate_frames_number: int = -1
+    fps: float = 0.0
+
+    @property
+    def resolution(self) -> tuple[int, int]:
+        """
+        Description:
+            Video resolution in (width, height) format getter.
+
+        :return: video resolution
+        """
+        return self.width, self.height
+
+    @property
+    def duration(self) -> float:
+        """
+        Description:
+            Video duration (seconds) getter.
+
+        :return: video duration
+        """
+        return self.approximate_frames_number / self.fps
+

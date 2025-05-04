@@ -1,0 +1,7 @@
+'videos_root_folder': '/media/anton/1e894684-3165-4ae7-9ef9-92b66b4e94ca/home/anton/work/fitMate/datasets'
+#'videos_root_folder': '/home/anton/work/fitMate/datasets'
+'videos_source_subfolder': 'test_single_person_filter_01'
+'videos_target_subfolder': 'test_single_person_filter_01_single_person'
+'videos_extensions': ['.mp4', '.MP4', '.mkv', '.webm']
+'number_processes': 1
+'use_multiprocessing': false

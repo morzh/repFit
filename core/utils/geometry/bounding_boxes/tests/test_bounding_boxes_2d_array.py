@@ -1,0 +1,459 @@
+import copy
+import unittest
+import numpy as np
+
+from core.utils.geometry.bounding_boxes.bounding_boxes_2d_array import BoundingBoxes2DArray
+
+
+class TestBoundingBoxes2DArray(unittest.TestCase):
+
+    def setUp(self):
+        self.number_checks = 2_500
+        self.maximum_number_boxes = 1_000
+        self.top_left_range = (-1_000, 1_000)
+
+
+    def test_init_inconsistent(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes_array_width_height = np.random.randint(-500, 0, (number_boxes, 2))
+            boxes_array = np.hstack((boxes_array_top_left, boxes_array_width_height))
+
+            with self.assertRaises(ValueError):
+                BoundingBoxes2DArray(boxes_array)
+
+
+    def test_append_correct_size(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes_array_width_height = np.random.randint(1, 500, (number_boxes, 2))
+            boxes_array = np.hstack((boxes_array_top_left, boxes_array_width_height))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+
+            bounding_box = np.array([*np.random.randint(self.top_left_range[0], self.top_left_range[1], (2,)), *np.random.randint(1, 500, (2,))])
+            bounding_box_1 = bounding_box.reshape(4,)
+            bounding_box_2 = bounding_box.reshape((4, 1))
+            bounding_box_3 = bounding_box.reshape((1, 4))
+
+            bounding_boxes_2d.append(bounding_box_1)
+            bounding_boxes_2d.append(bounding_box_2)
+            bounding_boxes_2d.append(bounding_box_3)
+
+            boxes_array = np.vstack((boxes_array, bounding_box_1.reshape(1, 4), bounding_box_2.reshape(1, 4), bounding_box_3.reshape(1, 4)))
+            self.assertTrue(np.all(boxes_array == bounding_boxes_2d.values))
+
+
+    def test_append_incorrect_size(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes_array_width_height = np.random.randint(1, 500, (number_boxes, 2))
+            boxes_array = np.hstack((boxes_array_top_left, boxes_array_width_height))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            random_size = np.random.randint(1, 100)
+            if random_size == 4: random_size += 1
+
+            bounding_box_1 = np.random.randint(0, 500, (random_size,))
+            bounding_box_2 = np.random.randint(0, 500, (1, random_size))
+            bounding_box_3 = np.random.randint(0, 500, (random_size, 1))
+
+            with self.assertRaises(ValueError):
+                bounding_boxes_2d.append(bounding_box_1)
+                bounding_boxes_2d.append(bounding_box_2)
+                bounding_boxes_2d.append(bounding_box_3)
+
+
+    def test_append_incorrect_dimensions(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(0, self.maximum_number_boxes)
+            boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes_array_width_height = np.random.randint(1, 300, (number_boxes, 2))
+            boxes_array = np.hstack((boxes_array_top_left, boxes_array_width_height))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            bounding_box = np.random.randint(-500, 500, size=(1, 4))
+            if np.all(bounding_box[0, 2:] > 0):
+                bounding_box[0, 2] *= -1.0
+            if np.any(bounding_box[0, 2:] == 0):
+                bounding_box[0, 3] = -1.0
+
+            with self.assertRaises(ValueError):
+                bounding_boxes_2d.append(bounding_box)
+
+
+    def test_extend_correct(self):
+        for _ in range(self.number_checks):
+            number_boxes_initial = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_initial = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_initial, 2))
+            boxes_array_width_height_initial = np.random.randint(1, 500, (number_boxes_initial, 2))
+            boxes_array = np.hstack((boxes_array_top_left_initial, boxes_array_width_height_initial))
+
+            number_boxes_to_extend = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_extend = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_to_extend, 2))
+            boxes_array_width_height_extend = np.random.randint(1, 500, (number_boxes_to_extend, 2))
+            boxes_array_to_extend = np.hstack((boxes_array_top_left_extend, boxes_array_width_height_extend))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            bounding_boxes_2d.extend(boxes_array_to_extend)
+            
+            
+    def test_extend_incorrect_values(self):
+        for _ in range(self.number_checks):
+            number_boxes_initial = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_initial = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_initial, 2))
+            boxes_array_width_height_initial = np.random.randint(1, 500, (number_boxes_initial, 2))
+            boxes_array = np.hstack((boxes_array_top_left_initial, boxes_array_width_height_initial))
+
+            number_boxes_to_extend = np.random.randint(1, self.maximum_number_boxes)
+
+            boxes_array_top_left_extend = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_to_extend, 2))
+            boxes_array_width_height_extend = np.random.randint(-300, 300, (number_boxes_to_extend, 2))
+            if np.any(boxes_array_width_height_extend > 0):
+                boxes_array_width_height_extend[0, 0] = -1
+            boxes_array_to_extend = np.hstack((boxes_array_top_left_extend, boxes_array_width_height_extend))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            with self.assertRaises(ValueError):
+                bounding_boxes_2d.extend(boxes_array_to_extend)
+
+
+    def test_extend_incorrect_dimensions(self):
+        for _ in range(self.number_checks):
+            number_boxes_initial = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left_initial = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_initial, 2))
+            boxes_array_width_height_initial = np.random.randint(1, 500, (number_boxes_initial, 2))
+            boxes_array = np.hstack((boxes_array_top_left_initial, boxes_array_width_height_initial))
+
+            number_boxes_to_extend = np.random.randint(1, self.maximum_number_boxes)
+            number_columns_width_height_to_extend = np.random.randint(1, 10)
+            if number_columns_width_height_to_extend == 2:
+                number_columns_width_height_to_extend += 1
+
+            boxes_array_top_left_extend = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes_to_extend, 2))
+            boxes_array_width_height_extend = np.random.randint(1, 600, (number_boxes_to_extend, number_columns_width_height_to_extend))
+            boxes_array_to_extend = np.hstack((boxes_array_top_left_extend, boxes_array_width_height_extend))
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array))
+            with self.assertRaises(ValueError):
+                bounding_boxes_2d.extend(boxes_array_to_extend)
+
+
+    def test_circumscribe(self):
+        for _ in range(self.number_checks):
+            left_top = np.random.randint(self.top_left_range[0], self.top_left_range[1], (2,))
+            width_height = np.random.randint(1, 512, (2,))
+            apriori_known_circumscribed_box = np.array([*left_top, *width_height])
+
+            number_boxes = np.random.randint(1, 512)
+            right_bottom = left_top + width_height
+
+            xs = np.random.randint(left_top[0], right_bottom[0], (number_boxes, 2))
+            ys = np.random.randint(left_top[1], right_bottom[1], (number_boxes, 2))
+
+            xyxys = np.hstack((xs[:, 0].reshape(-1, 1), ys[:, 0].reshape(-1, 1), xs[:, 1].reshape(-1, 1), ys[:, 1].reshape(-1, 1)))
+
+            if number_boxes > 1:
+                left_index = np.random.randint(0, number_boxes - 1)
+                right_index = np.random.randint(0, number_boxes - 1)
+                top_index = np.random.randint(0, number_boxes - 1)
+                bottom_index = np.random.randint(0, number_boxes - 1)
+            else:
+                left_index = 0
+                right_index = 0
+                top_index = 0
+                bottom_index = 0
+
+            xyxys[left_index, 0] = left_top[0]
+            xyxys[right_index, 2] = right_bottom[0]
+            xyxys[top_index, 1] = left_top[1]
+            xyxys[bottom_index, 3] = right_bottom[1]
+
+            bounding_boxes = BoundingBoxes2DArray(xyxys, mode=BoundingBoxes2DArray.XYXY)
+            circumscribed_box = bounding_boxes.circumscribe()
+
+            self.assertTrue(np.all(circumscribed_box == apriori_known_circumscribed_box))
+
+
+    def test_self_intersection(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            current_boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
+            current_boxes_array_width_height = np.random.randint(1, 1000, (current_number_boxes, 2))
+            current_boxes_array = np.hstack((current_boxes_array_top_left, current_boxes_array_width_height))
+            current_apriori_known_boxes_intersection = BoundingBoxes2DArray(current_boxes_array)
+
+            current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection)
+
+
+    def test_intersection_non_degenerate_set_1(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            current_boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
+            current_boxes_array_width_height = np.random.randint(1, 1000, (current_number_boxes, 2))
+            current_boxes_array = np.hstack((current_boxes_array_top_left, current_boxes_array_width_height))
+
+            current_apriori_known_boxes_intersection = BoundingBoxes2DArray(current_boxes_array)
+            current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
+
+            top_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(top=top_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertFalse(current_intersection_operand_1 == current_intersection_operand_2)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection)
+
+            left_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(left=left_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection)
+
+            right_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(right=right_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection)
+
+            bottom_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(bottom=bottom_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection)
+
+
+            left_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(left=left_enlarge_values)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertFalse(current_apriori_known_boxes_intersection == current_test_boxes_intersection)
+
+
+    def test_intersection_non_degenerate_set_2(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            current_boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
+            current_boxes_array_width_height = np.random.randint(1, 1000, (current_number_boxes, 2))
+            current_boxes_array = np.hstack((current_boxes_array_top_left, current_boxes_array_width_height))
+            current_apriori_known_boxes_intersection = BoundingBoxes2DArray(current_boxes_array)
+
+            current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            left_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            top_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            right_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            bottom_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(top=top_enlarge_values, left=left_enlarge_values)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(right=right_enlarge_values, bottom=bottom_enlarge_values)
+
+            current_test_boxes_intersection_1 = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertFalse(current_intersection_operand_1 == current_intersection_operand_2)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection_1)
+
+            # -----------------------------------------------------------------------------------------------------------------------------------------
+            current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            left_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            top_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            right_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            bottom_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(bottom=bottom_enlarge_values, left=left_enlarge_values)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(top=top_enlarge_values, right=right_enlarge_values)
+            current_test_boxes_intersection_1 = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            current_test_boxes_intersection_2 = BoundingBoxes2DArray.intersect(current_intersection_operand_2,
+                                                                             current_intersection_operand_1,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertFalse(current_intersection_operand_1 == current_intersection_operand_2)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection_1)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection_2)
+
+            # -----------------------------------------------------------------------------------------------------------------------------------------
+            current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            top_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            bottom_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(bottom=bottom_enlarge_values)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(top=top_enlarge_values)
+            current_test_boxes_intersection_1 = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertFalse(current_intersection_operand_1 == current_intersection_operand_2)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection_1)
+
+            # -----------------------------------------------------------------------------------------------------------------------------------------
+            current_intersection_operand_1 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            current_intersection_operand_2 = copy.deepcopy(current_apriori_known_boxes_intersection)
+            left_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            right_enlarge_values = np.random.randint(0, 100, current_number_boxes)
+            current_intersection_operand_1 = current_intersection_operand_1.enlarge(left=left_enlarge_values)
+            current_intersection_operand_2 = current_intersection_operand_2.enlarge(right=right_enlarge_values)
+            current_test_boxes_intersection_1 = BoundingBoxes2DArray.intersect(current_intersection_operand_1,
+                                                                             current_intersection_operand_2,
+                                                                             mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertFalse(current_intersection_operand_1 == current_intersection_operand_2)
+            self.assertTrue(current_apriori_known_boxes_intersection == current_test_boxes_intersection_1)
+
+
+
+    def test_intersection_degenerate(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            current_boxes_1_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
+            current_boxes_1_array_width_height = np.random.randint(1, 1000, (current_number_boxes, 2))
+            current_boxes_1_array = np.hstack((current_boxes_1_array_top_left, current_boxes_1_array_width_height))
+            current_boxes_1 = BoundingBoxes2DArray(current_boxes_1_array)
+
+            current_boxes_2 = copy.deepcopy(current_boxes_1)
+            shift_x_value = current_boxes_2.values[:, 2] + np.random.randint(1, 100, current_number_boxes)
+            shift_x_sign = int(2 * np.random.randint(0, 2) - 1)
+            current_boxes_2.values[:, 0] += shift_x_sign * shift_x_value
+            current_boxes_2.values[:, 1] += np.random.randint(-1500, 1500, current_number_boxes)
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_boxes_1, current_boxes_2, mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 2] == 0))
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 3] == 0))
+
+            current_boxes_2 = copy.deepcopy(current_boxes_1)
+            shift_y_value = current_boxes_2.values[:, 3] + np.random.randint(1, 100, current_number_boxes)
+            shift_y_sign = int(2 * np.random.randint(0, 2) - 1)
+            current_boxes_2.values[:, 0] += np.random.randint(-1500, 1500, current_number_boxes)
+            current_boxes_2.values[:, 1] += shift_y_sign * shift_y_value
+            current_test_boxes_intersection = BoundingBoxes2DArray.intersect(current_boxes_1, current_boxes_2, mode=BoundingBoxes2DArray.IntersectionMode.ONE_TO_ONE)
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 2] == 0))
+            self.assertTrue(np.all(current_test_boxes_intersection.values[:, 3] == 0))
+
+
+    def test_intersection_mixed_one_to_one(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
+
+
+    def test_intersection_over_union(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, self.maximum_number_boxes)
+
+
+    def test_areas(self):
+        for _ in range(self.number_checks):
+            current_number_boxes = np.random.randint(1, 512)
+            current_apriori_known_widths = np.random.randint(1, 2048, (current_number_boxes,))
+            current_apriori_known_heights = np.random.randint(1, 2048, (current_number_boxes,))
+            current_apriori_known_areas = current_apriori_known_widths * current_apriori_known_heights
+
+            current_left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (current_number_boxes, 2))
+            current_boxes = np.hstack((current_left_tops, current_apriori_known_widths.reshape(-1, 1), current_apriori_known_heights.reshape(-1, 1)))
+            current_bounding_boxes = BoundingBoxes2DArray(current_boxes)
+            current_areas = current_bounding_boxes.areas()
+
+            self.assertTrue(np.all(current_apriori_known_areas == current_areas))
+
+
+    def test_mean_area(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, 512)
+            apriori_known_widths = np.random.randint(1, 2048, (number_boxes,))
+            apriori_known_heights = np.random.randint(1, 2048, (number_boxes,))
+            apriori_known_areas = apriori_known_widths * apriori_known_heights
+            apriori_known_mean_area = np.mean(apriori_known_areas)
+
+            left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes = np.hstack((left_tops, apriori_known_widths.reshape(-1, 1), apriori_known_heights.reshape(-1, 1)))
+            bounding_boxes = BoundingBoxes2DArray(boxes)
+            mean_area = bounding_boxes.mean_area()
+
+            self.assertEqual(apriori_known_mean_area, mean_area)
+
+
+    def test_perimeters(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, 512)
+            apriori_known_widths = np.random.randint(1, 2048, (number_boxes,))
+            apriori_known_heights = np.random.randint(1, 2048, (number_boxes,))
+            apriori_known_perimeter = 2 * (apriori_known_widths + apriori_known_heights)
+
+            left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes = np.hstack((left_tops, apriori_known_widths.reshape(-1, 1), apriori_known_heights.reshape(-1, 1)))
+            bounding_boxes = BoundingBoxes2DArray(boxes)
+            perimeters = bounding_boxes.perimeters()
+
+            self.assertTrue(np.all(apriori_known_perimeter == perimeters))
+
+
+    def test_xyxy_to_xywh(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            width_heights = np.random.randint(1, 500, (number_boxes, 2))
+
+            right_bottoms = left_tops + width_heights
+            left_bottoms = np.hstack((left_tops[:, 0].reshape(-1, 1), right_bottoms[:, 1].reshape(-1, 1)))
+            right_tops = np.hstack((right_bottoms[:, 0].reshape(-1, 1), left_tops[:, 1].reshape(-1, 1)))
+
+            boxes_left_top_width_height = np.hstack((left_tops, width_heights))
+
+            boxes_top_left_bottom_right = np.hstack((left_tops, right_bottoms))
+            boxes_bottom_right_top_left = np.hstack((right_bottoms, left_tops))
+            boxes_bottom_left_top_right = np.hstack((left_bottoms, right_tops))
+            boxes_top_right_bottom_left = np.hstack((right_tops, left_bottoms))
+
+            boxes_xywh_converted_1 = BoundingBoxes2DArray.xyxy_to_xywh(boxes_top_left_bottom_right)
+            boxes_xywh_converted_2 = BoundingBoxes2DArray.xyxy_to_xywh(boxes_bottom_left_top_right)
+            boxes_xywh_converted_3 = BoundingBoxes2DArray.xyxy_to_xywh(boxes_bottom_right_top_left)
+            boxes_xywh_converted_4 = BoundingBoxes2DArray.xyxy_to_xywh(boxes_top_right_bottom_left)
+
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_1))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_2))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_3))
+            self.assertTrue(np.all(boxes_left_top_width_height == boxes_xywh_converted_4))
+
+
+    def test_xywh_to_xyxy(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            left_tops = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            width_heights = np.random.randint(1, 500, (number_boxes, 2))
+
+            boxes_xywh = np.hstack((left_tops, width_heights))
+            boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_xywh)
+            boxes_xywh_reverse = BoundingBoxes2DArray.xyxy_to_xywh(boxes_xyxy)
+
+            self.assertTrue(np.all(boxes_xywh == boxes_xywh_reverse))
+
+
+    def test_clamp(self):
+        for _ in range(self.number_checks):
+            number_boxes = np.random.randint(1, self.maximum_number_boxes)
+            boxes_array_top_left = np.random.randint(self.top_left_range[0], self.top_left_range[1], (number_boxes, 2))
+            boxes_array_width_height = np.random.randint(1, 500, (number_boxes, 2))
+            boxes_array_xywh = np.hstack((boxes_array_top_left, boxes_array_width_height))
+
+            boxes_array_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(boxes_array_xywh)
+            clamp_box_xyxy = np.hstack((np.mean(boxes_array_xyxy[:, :2], axis=0), np.mean(boxes_array_xyxy[:, 2:], axis=0))).astype(np.int64)
+            clamp_box_xywh = BoundingBoxes2DArray.xyxy_to_xywh(clamp_box_xyxy)
+
+            bounding_boxes_2d = BoundingBoxes2DArray(copy.deepcopy(boxes_array_xywh))
+            clamped_boxes_xywh = BoundingBoxes2DArray.clamp(bounding_boxes_2d, clamp_box_xywh)
+            clamped_boxes_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamped_boxes_xywh)
+            clamp_box_xyxy = BoundingBoxes2DArray.xywh_to_xyxy(clamp_box_xywh)
+
+            clamp_box_xyxy = np.repeat(clamp_box_xyxy, number_boxes, axis=0)
+
+            self.assertTrue(np.all(clamped_boxes_xyxy[:, :2] >= clamp_box_xyxy[:, :2]))
+            self.assertTrue(np.all(clamped_boxes_xyxy[:, 2:] <= clamp_box_xyxy[:, 2:]))
